@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Event Bali | Nusa Karsa Event</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="../Css/events-bali.css">
+    <link rel="stylesheet" href="../Css/events-table.css">
+    <link rel="stylesheet" href="../Css/navigation.css">
+</head>
+<body data-branch="bali">
+    <aside class="app-sidebar"><a class="app-brand" href="../halaman.html" aria-label="Dashboard Nusa Karsa"><img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event"></a><nav class="nav-menu" aria-label="Navigasi utama"></nav><div class="sidebar-bottom"><a href="../halaman.html"><i class="fa-solid fa-arrow-left"></i><span>Kembali ke dashboard</span></a></div></aside>
+    <main class="shell">
+        <header>
+            <div><p class="eyebrow">NUSA KARSA EVENT / CABANG BALI</p><h1>Pencatatan piutang event</h1><p>Nilai kontrak, DP, piutang, dan status dihitung otomatis oleh database.</p></div>
+            <a href="../halaman.html">Kembali ke dashboard</a>
+        </header>
+        <p id="notice" class="notice" hidden></p>
+        <section id="summary" class="summary" aria-label="Ringkasan keuangan"></section>
+        <section class="layout">
+            <form id="eventForm" class="card">
+                <div class="card-title"><h2 id="formTitle">Tambah event</h2><button type="button" id="resetButton" class="link">Form baru</button></div>
+                <div class="form-grid">
+                    <label>ID Event<input name="id" placeholder="EDK-021" required pattern="EDK-[A-Za-z0-9-]+"></label>
+                    <label>Nama event<input name="nama_event" required></label>
+                    <label>Skala<select name="skala" required><option>Besar</option><option>Sedang</option><option>Kecil</option></select></label>
+                    <label>Jenis acara<input name="jenis_acara" required></label>
+                    <label>Tanggal event<input name="tgl_event" type="date"></label>
+                    <label>Jatuh tempo<input name="tgl_jatuh_tempo" type="date"></label>
+                    <label>Lokasi<input name="lokasi"></label>
+                    <label>Pelanggan<input name="pelanggan"></label>
+                    <label>Jenis pihak<select name="jenis_pihak" required><option>Perorangan</option><option>Perusahaan</option></select></label>
+                    <label>Status data<select name="status_data"><option>Draft</option><option>Final</option></select></label>
+                    <label>HPP / RAB<input name="hpp_rab" type="number" min="0" step="0.01" value="0" required></label>
+                    <label>Margin<input name="margin" type="number" min="0" step="0.01" value="0" required></label>
+                    <label>Total dibayar<input name="total_dibayar" type="number" min="0" step="0.01" value="0" required></label>
+                </div>
+                <div id="calculator" class="calculator" aria-live="polite"></div>
+                <button class="primary" type="submit" id="submitButton">Simpan event</button>
+                <small>Untuk menyimpan atau mengubah data, masuk sebagai admin pada aplikasi utama.</small>
+            </form>
+            <section class="card table-card">
+                <div class="card-title"><h2>Daftar event</h2><input id="search" type="search" placeholder="Cari ID, event, atau pelanggan"></div>
+                <div class="filters" aria-label="Filter event">
+                    <select id="statusFilter"><option value="">Semua status pembayaran</option><option>Lunas</option><option>Berjalan</option><option>Piutang Jatuh Tempo</option></select>
+                    <select id="scaleFilter"><option value="">Semua skala</option><option>Besar</option><option>Sedang</option><option>Kecil</option></select>
+                    <select id="partyFilter"><option value="">Semua jenis pihak</option><option>Perorangan</option><option>Perusahaan</option></select>
+                </div>
+                <div class="table-wrap"><table><thead><tr><th>Event</th><th>Skala</th><th>Acara</th><th>Tanggal</th><th>Lokasi</th><th>Pelanggan</th><th>Pihak</th><th>HPP</th><th>Margin</th><th>Kontrak</th><th>DP</th><th>Termin 2</th><th>Pelunasan</th><th>Dibayar</th><th>Piutang</th><th>Jatuh tempo</th><th>Status data</th><th>Status</th><th></th></tr></thead><tbody id="eventRows"></tbody></table></div>
+            </section>
+        </section>
+    </main>
+    <script src="../Js/events-bali.js"></script>
+</body>
+</html>

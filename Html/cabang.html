@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabang | Nusa Karsa Event</title>
+    <script>
+        if (window.location.protocol === "file:") {
+            window.location.replace("http://localhost/web-Kerkom/Html/cabang.html");
+        }
+        const entry = new URLSearchParams(window.location.search).get("loadingEntry");
+        if (entry !== "1") {
+            const loadingUrl = new URL("../loading.html", window.location.href);
+            loadingUrl.searchParams.set("next", window.location.href);
+            window.location.replace(loadingUrl.href);
+        } else {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("loadingEntry");
+            window.history.replaceState({}, document.title, cleanUrl.href);
+        }
+    </script>
+    <link rel="icon" type="image/png" href="../assets/logo2.0.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../Css/cabang.css">
+    <link rel="stylesheet" href="../Css/navigation.css">
+</head>
+<body data-branch="palembang">
+    <div class="warp" aria-hidden="true"><span></span><span></span><span></span></div>
+    <aside class="sidebar">
+        <div class="brand-area"><img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event"></div>
+        <nav class="nav-menu" aria-label="Navigasi utama">
+            <a class="nav-item" href="../halaman.html"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
+            <a class="nav-item active" href="cabang.html"><i class="fa-solid fa-code-branch"></i><span>Cabang</span></a>
+            <a class="nav-item" href="pembayaran.html"><i class="fa-regular fa-credit-card"></i><span>Pembayaran</span></a>
+        </nav>
+        <div class="sidebar-bottom"><a class="logout" href="../halaman.html"><i class="fa-solid fa-arrow-left"></i><span>Kembali</span></a></div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">NUSA KARSA EVENT / JARINGAN CABANG</p>
+                <h1>Pilih ruang operasional</h1>
+                <p class="subtitle">Setiap cabang punya karakter, warna, dan energi kerjanya sendiri.</p>
+            </div>
+            <a class="back-link" href="../halaman.html"><i class="fa-solid fa-arrow-left"></i><span>Kembali ke dashboard</span></a>
+        </header>
+
+        <div class="content">
+            <section class="branch-hero">
+                <div>
+                    <span class="section-kicker">TIGA LOKASI Â· SATU GERAKAN</span>
+                    <h2>Masuk ke cabang pilihanmu.</h2>
+                    <p>Gunakan kartu di bawah untuk mengganti nuansa ruang kerja tanpa kehilangan alur dashboard.</p>
+                </div>
+                <div class="orbit-mark"><i class="fa-solid fa-location-crosshairs"></i></div>
+            </section>
+
+            <section class="branch-grid" aria-label="Daftar cabang">
+                <a class="branch-card palembang" href="cabang.html?branch=palembang">
+                    <div class="branch-symbol"><i class="fa-solid fa-water"></i></div>
+                    <div class="branch-copy"><span class="branch-label">01 / SUNGAI MUSI</span><h3>Palembang</h3><p>Hangat, cair, dan penuh ritme sungai.</p></div>
+                    <span class="enter"><i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+                <a class="branch-card bandung" href="cabangBandung.html">
+                    <div class="branch-symbol"><i class="fa-solid fa-mountain-sun"></i></div>
+                    <div class="branch-copy"><span class="branch-label">02 / DATARAN TINGGI</span><h3>Bandung</h3><p>Kreatif, berani, dan selalu menemukan bentuk baru.</p></div>
+                    <span class="enter"><i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+                <a class="branch-card bali" href="cabangBali.html">
+                    <div class="branch-symbol"><i class="fa-solid fa-sun"></i></div>
+                    <div class="branch-copy"><span class="branch-label">03 / PULAU DEWATA</span><h3>Bali</h3><p>Terang, tenang, dan siap menyambut peluang.</p></div>
+                    <span class="enter"><i class="fa-solid fa-arrow-right"></i></span>
+                </a>
+            </section>
+
+            <section class="branch-status">
+                <div class="status-icon"><i class="fa-solid fa-sparkles"></i></div>
+                <div><span class="section-kicker">RUANG AKTIF</span><strong id="activeBranch">Palembang</strong><p id="activeDescription">Memuat identitas cabang...</p></div>
+                <div class="status-line"><span></span></div>
+            </section>
+        </div>
+    </main>
+    <script src="../Js/cabang.js"></script>
+    <script src="../Js/navigation.js"></script>
+</body>
+</html>

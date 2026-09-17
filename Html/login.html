@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin | Nusa Karsa Event</title>
+    <script>
+        if (window.location.protocol === "file:") {
+            window.location.replace("http://localhost/web-Kerkom/Html/login.html");
+        }
+    </script>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        :root {
+            --navy: #102d4d;
+            --navy-2: #173d63;
+            --navy-3: #235581;
+            --blue: #246b95;
+            --cyan: #28b8c9;
+            --cyan-soft: #e4f7fa;
+            --purple: #5a34a3;
+            --gold: #c9962b;
+            --gold-soft: #fbf3df;
+            --orange: #ed5a1b;
+            --orange-soft: #fff0e8;
+            --green: #23805c;
+            --green-soft: #e7f6ef;
+            --text: #233b57;
+            --muted: #6e7c8e;
+            --line: #e7ebf0;
+            --bg: #f5f7fb;
+            --white: #ffffff;
+            --shadow: 0 10px 28px rgba(25, 52, 82, .09);
+            --shadow-lg: 0 20px 40px rgba(25, 52, 82, .12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Poppins", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 15% 20%, rgba(40, 184, 201, .08), transparent 25rem),
+                radial-gradient(circle at 85% 80%, rgba(201, 150, 43, .06), transparent 30rem),
+                var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Dekorasi lingkaran halus */
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::before {
+            width: 450px;
+            height: 450px;
+            top: -120px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(40, 184, 201, .15), transparent 70%);
+        }
+
+        body::after {
+            width: 350px;
+            height: 350px;
+            bottom: -80px;
+            left: -70px;
+            background: radial-gradient(circle, rgba(201, 150, 43, .12), transparent 70%);
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            animation: fadeInUp .6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 40px 32px 32px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--line);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Garis aksen atas */
+        .login-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--navy), var(--cyan), var(--gold));
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .logo-img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .1));
+        }
+
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -.03em;
+            background: linear-gradient(135deg, var(--navy), var(--cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            line-height: 1.2;
+        }
+
+        .brand-sub {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: .85rem;
+            text-align: center;
+        }
+
+        .form-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 6px;
+        }
+
+        .form-subtitle {
+            color: var(--muted);
+            font-size: .85rem;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .input-field {
+            display: flex;
+            align-items: center;
+            background: #f9fafc;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 0 14px;
+            transition: all .25s ease;
+        }
+
+        .input-field:focus-within {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(40, 184, 201, .12);
+            background: #fff;
+        }
+
+        .input-field i {
+            color: var(--muted);
+            margin-right: 12px;
+            font-size: 1rem;
+        }
+
+        .input-field input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            padding: 13px 0;
+            font-family: "Poppins", sans-serif;
+            font-size: .9rem;
+            color: var(--text);
+        }
+
+        .input-field input::placeholder {
+            color: #aab4be;
+        }
+
+        .options-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: .82rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        .remember-me input {
+            accent-color: var(--cyan);
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color .2s;
+        }
+
+        .forgot-link:hover {
+            color: var(--orange);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(100deg, #173d63, #246b95 60%, #28b8c9);
+            color: white;
+            font-weight: 600;
+            font-size: .95rem;
+            letter-spacing: .02em;
+            cursor: pointer;
+            transition: all .3s ease;
+            box-shadow: 0 8px 20px rgba(23, 61, 99, .25);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(23, 61, 99, .35);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+            box-shadow: 0 6px 16px rgba(23, 61, 99, .25);
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 22px;
+            color: var(--muted);
+            font-size: .82rem;
+            text-decoration: none;
+            transition: color .2s;
+        }
+
+        .back-link:hover {
+            color: var(--cyan);
+        }
+
+        /* Responsif */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px 24px;
+            }
+
+            .logo-img {
+                width: 70px;
+                height: 70px;
+            }
+
+            .brand-name {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <!-- Logo -->
+            <div class="logo-container">
+                <!-- Ganti path sesuai struktur folder Anda -->
+                <img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event" class="logo-img" onerror="this.style.display='none'">
+                <div class="brand-name">Nusa Karsa Event</div>
+                <div class="brand-sub">Sistem Pengelolaan Piutang Pelanggan</div>
+            </div>
+
+            <!-- Form -->
+            <h1 class="form-title">Login Administrasi</h1>
+            <p class="form-subtitle">Masuk untuk mengelola data piutang cabang Palembang, Bali, dan Bandung.</p>
+
+            <form id="loginForm" action="#" method="post">
+                <div class="input-group">
+                    <label for="username">Username / Email</label>
+                    <div class="input-field">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="username" name="username" placeholder="admin@nusakarsa.com" required autofocus>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="input-field">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="Masukkan password" required>
+                    </div>
+                </div>
+
+                <div class="options-row">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember"> Ingat saya
+                    </label>
+                    <a href="#" class="forgot-link">Lupa password?</a>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    Masuk <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+                </button>
+            </form>
+
+            <a href="../loading.html?next=halaman.html" class="back-link">
+                <i class="fa-solid fa-arrow-left" style="margin-right: 6px;"></i> Kembali ke Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const button = this.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Memproses...';
+
+            try {
+                const response = await fetch('../api/login.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Login gagal.');
+
+                const next = new URLSearchParams(window.location.search).get('next');
+                const defaultDestination = new URL('../halaman.html', window.location.href);
+                let destination = defaultDestination;
+
+                if (next) {
+                    const candidate = new URL(next, window.location.href);
+                    if (candidate.origin === window.location.origin && !/loading\.html$/i.test(candidate.pathname)) {
+                        destination = candidate;
+                    }
+                }
+
+                const loadingUrl = new URL('../loading.html', window.location.href);
+                loadingUrl.searchParams.set('next', destination.href);
+                window.location.href = loadingUrl.href;
+            } catch (error) {
+                alert(error.message || 'Tidak dapat menghubungi server.');
+                button.disabled = false;
+                button.innerHTML = 'Masuk <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>';
+            }
+        });
+    </script>
+</body>
+</html>

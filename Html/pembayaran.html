@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembayaran Piutang | Nusa Karsa Event</title>
+    <script>
+        if (window.location.protocol === "file:") {
+            window.location.replace("http://localhost/web-Kerkom/Html/pembayaran.html");
+        }
+        const loadingEntry = new URLSearchParams(window.location.search).get("loadingEntry");
+        if (loadingEntry !== "1") {
+            const loadingUrl = new URL("../loading.html", window.location.href);
+            loadingUrl.searchParams.set("next", window.location.href);
+            window.location.replace(loadingUrl.href);
+        } else {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("loadingEntry");
+            window.history.replaceState({}, document.title, cleanUrl.href);
+        }
+    </script>
+    <link rel="icon" type="image/png" href="../assets/logo2.0.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../Css/pembayaran.css">
+    <link rel="stylesheet" href="../Css/navigation.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand-area"><img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event"></div>
+        <nav class="nav-menu" aria-label="Navigasi utama">
+            <a class="nav-item" href="../halaman.html"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
+            <a class="nav-item active" href="pembayaran.html"><i class="fa-regular fa-credit-card"></i><span>Pembayaran</span></a>
+        </nav>
+        <div class="sidebar-bottom"><a class="logout" href="../halaman.html"><i class="fa-solid fa-arrow-left"></i><span>Kembali</span></a></div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">NUSA KARSA EVENT / KEUANGAN</p>
+                <h1>Pembayaran piutang</h1>
+                <p class="subtitle">Catat pembayaran pelanggan dengan kanal yang mereka pilih.</p>
+            </div>
+            <div class="topbar-actions">
+                <span id="sessionStatus" class="session-status" aria-live="polite">Memeriksa sesi...</span>
+                <a class="back-link" href="../halaman.html"><i class="fa-solid fa-arrow-left"></i><span>Dashboard</span></a>
+            </div>
+        </header>
+
+        <div class="content">
+            <section class="page-intro">
+                <div>
+                    <span class="section-kicker">TRANSAKSI BARU</span>
+                    <h2>Pilih tagihan yang akan dibayar</h2>
+                </div>
+                <div class="secure-note"><i class="fa-solid fa-shield-halved"></i><span>Transaksi tercatat aman</span></div>
+            </section>
+
+            <div id="alert" class="alert" role="alert" hidden></div>
+            <div class="payment-layout">
+                <section class="panel invoice-panel">
+                    <div class="panel-heading"><div><h3>Tagihan aktif</h3><p>Pilih satu piutang untuk melihat nominal tersisa.</p></div><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                    <label class="field-label" for="receivableSelect">Nomor tagihan / pelanggan</label>
+                    <select id="receivableSelect" class="select-control"><option value="">Memuat tagihan...</option></select>
+                    <div id="invoiceSummary" class="invoice-summary empty-state"><i class="fa-regular fa-hand-pointer"></i><p>Pilih tagihan untuk melanjutkan pembayaran.</p></div>
+                    <div class="amount-block">
+                        <label class="field-label" for="amount">Nominal pembayaran</label>
+                        <div class="amount-input"><span>Rp</span><input id="amount" type="number" min="1" step="1000" placeholder="0" disabled></div>
+                        <div class="amount-hint" id="amountHint">Maksimal sesuai sisa tagihan.</div>
+                    </div>
+                    <label class="field-label" for="note">Catatan <span>(opsional)</span></label>
+                    <textarea id="note" rows="3" maxlength="255" placeholder="Contoh: Pelunasan invoice Agustus" disabled></textarea>
+                </section>
+
+                <section class="panel method-panel">
+                    <div class="panel-heading"><div><h3>Metode pembayaran</h3><p>Pilih kanal pembayaran yang digunakan.</p></div><i class="fa-solid fa-wallet"></i></div>
+                    <div class="method-grid" role="radiogroup" aria-label="Metode pembayaran">
+                        <button class="method-card" data-method="QRIS" type="button"><span class="method-icon qris"><i class="fa-solid fa-qrcode"></i></span><span><strong>QRIS</strong><small>Scan semua aplikasi</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="BRI" type="button"><span class="method-icon bri">BRI</span><span><strong>Bank BRI</strong><small>Transfer virtual account</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="BCA" type="button"><span class="method-icon bca">BCA</span><span><strong>Bank BCA</strong><small>Transfer virtual account</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="SEABANK" type="button"><span class="method-icon sea"><i class="fa-solid fa-water"></i></span><span><strong>SeaBank</strong><small>Transfer rekening</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="PAYPAL" type="button"><span class="method-icon paypal"><i class="fa-brands fa-paypal"></i></span><span><strong>PayPal</strong><small>Pembayaran internasional</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                    </div>
+                    <div id="methodDetails" class="method-details" hidden></div>
+                    <button id="submitPayment" class="submit-button" type="button" disabled><i class="fa-solid fa-lock"></i><span>Konfirmasi pembayaran</span></button>
+                    <p class="form-footnote"><i class="fa-solid fa-circle-info"></i> Pembayaran akan langsung memperbarui saldo piutang.</p>
+                </section>
+            </div>
+
+            <section id="receipt" class="receipt panel" hidden>
+                <div class="receipt-heading"><div><span class="section-kicker">STRUK DIGITAL</span><h2>Pembayaran berhasil</h2></div><i class="fa-solid fa-circle-check"></i></div>
+                <div class="receipt-token"><span>Token transaksi</span><strong id="receiptToken">-</strong></div>
+                <div class="receipt-grid">
+                    <div><span>Pelanggan</span><strong id="receiptCustomer">-</strong></div>
+                    <div><span>Acara</span><strong id="receiptEvent">-</strong></div>
+                    <div><span>Cabang</span><strong id="receiptBranch">-</strong></div>
+                    <div><span>Metode</span><strong id="receiptMethod">-</strong></div>
+                    <div><span>Tanggal</span><strong id="receiptDate">-</strong></div>
+                    <div><span>Catatan</span><strong id="receiptNote">-</strong></div>
+                    <div class="receipt-total"><span>Total dibayar</span><strong id="receiptAmount">-</strong></div>
+                </div>
+                <p class="receipt-validity"><i class="fa-solid fa-shield-halved"></i> Struk digital ini divalidasi dengan token transaksi di atas.</p>
+                <div class="receipt-actions" aria-label="Aksi struk digital">
+                    <button id="shareReceipt" class="share-button primary" type="button"><i class="fa-solid fa-share-nodes"></i> Bagikan</button>
+                    <a id="whatsappReceipt" class="share-button whatsapp" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                    <button id="copyReceiptToken" class="share-button" type="button"><i class="fa-regular fa-copy"></i> Salin token</button>
+                    <button id="printReceipt" class="share-button" type="button"><i class="fa-solid fa-print"></i> Cetak</button>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script src="../Js/pembayaran.js"></script>
+    <script src="../Js/navigation.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,14 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:database|\.git)(?:/|$) - [F,L,NC]
+    RewriteRule ^api/events/?$ api/events.php [L,QSA,NC]
+    RewriteRule ^api/events/([^/]+)/?$ api/events.php?id=$1 [L,QSA,B,NC]
+    RewriteRule ^api/events-bandung/?$ api/events-bandung.php [L,QSA,NC]
+    RewriteRule ^api/events-bandung/([^/]+)/?$ api/events-bandung.php?id=$1 [L,QSA,B,NC]
+</IfModule>
+
+<FilesMatch "^(?:config\.php|\.env)$">
+    Require all denied
+</FilesMatch>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Screen - Nusa Karsa Event</title>
+    
+    <style>
+        :root {
+            --navy: #102d4d;
+            --blue: #246b95;
+            --cyan: #28b8c9;
+            --gold: #c9962b;
+            --bg: #f5f7fb;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            color: var(--navy);
+            font-family: "Poppins", "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 18% 15%, rgba(40, 184, 201, .18), transparent 28rem),
+                radial-gradient(circle at 86% 88%, rgba(201, 150, 43, .14), transparent 24rem),
+                var(--bg);
+        }
+
+        .loading-screen {
+            width: min(100%, 30rem);
+            padding: 2rem;
+            text-align: center;
+            animation: appear .7s ease both;
+        }
+
+        .logo-wrap {
+            position: relative;
+            width: min(70vw, 18rem);
+            aspect-ratio: 1;
+            margin: 0 auto 1.25rem;
+        }
+
+        .logo-wrap img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 14px 20px rgba(16, 45, 77, .16));
+        }
+
+        .logo-muted { opacity: .2; filter: grayscale(1) drop-shadow(0 14px 20px rgba(16, 45, 77, .12)) !important; }
+
+        @keyframes fillLeftToRight {
+            0% {
+                clip-path: inset(0 100% 0 0);
+            }
+            100% {
+                clip-path: inset(0 0 0 0);
+            }
+        }
+
+        .animate-logo-fill {
+            animation: fillLeftToRight 1.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+
+        .loading-title {
+            margin: 0;
+            font-size: clamp(1.15rem, 4vw, 1.45rem);
+            font-weight: 700;
+        }
+
+        .loading-text {
+            margin: .45rem 0 1.4rem;
+            color: var(--blue);
+            font-size: .85rem;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        .progress {
+            width: min(100%, 18rem);
+            height: .3rem;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 99px;
+            background: rgba(16, 45, 77, .12);
+        }
+
+        .progress span {
+            display: block;
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--navy), var(--cyan), var(--gold));
+            animation: progress 1.9s cubic-bezier(.4, 0, .2, 1) forwards;
+        }
+
+        @keyframes appear { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 50% { opacity: .45; } }
+        @keyframes progress { to { width: 100%; } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+        }
+    </style>
+</head>
+<body>
+    <main class="loading-screen" aria-live="polite">
+        <div class="logo-wrap">
+            <img src="assets/logo3.0.png" alt="Logo Nusa Karsa Event" class="logo-muted">
+            <img src="assets/logo3.0.png" alt="" class="animate-logo-fill" aria-hidden="true">
+        </div>
+        <h1 class="loading-title">Nusa Karsa Event</h1>
+        <p class="loading-text">Menyiapkan halaman...</p>
+        <div class="progress" role="progressbar" aria-label="Memuat halaman"><span></span></div>
+    </main>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const requestedDestination = params.get('next');
+        const fallbackDestination = 'halaman.html';
+        const destination = requestedDestination && isSafeDestination(requestedDestination)
+            ? requestedDestination
+            : fallbackDestination;
+
+        function isSafeDestination(value) {
+            try {
+                const url = new URL(value, window.location.href);
+                return url.origin === window.location.origin && !/loading\.html$/i.test(url.pathname);
+            } catch (error) {
+                return false;
+            }
+        }
+
+        let redirected = false;
+        function continueToDestination() {
+            if (redirected) return;
+            redirected = true;
+            const destinationUrl = new URL(destination, window.location.href);
+            destinationUrl.searchParams.set('loadingEntry', '1');
+            window.location.replace(destinationUrl.href);
+        }
+
+        window.setTimeout(continueToDestination, 2000);
+    </script>
+</body>
+</html>``
