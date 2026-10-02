@@ -1,24 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cabang | Nusa Karsa Event</title>
-    <script>
-        if (window.location.protocol === "file:") {
-            window.location.replace("http://localhost/web-Kerkom/Html/cabang.html");
-        }
-        const entry = new URLSearchParams(window.location.search).get("loadingEntry");
-        if (entry !== "1") {
-            const loadingUrl = new URL("../loading.html", window.location.href);
-            loadingUrl.searchParams.set("next", window.location.href);
-            window.location.replace(loadingUrl.href);
-        } else {
-            const cleanUrl = new URL(window.location.href);
-            cleanUrl.searchParams.delete("loadingEntry");
-            window.history.replaceState({}, document.title, cleanUrl.href);
-        }
-    </script>
     <link rel="icon" type="image/png" href="../assets/logo2.0.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -59,7 +44,7 @@
             </section>
 
             <section class="branch-grid" aria-label="Daftar cabang">
-                <a class="branch-card palembang" href="cabang.html?branch=palembang">
+                <a class="branch-card palembang" href="cabangPalembang.html">
                     <div class="branch-symbol"><i class="fa-solid fa-water"></i></div>
                     <div class="branch-copy"><span class="branch-label">01 / SUNGAI MUSI</span><h3>Palembang</h3><p>Hangat, cair, dan penuh ritme sungai.</p></div>
                     <span class="enter"><i class="fa-solid fa-arrow-right"></i></span>

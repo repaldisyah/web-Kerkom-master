@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cabang Palembang | Nusa Karsa Event</title>
+    <link rel="icon" type="image/png" href="../assets/logo2.0.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../Css/cabang.css">
+    <link rel="stylesheet" href="../Css/cabangPalembang.css">
+    <link rel="stylesheet" href="../Css/navigation.css">
+</head>
+<body data-branch="palembang">
+    <div class="warp" aria-hidden="true"><span></span><span></span><span></span></div>
+    <aside class="sidebar">
+        <div class="brand-area"><img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event"></div>
+        <nav class="nav-menu" aria-label="Navigasi utama"></nav>
+        <div class="sidebar-bottom"><a class="logout" href="cabang.html"><i class="fa-solid fa-arrow-left"></i><span>Semua cabang</span></a></div>
+    </aside>
+    <main class="main">
+        <header class="topbar">
+            <div><p class="eyebrow">NUSA KARSA EVENT / CABANG PALEMBANG</p><h1>Piutang event Palembang</h1><p class="subtitle">Pantau kontrak, jadwal pembayaran, saldo hutang, dan jatuh tempo setiap event.</p></div>
+            <a class="back-link" href="cabang.html"><i class="fa-solid fa-arrow-left"></i><span>Kembali ke daftar cabang</span></a>
+        </header>
+        <div class="content">
+            <section class="branch-hero">
+                <div><span class="section-kicker">SUNGAI MUSI · PALEMBANG</span><h2>Ringkasan keuangan event.</h2><p>Saldo dan status keterlambatan dihitung dari sisa piutang dan tanggal jatuh tempo.</p></div>
+                <div class="orbit-mark"><i class="fa-solid fa-water"></i></div>
+            </section>
+            <section id="summary" class="palembang-summary" aria-label="Ringkasan piutang Palembang" aria-live="polite"></section>
+            <p class="palembang-note">Nilai total dibayar dan rincian DP/termin berasal dari data sumber. Tanggal dan metode transaksi lama tidak tersedia; pembayaran baru akan tercatat dengan metode yang dipilih.</p>
+            <section class="palembang-table-card">
+                <div class="palembang-table-head"><div><h2>Daftar event dan hutang</h2><p class="palembang-note">Tombol Bayar membuka tagihan dengan saldo tersisa terisi otomatis.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><select id="statusFilter" aria-label="Filter status"><option value="">Semua status</option><option value="Menunggak">Menunggak</option><option value="Belum Lunas">Belum Lunas</option><option value="Lunas">Lunas</option></select><input id="search" type="search" placeholder="Cari event atau pelanggan" aria-label="Cari event atau pelanggan"></div></div>
+                <div id="error" class="palembang-error" role="alert" hidden></div>
+                <div class="palembang-table-wrap"><table class="palembang-table"><thead><tr><th>Event</th><th>Skala / Jenis</th><th>Pelanggan / Lokasi</th><th>Tanggal event</th><th>RAB / Margin</th><th>Nilai kontrak</th><th>DP / Termin 2 / Pelunasan</th><th>Total dibayar</th><th>Sisa hutang</th><th>Jatuh tempo</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="eventRows"><tr><td colspan="12">Memuat data event...</td></tr></tbody></table></div>
+            </section>
+        </div>
+    </main>
+    <script src="../Js/cabang.js"></script>
+    <script src="../Js/cabangPalembang.js"></script>
+    <script src="../Js/navigation.js"></script>
+</body>
+</html>

@@ -12,10 +12,11 @@ Halaman `Html/cabangBali.html` dan `Html/cabangBandung.html` memakai stylesheet 
 
 Stack yang digunakan adalah PHP 8+ dengan PDO MySQL untuk backend, MySQL 8+ untuk database/view kalkulasi, serta HTML/CSS/JavaScript vanilla untuk frontend. Setelah impor SQL, buka `Html/events-bali.html` atau `Html/cabangBali.html` melalui Apache XAMPP, lalu login sebagai admin.
 
-View `vw_events_dashboard` menghitung nilai kontrak, DP, Termin 2, pelunasan, piutang, dan status pembayaran. Karena input yang tersedia tidak memiliki kolom terpisah untuk menandai Termin 2, pembayaran yang melebihi DP dianggap mulai masuk Termin 2 sampai maksimum 30% nilai kontrak; jika pembayaran belum melewati DP, Termin 2 bernilai Rp0. Jalankan ulang impor `events_bali.sql` atau `events_bandung.sql` setelah perubahan view agar database lama memakai formula terbaru.
+View `vw_events_dashboard` menghitung nilai kontrak, piutang, dan status terkini. Untuk Cabang Bali, nilai DP, Termin 2, dan Pelunasan pada 20 event sumber disimpan pada kolom jadwal tersendiri; total dibayar tetap merupakan pembayaran yang benar-benar telah diterima. Event baru tanpa jadwal khusus tetap memakai rumus bawaan berdasarkan skala. Cabang Bandung tetap memakai rumus otomatis berdasarkan skala.
 
 Untuk database yang sudah pernah diimpor, jalankan migration sesuai urutan nama file. Fitur akun pelanggan membutuhkan `migration_add_customer_account.sql`; token riwayat pembayaran membutuhkan `migration_add_payment_token.sql`.
 Untuk database event yang sudah berisi data, jalankan `migration_add_event_calculations.sql` agar view kalkulasi menampilkan Termin 2 dan Pelunasan terbaru tanpa menghapus 20 seed event.
+Untuk database `events_bali` lama, jalankan `migration_update_bali_events.sql` satu kali setelah migrasi kalkulasi; skrip ini menambahkan kolom jadwal pembayaran dan memperbarui 20 ID EDK terbaru. Untuk instalasi baru, impor `events_bali.sql` yang sudah memuat struktur dan data tersebut. Jangan impor ulang file seed setelah pembayaran operasional dicatat karena nilai total dibayar akan kembali ke nilai sumber.
 
 ## Akun awal
 

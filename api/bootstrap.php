@@ -6,6 +6,16 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
 session_name('nusa_karsa_session');
+ini_set('session.use_strict_mode', '1');
+ini_set('session.cookie_httponly', '1');
+ini_set('session.cookie_samesite', 'Lax');
+$cookieSecure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+session_set_cookie_params([
+    'httponly' => true,
+    'secure' => $cookieSecure,
+    'samesite' => 'Lax',
+    'path' => '/',
+]);
 session_start();
 
 function respond(array $payload, int $status = 200): never
@@ -61,6 +71,14 @@ function require_login(): int
     return (int) $userId;
 }
 
+function require_operational_user(): array
+{
+    $scope = current_scope();
+    if (!in_array($scope['role'], ['super_admin', 'admin_cabang'], true)) {
+        respond(['success' => false, 'message' => 'Aksi ini hanya tersedia untuk admin.'], 403);
+    }
+    return $scope;
+}
 function current_scope(): array
 {
     $userId = require_login();

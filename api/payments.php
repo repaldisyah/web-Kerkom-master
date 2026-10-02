@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
-require_login();
+$scope = require_operational_user();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(['success' => false, 'message' => 'Metode harus POST.'], 405);
@@ -10,12 +10,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $data = request_data();
 $receivableId = (int) ($data['receivable_id'] ?? 0);
-$amount = (float) ($data['amount'] ?? 0);
+$rawAmount = $data['amount'] ?? null;
+$amount = is_numeric($rawAmount) ? (float) $rawAmount : 0.0;
 $paymentMethod = strtoupper(trim((string) ($data['payment_method'] ?? '')));
 $note = trim((string) ($data['note'] ?? ''));
 $allowedMethods = ['QRIS', 'BRI', 'BCA', 'SEABANK', 'PAYPAL'];
 
-if ($receivableId < 1 || $amount <= 0 || !in_array($paymentMethod, $allowedMethods, true)) {
+if ($receivableId < 1 || !is_finite($amount) || $amount <= 0 || !in_array($paymentMethod, $allowedMethods, true)) {
     respond(['success' => false, 'message' => 'Tagihan, nominal, dan metode pembayaran wajib valid.'], 422);
 }
 if (strlen($note) > 255) {
@@ -23,8 +24,8 @@ if (strlen($note) > 255) {
 }
 
 $db = database();
-$isSuperAdmin = ($_SESSION['user_role'] ?? '') === 'super_admin';
-$branchId = $_SESSION['user_branch_id'] ?? null;
+$isSuperAdmin = $scope['role'] === 'super_admin';
+$branchId = $scope['branch_id'];
 if (!$isSuperAdmin && $branchId === null) {
     respond(['success' => false, 'message' => 'Akun belum memiliki cabang. Hubungi admin pusat.'], 403);
 }

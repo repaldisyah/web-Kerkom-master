@@ -1,33 +1,74 @@
 <!doctype html>
 <html lang="id">
 <head>
-    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cabang Bali | Nusa Karsa Event</title>
     <link rel="icon" type="image/png" href="../assets/logo2.0.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="../Css/events-bali.css">
-    <link rel="stylesheet" href="../Css/events-table.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../Css/cabang.css">
+    <link rel="stylesheet" href="../Css/cabangPalembang.css">
+    <link rel="stylesheet" href="../Css/cabangBali.css">
     <link rel="stylesheet" href="../Css/navigation.css">
 </head>
 <body data-branch="bali">
-<aside class="app-sidebar"><a class="app-brand" href="../halaman.html" aria-label="Dashboard Nusa Karsa"><img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event"></a><nav class="nav-menu" aria-label="Navigasi utama"></nav><div class="sidebar-bottom"><a href="../halaman.html"><i class="fa-solid fa-arrow-left"></i><span>Kembali ke dashboard</span></a></div></aside>
-<main class="shell">
-    <header><div><p class="eyebrow">NUSA KARSA EVENT / CABANG BALI</p><h1>Piutang event Cabang Bali</h1><p>Data live dari MySQL; nilai kontrak, DP, piutang, dan indikator status dihitung otomatis.</p></div><a href="cabang.html">← Semua cabang</a></header>
-    <p id="notice" class="notice" hidden></p><section id="summary" class="summary" aria-label="Ringkasan Cabang Bali"></section>
-    <section class="layout">
-        <form id="eventForm" class="card"><div class="card-title"><h2 id="formTitle">Tambah event Bali</h2><button id="resetButton" class="link" type="button">Form baru</button></div>
-            <div class="form-grid">
-                <label>ID Event<input name="id" required pattern="EDK-[A-Za-z0-9-]+" placeholder="EDK-021"></label><label>Nama event<input name="nama_event" required></label>
-                <label>Skala<select name="skala"><option>Besar</option><option>Sedang</option><option>Kecil</option></select></label><label>Jenis acara<input name="jenis_acara" required></label>
-                <label>Tanggal event<input name="tgl_event" type="date"></label><label>Jatuh tempo<input name="tgl_jatuh_tempo" type="date"></label>
-                <label>Lokasi<input name="lokasi"></label><label>Pelanggan<input name="pelanggan"></label>
-                <label>Jenis pihak<select name="jenis_pihak"><option>Perorangan</option><option>Perusahaan</option></select></label><label>Status data<select name="status_data"><option>Draft</option><option>Final</option></select></label>
-                <label>HPP / RAB<input name="hpp_rab" type="number" min="0" step="0.01" value="0" required></label><label>Margin<input name="margin" type="number" min="0" step="0.01" value="0" required></label><label>Total dibayar<input name="total_dibayar" type="number" min="0" step="0.01" value="0" required></label>
-            </div><div id="calculator" class="calculator" aria-live="polite"></div><button id="submitButton" class="primary" type="submit">Simpan event</button><small>Tambah, ubah, dan hapus data membutuhkan login admin.</small>
-        </form>
-        <section class="card table-card"><div class="card-title"><h2>Data event Bali</h2><input id="search" type="search" placeholder="Cari ID, event, atau pelanggan"></div><div class="filters"><select id="statusFilter"><option value="">Semua status pembayaran</option><option>Lunas</option><option>Berjalan</option><option>Piutang Jatuh Tempo</option></select><select id="scaleFilter"><option value="">Semua skala</option><option>Besar</option><option>Sedang</option><option>Kecil</option></select><select id="partyFilter"><option value="">Semua jenis pihak</option><option>Perorangan</option><option>Perusahaan</option></select></div><div class="table-wrap"><table><thead><tr><th>Event</th><th>Skala</th><th>Acara</th><th>Tanggal</th><th>Lokasi</th><th>Pelanggan</th><th>Pihak</th><th>HPP</th><th>Margin</th><th>Kontrak</th><th>DP</th><th>Termin 2</th><th>Pelunasan</th><th>Dibayar</th><th>Piutang</th><th>Jatuh tempo</th><th>Status data</th><th>Status</th><th></th></tr></thead><tbody id="eventRows"></tbody></table></div></section>
-    </section>
-</main>
-<script src="../Js/events-bali.js"></script>
-<script src="../Js/navigation.js"></script>
-</body></html>
+    <aside class="sidebar">
+        <div class="brand-area"><a href="../halaman.html" aria-label="Kembali ke dashboard"><img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event"></a></div>
+        <nav class="nav-menu" aria-label="Navigasi utama"></nav>
+        <div class="sidebar-bottom"><a class="logout" href="cabang.html"><i class="fa-solid fa-arrow-left"></i><span>Semua cabang</span></a></div>
+    </aside>
+    <main class="main">
+        <header class="topbar">
+            <div><p class="eyebrow">NUSA KARSA EVENT / CABANG BALI</p><h1>Piutang event Bali</h1><p class="subtitle">Pantau kontrak, jadwal pembayaran, saldo piutang, dan jatuh tempo setiap event.</p></div>
+            <a class="back-link" href="cabang.html"><i class="fa-solid fa-arrow-left"></i><span>Kembali ke daftar cabang</span></a>
+        </header>
+        <div class="content">
+            <section class="branch-hero">
+                <div><span class="section-kicker">PULAU DEWATA / BALI</span><h2>Ringkasan keuangan event.</h2><p>Saldo dan status keterlambatan dihitung dari nilai kontrak, total pembayaran, serta tanggal jatuh tempo.</p></div>
+                <div class="orbit-mark"><i class="fa-solid fa-sun"></i></div>
+            </section>
+            <section id="summary" class="palembang-summary" aria-label="Ringkasan piutang Bali" aria-live="polite"></section>
+            <p id="notice" class="bali-notice" role="status" hidden></p>
+            <form id="eventForm" class="bali-form-card">
+                <div class="bali-card-head"><div><h2 id="formTitle">Tambah event Bali</h2><p>Pengelolaan data hanya tersedia untuk admin.</p></div><button id="resetButton" class="bali-secondary" type="button">Form baru</button></div>
+                <div class="bali-form-grid">
+                    <label>ID Event<input name="id" required pattern="EDK-[A-Za-z0-9-]+" placeholder="EDK-021"></label>
+                    <label>Nama event<input name="nama_event" required></label>
+                    <label>Skala<select name="skala"><option>Besar</option><option>Sedang</option><option>Kecil</option></select></label>
+                    <label>Jenis acara<input name="jenis_acara" required></label>
+                    <label>Tanggal event<input name="tgl_event" type="date"></label>
+                    <label>Jatuh tempo<input name="tgl_jatuh_tempo" type="date"></label>
+                    <label>Lokasi<input name="lokasi"></label><label>Pelanggan<input name="pelanggan"></label>
+                    <label>Jenis pihak<select name="jenis_pihak"><option>Perorangan</option><option>Perusahaan</option></select></label>
+                    <label>Status data<select name="status_data"><option>Draft</option><option>Final</option></select></label>
+                    <label>HPP / RAB<input name="hpp_rab" type="number" min="0" step="0.01" value="0" required></label>
+                    <label>Margin<input name="margin" type="number" min="0" step="0.01" value="0" required></label>
+                    <label>Total dibayar<input name="total_dibayar" type="number" min="0" step="0.01" value="0" required></label>
+                </div>
+                <div id="calculator" class="bali-calculator" aria-live="polite"></div>
+                <button id="submitButton" class="bali-primary" type="submit">Simpan event</button>
+            </form>
+            <section class="palembang-table-card bali-table-card">
+                <div class="palembang-table-head bali-table-head">
+                    <div><h2>Data event Bali</h2><p class="palembang-note">Gunakan pencarian dan filter untuk menemukan event.</p></div>
+                    <div class="bali-controls">
+                        <input id="search" type="search" placeholder="Cari ID, event, atau pelanggan" aria-label="Cari event">
+                        <select id="statusFilter" aria-label="Filter status pembayaran"><option value="">Semua status pembayaran</option><option>Lunas</option><option>Berjalan</option><option>Piutang Jatuh Tempo</option></select>
+                        <select id="scaleFilter" aria-label="Filter skala"><option value="">Semua skala</option><option>Besar</option><option>Sedang</option><option>Kecil</option></select>
+                        <select id="partyFilter" aria-label="Filter jenis pihak"><option value="">Semua jenis pihak</option><option>Perorangan</option><option>Perusahaan</option></select>
+                    </div>
+                </div>
+                <div id="error" class="bali-error" role="alert" hidden></div>
+                <div class="palembang-table-wrap"><table class="palembang-table bali-table">
+                    <thead><tr><th>Event</th><th>Skala</th><th>Acara</th><th>Tanggal</th><th>Lokasi</th><th>Pelanggan</th><th>Pihak</th><th>HPP</th><th>Margin</th><th>Kontrak</th><th>DP</th><th>Termin 2</th><th>Pelunasan</th><th>Dibayar</th><th>Piutang</th><th>Jatuh tempo</th><th>Status data</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody id="eventRows"><tr><td colspan="19">Memuat data event...</td></tr></tbody>
+                </table></div>
+            </section>
+        </div>
+    </main>
+    <script src="../Js/events-bali.js"></script>
+    <script src="../Js/navigation.js"></script>
+</body>
+</html>

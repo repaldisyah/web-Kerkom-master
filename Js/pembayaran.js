@@ -12,6 +12,9 @@ const sessionStatus = document.getElementById("sessionStatus");
 const shareReceiptButton = document.getElementById("shareReceipt");
 const copyReceiptTokenButton = document.getElementById("copyReceiptToken");
 const whatsappReceiptLink = document.getElementById("whatsappReceipt");
+const paymentParams = new URLSearchParams(window.location.search);
+const isPalembangPayment = paymentParams.get("source") === "palembang";
+let requestedEventId = paymentParams.get("event_id");
 let receivables = [];
 let selectedMethod = "";
 let latestReceipt = null;
@@ -29,7 +32,7 @@ const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, character =>
 async function readJson(response) {
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
-        throw new Error("Server PHP belum dijalankan. Buka web melalui http://localhost/web-Kerkom/.");
+        throw new Error("Server PHP belum dijalankan. Buka proyek melalui Apache di localhost, bukan sebagai file lokal.");
     }
     return response.json();
 }
@@ -45,7 +48,10 @@ function selectedReceivable() {
 }
 
 function renderReceivableOptions() {
-    if (!receivables.length) return;
+    if (!receivables.length) {
+        receivableSelect.innerHTML = '<option value="">Tidak ada piutang aktif</option>';
+        return;
+    }
 
     const placeholder = document.createElement("option");
     placeholder.value = "";
@@ -96,7 +102,7 @@ function renderInvoice() {
         return;
     }
     invoiceSummary.className = "invoice-summary";
-    invoiceSummary.innerHTML = `<strong>${receivable.customer}</strong><span>${receivable.branch} · ${receivable.event}</span><span>Jatuh tempo ${receivable.due_date}</span><span class="balance">Sisa ${money(receivable.balance)}</span>`;
+    invoiceSummary.innerHTML = `<strong>${escapeHtml(receivable.customer)}</strong><span>${escapeHtml(receivable.branch)} · ${escapeHtml(receivable.event)}</span><span>Jatuh tempo ${escapeHtml(receivable.due_date)}</span><span class="balance">Sisa ${money(receivable.balance)}</span>`;
     amountInput.disabled = false;
     noteInput.disabled = false;
     amountInput.max = receivable.balance;
@@ -187,18 +193,28 @@ async function shareReceipt() {
 
 async function loadReceivables() {
     try {
-        const response = await fetch("../api/receivables.php", { cache: "no-store" });
+        const endpoint = isPalembangPayment ? "../api/palembang-events.php" : "../api/receivables.php";
+        const response = await fetch(endpoint, { cache: "no-store" });
         const result = await readJson(response);
         if (response.status === 401) {
             redirectToLogin();
             return;
         }
         if (!response.ok || !result.success) throw new Error(result.message || "Tagihan tidak dapat dimuat.");
-        receivables = result.receivables;
-        receivableSelect.innerHTML = receivables.length
-            ? '<option value="">Pilih tagihan...</option>' + receivables.map(item => `<option value="${item.id}">${item.customer} · ${money(item.balance)} tersisa</option>`).join("")
-            : '<option value="">Tidak ada piutang aktif</option>';
+        receivables = isPalembangPayment
+            ? (result.events || []).filter(item => Number(item.piutang) > 0).map(item => ({ id: item.id, customer: item.pelanggan, branch: "Palembang", event: item.nama_event, due_date: item.tgl_jatuh_tempo, total_amount: item.nilai_kontrak, balance: item.piutang }))
+            : result.receivables;
         renderReceivableOptions();
+        if (requestedEventId) {
+            const requested = receivables.find(item => String(item.id) === requestedEventId);
+            if (requested) {
+                receivableSelect.value = String(requested.id);
+                renderInvoice();
+                noteInput.value = `Pembayaran piutang ${requested.id}`;
+            } else {
+                showAlert("Tagihan ini sudah lunas atau tidak tersedia pada akun Anda.");
+            }
+        }
     } catch (error) {
         receivableSelect.innerHTML = '<option value="">Gagal memuat tagihan</option>';
         showAlert(error.message);
@@ -227,10 +243,10 @@ submitButton.addEventListener("click", async () => {
     submitButton.disabled = true;
     submitButton.querySelector("span").textContent = "Menyimpan pembayaran...";
     try {
-        const response = await fetch("../api/payments.php", {
+        const response = await fetch(isPalembangPayment ? "../api/palembang-events.php" : "../api/payments.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ receivable_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() })
+            body: JSON.stringify(isPalembangPayment ? { event_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() } : { receivable_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() })
         });
         const result = await readJson(response);
         if (response.status === 401) {
@@ -240,6 +256,12 @@ submitButton.addEventListener("click", async () => {
         if (!response.ok || !result.success) throw new Error(result.message || "Pembayaran gagal disimpan.");
         showAlert("Pembayaran berhasil dicatat dan saldo piutang telah diperbarui.", true);
         renderReceipt(result.receipt);
+        if (isPalembangPayment && requestedEventId) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.delete("event_id");
+            requestedEventId = null;
+            window.history.replaceState({}, document.title, currentUrl.href);
+        }
         await loadReceivables();
         renderReceivableOptions();
         receivableSelect.value = "";
@@ -267,7 +289,7 @@ shareReceiptButton.addEventListener("click", shareReceipt);
             receivables.forEach(item => {
                 const option = document.createElement("option");
                 option.value = String(item.id);
-                option.textContent = `${item.customer} · ${money(item.balance)} tersisa`;
+                option.textContent = `${escapeHtml(item.customer)} · ${money(item.balance)} tersisa`;
                 receivableSelect.append(option);
             });
         }

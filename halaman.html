@@ -717,6 +717,10 @@
         }
 
         .branch-card {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
             min-height: 141px;
             padding: 17px 15px;
             background: white;
@@ -1294,7 +1298,7 @@
 
                 <div class="branch-grid">
 
-                    <article class="branch-card palembang-card">
+                    <a class="branch-card palembang-card" href="Html/cabangPalembang.html" data-branch-link>
                         <div class="branch-top">
                             <div class="branch-icon palembang">
                                 <i class="fa-solid fa-building"></i>
@@ -1306,9 +1310,9 @@
                             </div>
                         </div>
                         <div class="progress"><span></span></div>
-                    </article>
+                    </a>
 
-                    <article class="branch-card bali-card">
+                    <a class="branch-card bali-card" href="Html/cabangBali.html" data-branch-link>
                         <div class="branch-top">
                             <div class="branch-icon bali">
                                 <i class="fa-solid fa-landmark"></i>
@@ -1320,9 +1324,9 @@
                             </div>
                         </div>
                         <div class="progress"><span></span></div>
-                    </article>
+                    </a>
 
-                    <article class="branch-card bandung-card">
+                    <a class="branch-card bandung-card" href="Html/cabangBandung.html" data-branch-link>
                         <div class="branch-top">
                             <div class="branch-icon bandung">
                                 <i class="fa-regular fa-building"></i>
@@ -1334,7 +1338,7 @@
                             </div>
                         </div>
                         <div class="progress"><span></span></div>
-                    </article>
+                    </a>
 
                 </div>
             </section>
@@ -1465,6 +1469,8 @@
                 return;
             }
 
+            if (link.hasAttribute("data-branch-link")) return;
+
             event.preventDefault();
             navigateThroughLoading(destination);
         });
@@ -1514,19 +1520,25 @@
                 if (element) element.textContent = formatCurrency(value);
             });
 
-            document.querySelector(".branch-grid").innerHTML = data.branches.map(branch => `
-                <article class="branch-card">
-                    <div class="branch-top">
-                        <div class="branch-icon palembang"><i class="fa-solid fa-building"></i></div>
-                        <div class="branch-info">
-                            <strong>${escapeHtml(branch.name)}</strong>
-                            <span>${formatCurrency(branch.receivables)}</span>
-                            <small>${Number(branch.customer_count) || 0} pelanggan</small>
-                        </div>
-                    </div>
-                    <div class="progress"><span></span></div>
-                </article>
-            `).join("") || "<p>Tidak ada data cabang.</p>";
+            const branchRoutes = {
+                palembang: "Html/cabangPalembang.html",
+                bali: "Html/cabangBali.html",
+                bandung: "Html/cabangBandung.html"
+            };
+            const branchIcons = { palembang: "fa-water", bali: "fa-sun", bandung: "fa-mountain-sun" };
+            document.querySelector(".branch-grid").innerHTML = data.branches.map(branch => {
+                const branchKey = String(branch.name || "").trim().toLowerCase();
+                const route = branchRoutes[branchKey];
+                const tag = route ? "a" : "article";
+                const linkAttributes = route ? ' href="' + route + '" data-branch-link' : "";
+                const icon = branchIcons[branchKey] || "fa-building";
+                return '<' + tag + ' class="branch-card ' + escapeHtml(branchKey) + '-card"' + linkAttributes + '>'
+                    + '<div class="branch-top"><div class="branch-icon ' + escapeHtml(branchKey) + '"><i class="fa-solid ' + icon + '"></i></div>'
+                    + '<div class="branch-info"><strong>' + escapeHtml(branch.name) + '</strong>'
+                    + '<span>' + formatCurrency(branch.receivables) + '</span>'
+                    + '<small>' + (Number(branch.customer_count) || 0) + ' pelanggan</small></div></div>'
+                    + '<div class="progress"><span></span></div></' + tag + '>';
+            }).join("") || "<p>Tidak ada data cabang.</p>";
 
             document.querySelector("tbody").innerHTML = data.recent_receivables.map(receivable => `
                 <tr>

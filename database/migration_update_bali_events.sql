@@ -1,32 +1,10 @@
--- Modul pencatatan piutang event Cabang Bali.
--- MySQL 8.0+; aman dijalankan pertama kali pada server lokal.
-CREATE DATABASE IF NOT EXISTS events_bali
-    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE events_bali;
 
-CREATE TABLE IF NOT EXISTS events (
-    id VARCHAR(20) PRIMARY KEY,
-    nama_event VARCHAR(255) NOT NULL,
-    skala ENUM('Kecil', 'Sedang', 'Besar') NOT NULL,
-    jenis_acara VARCHAR(100) NOT NULL,
-    tgl_event DATE NULL,
-    lokasi VARCHAR(255) NULL,
-    pelanggan VARCHAR(255) NULL,
-    jenis_pihak ENUM('Perorangan', 'Perusahaan') NOT NULL,
-    hpp_rab DECIMAL(15,2) NOT NULL DEFAULT 0,
-    margin DECIMAL(15,2) NOT NULL DEFAULT 0,
-    total_dibayar DECIMAL(15,2) NOT NULL DEFAULT 0,
-    dp_schedule DECIMAL(15,2) NULL,
-    termin_2_schedule DECIMAL(15,2) NULL,
-    pelunasan_schedule DECIMAL(15,2) NULL,
-    tgl_jatuh_tempo DATE NULL,
-    status_data ENUM('Draft', 'Final') NOT NULL DEFAULT 'Draft',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT chk_events_hpp_rab CHECK (hpp_rab >= 0),
-    CONSTRAINT chk_events_margin CHECK (margin >= 0),
-    CONSTRAINT chk_events_dibayar CHECK (total_dibayar >= 0)
-) ENGINE=InnoDB;
+DROP VIEW IF EXISTS vw_events_dashboard;
+ALTER TABLE events
+    ADD COLUMN dp_schedule DECIMAL(15,2) NULL AFTER total_dibayar,
+    ADD COLUMN termin_2_schedule DECIMAL(15,2) NULL AFTER dp_schedule,
+    ADD COLUMN pelunasan_schedule DECIMAL(15,2) NULL AFTER termin_2_schedule;
 
 DROP VIEW IF EXISTS vw_events_dashboard;
 CREATE VIEW vw_events_dashboard AS
@@ -61,7 +39,6 @@ FROM (
                           ELSE (hpp_rab + margin) * 0.50 END) AS dp
     FROM events
 ) AS e;
-
 INSERT INTO events
 (id,nama_event,skala,jenis_acara,tgl_event,lokasi,pelanggan,jenis_pihak,hpp_rab,margin,total_dibayar,dp_schedule,termin_2_schedule,pelunasan_schedule,tgl_jatuh_tempo,status_data)
 VALUES

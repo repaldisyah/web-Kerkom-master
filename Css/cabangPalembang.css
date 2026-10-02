@@ -1,0 +1,26 @@
+.palembang-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:18px 0 24px; }
+.palembang-metric { padding:18px 20px; border:1px solid var(--line); border-radius:15px; background:rgba(255,255,255,.88); box-shadow:0 8px 25px rgba(25,52,82,.05); }
+.palembang-metric span { display:block; color:var(--muted); font-size:.72rem; }
+.palembang-metric strong { display:block; margin-top:7px; color:var(--navy); font-size:clamp(1rem,2vw,1.35rem); }
+.palembang-table-card { overflow:hidden; border:1px solid var(--line); border-radius:17px; background:#fff; box-shadow:0 10px 30px rgba(25,52,82,.06); }
+.palembang-table-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 22px; }
+.palembang-table-head h2 { margin:0; font-size:1.08rem; }
+.palembang-table-head input { width:min(100%,300px); padding:10px 12px; border:1px solid var(--line); border-radius:10px; font:inherit; }
+.palembang-table-wrap { overflow:auto; }
+.palembang-table { width:100%; min-width:1160px; border-collapse:collapse; font-size:.78rem; }
+.palembang-table th,.palembang-table td { padding:12px 13px; border-top:1px solid #edf1f5; text-align:left; vertical-align:top; white-space:nowrap; }
+.palembang-table th { color:#66758a; background:#f8fafc; font-size:.68rem; letter-spacing:.04em; text-transform:uppercase; }
+.palembang-table td:first-child { white-space:normal; min-width:230px; }
+.palembang-table .event-name { display:block; color:var(--navy); font-weight:700; }
+.palembang-table .event-id { display:block; margin-top:3px; color:var(--muted); font-size:.68rem; }
+.palembang-status { display:inline-flex; padding:5px 9px; border-radius:999px; font-size:.68rem; font-weight:700; }
+.palembang-status.paid { color:#14724c; background:#e7f7ef; }
+.palembang-status.overdue { color:#a93535; background:#fff0f0; }
+.palembang-status.open { color:#8b6500; background:#fff7dc; }
+.palembang-pay { display:inline-flex; align-items:center; gap:7px; padding:8px 11px; border:0; border-radius:9px; color:#fff; background:#147d91; font:inherit; font-size:.72rem; font-weight:700; text-decoration:none; }
+.palembang-pay:hover { background:#0e6274; }
+.palembang-pay.disabled { color:#66758a; background:#edf1f5; pointer-events:none; }
+.palembang-note { margin:12px 0 20px; color:var(--muted); font-size:.77rem; }
+.palembang-error { padding:14px 16px; border:1px solid #f2c6c6; border-radius:12px; color:#8f2d2d; background:#fff4f4; }
+@media(max-width:850px){.palembang-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.palembang-table-head{align-items:flex-start;flex-direction:column}.palembang-table-head input{width:100%}}
+@media(max-width:430px){.palembang-summary{grid-template-columns:1fr}}
