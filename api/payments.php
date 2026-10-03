@@ -24,7 +24,7 @@ if (strlen($note) > 255) {
 }
 
 $db = database();
-$isSuperAdmin = $scope['role'] === 'super_admin';
+$isSuperAdmin = in_array($scope['role'], ['admin_pusat', 'super_admin'], true);
 $branchId = $scope['branch_id'];
 if (!$isSuperAdmin && $branchId === null) {
     respond(['success' => false, 'message' => 'Akun belum memiliki cabang. Hubungi admin pusat.'], 403);

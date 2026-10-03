@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 $db = database();
-$isSuperAdmin = ($_SESSION['user_role'] ?? '') === 'super_admin';
+$isSuperAdmin = in_array($_SESSION['user_role'] ?? '', ['admin_pusat', 'super_admin'], true);
 $branchId = $_SESSION['user_branch_id'] ?? null;
 if (!$isSuperAdmin && $branchId === null) {
     respond(['success' => false, 'message' => 'Akun belum memiliki cabang. Hubungi admin pusat.'], 403);

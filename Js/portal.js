@@ -36,7 +36,7 @@ function addRow(values) {
 }
 
 function setScope(role) {
-    const labels = { super_admin: 'Akun utama · semua cabang', admin_cabang: 'Akun cabang', pelanggan: 'Akun pelanggan' };
+    const labels = { admin_pusat: 'Admin pusat · semua cabang', super_admin: 'Admin pusat · semua cabang', admin_cabang: 'Akun cabang', pelanggan: 'Akun pelanggan' };
     const badge = document.getElementById('scopeBadge');
     if (badge) badge.textContent = labels[role] || role;
     if (role === 'pelanggan') document.querySelectorAll('.report-link').forEach(link => link.classList.add('hidden'));

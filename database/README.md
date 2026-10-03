@@ -1,12 +1,12 @@
 # Menjalankan backend lokal
 
 1. Jalankan **Apache** dan **MySQL** dari XAMPP.
-2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`.
-3. Impor `events_bali.sql` dan `events_bandung.sql` untuk membuat database event khusus masing-masing cabang.
+2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`. Setelah itu jalankan `migration_separate_admin_pusat.sql` satu kali untuk memindahkan akun `admin` ke database khusus `admin_pusat`; username dan password tetap sama.
+3. Impor `events_bali.sql` dan `events_bandung.sql` untuk membuat database event tiap cabang. Untuk instalasi baru, setelah itu jalankan `events_bandung_upsert.sql` agar jadwal DP/Termin 2/Pelunasan Bandung tersimpan. Untuk database Bandung lama, jalankan `migration_add_bandung_schedules.sql` satu kali, lalu jalankan `events_bandung_upsert.sql`.
 4. Sesuaikan `../api/config.php` bila username, password, port, atau nama database MySQL Anda berbeda. Pemetaan cabang mengikuti data `nusa_karsa.sql`: Bali = `branch_id` 2 dan Bandung = `branch_id` 3.
-5. Letakkan folder proyek ini di `C:/xampp/htdocs/web-Kerkom` (atau atur virtual host ke folder proyek), kemudian buka `http://localhost/web-Kerkom/halaman.html`.
+5. Letakkan folder proyek ini di `C:/xampp/htdocs/web-Kerkom-master` (atau atur virtual host ke folder proyek), kemudian buka `http://localhost/web-Kerkom-master/halaman.html`.
 
-Halaman `Html/cabangBali.html` dan `Html/cabangBandung.html` memakai stylesheet serta JavaScript eksternal masing-masing. Data tabel, ringkasan, tambah, ubah, dan hapus diambil dari `api/events.php` atau `api/events-bandung.php`; akun `admin_cabang` hanya dapat mengakses database cabangnya, sedangkan `super_admin` dapat mengakses keduanya.
+Halaman `Html/cabangBali.html` dan `Html/cabangBandung.html` memakai stylesheet serta JavaScript eksternal masing-masing. Data tabel, ringkasan, tambah, ubah, dan hapus diambil dari `api/events.php` atau `api/events-bandung.php`; akun `admin_cabang` hanya dapat mengakses database cabangnya, sedangkan akun `admin_pusat` pada database `admin_pusat` dapat mengakses seluruh cabang.
 
 ## Modul event Bali/Bandung
 

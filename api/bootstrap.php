@@ -5,7 +5,8 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-session_name('nusa_karsa_session');
+// Versi sesi baru membatalkan sesi lama yang masih memakai role super_admin dari DB bersama.
+session_name('nusa_karsa_session_v2');
 ini_set('session.use_strict_mode', '1');
 ini_set('session.cookie_httponly', '1');
 ini_set('session.cookie_samesite', 'Lax');
@@ -62,6 +63,25 @@ function database(): PDO
     }
 }
 
+function admin_database(): PDO
+{
+    static $connection = null;
+    if ($connection instanceof PDO) return $connection;
+
+    $config = require __DIR__ . '/config.php';
+    $databaseName = $config['admin_db_name'] ?? 'admin_pusat';
+    try {
+        $connection = new PDO(
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $config['db_host'], $config['db_port'], $databaseName),
+            $config['db_user'],
+            $config['db_pass'],
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
+        );
+        return $connection;
+    } catch (PDOException) {
+        respond(['success' => false, 'message' => 'Database admin pusat belum disiapkan. Jalankan database/migration_separate_admin_pusat.sql.'], 500);
+    }
+}
 function require_login(): int
 {
     $userId = $_SESSION['user_id'] ?? null;
@@ -74,7 +94,7 @@ function require_login(): int
 function require_operational_user(): array
 {
     $scope = current_scope();
-    if (!in_array($scope['role'], ['super_admin', 'admin_cabang'], true)) {
+    if (!in_array($scope['role'], ['admin_pusat', 'super_admin', 'admin_cabang'], true)) {
         respond(['success' => false, 'message' => 'Aksi ini hanya tersedia untuk admin.'], 403);
     }
     return $scope;
@@ -83,7 +103,7 @@ function current_scope(): array
 {
     $userId = require_login();
     $role = (string) ($_SESSION['user_role'] ?? '');
-    $allowedRoles = ['super_admin', 'admin_cabang', 'pelanggan'];
+    $allowedRoles = ['admin_pusat', 'super_admin', 'admin_cabang', 'pelanggan'];
     if (!in_array($role, $allowedRoles, true)) {
         respond(['success' => false, 'message' => 'Peran akun tidak valid.'], 403);
     }

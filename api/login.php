@@ -8,17 +8,32 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $data = request_data();
-$username = trim((string) ($data['username'] ?? ''));
+$login = trim((string) ($data['username'] ?? ''));
 $password = (string) ($data['password'] ?? '');
-
-if ($username === '' || $password === '') {
+if ($login === '' || $password === '') {
     respond(['success' => false, 'message' => 'Username/email dan password wajib diisi.'], 422);
 }
 
-$customerColumn = has_customer_account_column() ? 'customer_id' : 'NULL AS customer_id';
-$statement = database()->prepare("SELECT id, name, username, email, password_hash, role, branch_id, $customerColumn FROM users WHERE username = :login OR email = :login LIMIT 1");
-$statement->execute(['login' => $username]);
-$user = $statement->fetch();
+// Akun pusat dicari di database khusus terlebih dahulu.
+$centralStatement = admin_database()->prepare(
+    "SELECT id, name, username, email, password_hash, 'admin_pusat' AS role,
+            NULL AS branch_id, NULL AS customer_id
+     FROM users WHERE username = :login OR email = :login LIMIT 1"
+);
+$centralStatement->execute(['login' => $login]);
+$user = $centralStatement->fetch();
+
+// Akun admin cabang/pelanggan tetap tersimpan di database operasional.
+if (!$user) {
+    $customerColumn = has_customer_account_column() ? 'customer_id' : 'NULL AS customer_id';
+    $statement = database()->prepare(
+        "SELECT id, name, username, email, password_hash, role, branch_id, $customerColumn
+         FROM users WHERE (username = :login OR email = :login)
+         AND role IN ('admin_cabang', 'pelanggan') LIMIT 1"
+    );
+    $statement->execute(['login' => $login]);
+    $user = $statement->fetch();
+}
 
 if (!$user || !password_verify($password, $user['password_hash'])) {
     respond(['success' => false, 'message' => 'Username/email atau password tidak valid.'], 401);
