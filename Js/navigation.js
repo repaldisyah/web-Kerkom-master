@@ -9,6 +9,7 @@
         ['halaman.html', 'Dashboard', 'fa-house'],
         ['login.html', 'Akun', 'fa-user'],
         ['cabang.html', 'Cabang', 'fa-code-branch'],
+        ['piutang.html', 'Piutang', 'fa-file-invoice-dollar'],
         ['pelanggan.html', 'Pelanggan', 'fa-users'],
         ['history.html', 'Riwayat', 'fa-clock-rotate-left'],
         ['pembayaran.html', 'Pembayaran', 'fa-credit-card'],
@@ -22,6 +23,48 @@
 
     if (branchFromPath) document.body.dataset.branch = branchFromPath;
 
+    async function applyRoleNavigation() {
+        try {
+            const sessionResponse = await fetch(fromHtmlDirectory ? '../api/session.php' : 'api/session.php', { cache: 'no-store' });
+            const session = await sessionResponse.json();
+            if (!sessionResponse.ok || !session.authenticated) return;
+
+            const links = [...document.querySelectorAll('.nav-menu .nav-item')];
+            if (['admin_pusat', 'super_admin'].includes(session.user.role)) {
+                const accountLink = document.createElement('a');
+                accountLink.className = 'nav-item';
+                accountLink.href = hrefFor('admin-akun.html');
+                accountLink.innerHTML = '<i class="fa-solid fa-user-plus"></i><span>Akun admin cabang</span>';
+                document.querySelector('.nav-menu')?.append(accountLink);
+            }
+            if (session.user.role === 'pelanggan') {
+                const restricted = /\/(cabang(?:palembang|bandung|bali)?|pelanggan|piutang|pembayaran|laporan|events-(?:bali|bandung))\.html$/i;
+                links.forEach(link => {
+                    if (restricted.test(new URL(link.href, window.location.href).pathname)) link.hidden = true;
+                    if (/\/history\.html$/i.test(new URL(link.href, window.location.href).pathname)) {
+                        const label = link.querySelector('span');
+                        if (label) label.textContent = 'Riwayat Pembayaran';
+                    }
+                });
+                document.querySelectorAll('.nav-section-label').forEach(label => { label.hidden = true; });
+                return;
+            }
+
+            if (session.user.role !== 'admin_cabang') return;
+            const branchResponse = await fetch(fromHtmlDirectory ? '../api/branches.php' : 'api/branches.php', { cache: 'no-store' });
+            const branchData = await branchResponse.json();
+            if (!branchResponse.ok || !branchData.success) throw new Error(branchData.message || 'Hak akses cabang tidak dapat dimuat.');
+            const ownBranch = branchData.branches.find(branch => Number(branch.id) === Number(branchData.own_branch_id));
+            const allowedBranches = new Set(ownBranch ? [String(ownBranch.name).trim().toLowerCase().replace(/^cabang\s+/, '')] : []);
+            links.filter(link => link.classList.contains('nav-branch')).forEach(link => {
+                const branch = link.className.match(/\bnav-branch-(palembang|bandung|bali)\b/)?.[1];
+                link.hidden = !allowedBranches.has(branch);
+            });
+        } catch (error) {
+            console.error('Navigasi belum dapat disesuaikan dengan hak akses akun.', error);
+        }
+    }
+
     if (!document.getElementById('accountLink')) {
         const existingMenu = document.querySelector('.sidebar .nav-menu');
         if (existingMenu) {
@@ -34,4 +77,6 @@
             document.querySelector('.portal-nav')?.remove();
         }
     }
+
+    applyRoleNavigation();
 })();

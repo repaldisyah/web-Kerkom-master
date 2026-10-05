@@ -2,14 +2,19 @@
 
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
-$userId = require_login();
+$scope = current_scope();
+$userId = $scope['user_id'];
 
 $config = require __DIR__ . '/config.php';
 $db = database();
-$isSuperAdmin = in_array($_SESSION['user_role'] ?? '', ['admin_pusat', 'super_admin'], true);
-$branchId = $_SESSION['user_branch_id'] ?? null;
-if (!$isSuperAdmin && $branchId === null) {
+$isSuperAdmin = in_array($scope['role'], ['admin_pusat', 'super_admin'], true);
+$isCustomer = $scope['role'] === 'pelanggan';
+$branchId = $scope['branch_id'];
+if (!$isSuperAdmin && !$isCustomer && $branchId === null) {
     respond(['success' => false, 'message' => 'Akun belum memiliki cabang. Hubungi admin pusat.'], 403);
+}
+if ($isCustomer && $scope['customer_id'] === null) {
+    respond(['success' => false, 'message' => 'Akun pelanggan belum terhubung ke data pelanggan. Hubungi admin.'], 403);
 }
 
 $branchRows = $db->query('SELECT id, name FROM branches ORDER BY name')->fetchAll();
@@ -24,7 +29,7 @@ foreach ($branchRows as $branch) {
 }
 
 $records = [];
-$summary = ['total_receivables' => 0.0, 'unpaid' => 0.0, 'near_due' => 0.0, 'paid' => 0.0];
+$summary = ['total_receivables' => 0.0, 'unpaid' => 0.0, 'unpaid_count' => 0, 'near_due' => 0.0, 'overdue' => 0.0, 'overdue_count' => 0, 'paid' => 0.0];
 $today = new DateTimeImmutable('today');
 $nearDueLimit = $today->modify('+7 days');
 
@@ -38,11 +43,19 @@ $appendRecord = static function (int $recordBranchId, array $record) use (&$reco
     $status = $balance <= 0 ? 'paid' : ($paidAmount <= 0 ? 'unpaid' : 'partial');
 
     $summary['total_receivables'] += $balance;
-    if ($status === 'unpaid') $summary['unpaid'] += $balance;
+    if ($status === 'unpaid') {
+        $summary['unpaid'] += $balance;
+        $summary['unpaid_count']++;
+    }
     if ($status === 'paid') $summary['paid'] += $total;
     if ($balance > 0 && $dueDate) {
         try {
-            if (new DateTimeImmutable((string) $dueDate) <= $nearDueLimit) $summary['near_due'] += $balance;
+            $parsedDueDate = new DateTimeImmutable((string) $dueDate);
+            if ($parsedDueDate >= $today && $parsedDueDate <= $nearDueLimit) $summary['near_due'] += $balance;
+            if ($balance > 0 && $parsedDueDate < $today) {
+                $summary['overdue'] += $balance;
+                $summary['overdue_count']++;
+            }
         } catch (Exception) {
             // Abaikan tanggal jatuh tempo yang tidak valid, tetapi tetap tampilkan tagihannya.
         }
@@ -72,7 +85,10 @@ $masterSql = 'SELECT r.id, r.branch_id, c.name AS customer, e.name AS event, r.i
               JOIN customers c ON c.id = r.customer_id
               JOIN events e ON e.id = r.event_id';
 $masterParameters = [];
-if (!$isSuperAdmin) {
+if ($isCustomer) {
+    $masterSql .= ' WHERE r.customer_id = :customer_id';
+    $masterParameters['customer_id'] = $scope['customer_id'];
+} elseif (!$isSuperAdmin) {
     $masterSql .= ' WHERE r.branch_id = :branch_id';
     $masterParameters['branch_id'] = (int) $branchId;
 }
@@ -100,25 +116,27 @@ $loadEventDatabase = static function (string $databaseName): PDO {
     }
 };
 
-foreach ([
-    'bali' => (string) ($config['events_bali_db_name'] ?? 'events_bali'),
-    'bandung' => (string) ($config['events_bandung_db_name'] ?? 'events_bandung'),
-] as $branchKey => $databaseName) {
-    $eventBranchId = $branchIdByName[$branchKey] ?? null;
-    if ($eventBranchId === null || (!$isSuperAdmin && (int) $branchId !== $eventBranchId)) continue;
-    $eventDb = $loadEventDatabase($databaseName);
-    $events = $eventDb->query('SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
-                                      nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
-                               FROM vw_events_dashboard')->fetchAll();
-    foreach ($events as $record) $appendRecord((int) $eventBranchId, $record);
-}
+if (!$isCustomer) {
+    foreach ([
+        'bali' => (string) ($config['events_bali_db_name'] ?? 'events_bali'),
+        'bandung' => (string) ($config['events_bandung_db_name'] ?? 'events_bandung'),
+    ] as $branchKey => $databaseName) {
+        $eventBranchId = $branchIdByName[$branchKey] ?? null;
+        if ($eventBranchId === null || (!$isSuperAdmin && (int) $branchId !== $eventBranchId)) continue;
+        $eventDb = $loadEventDatabase($databaseName);
+        $events = $eventDb->query('SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
+                                          nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
+                                   FROM vw_events_dashboard')->fetchAll();
+        foreach ($events as $record) $appendRecord((int) $eventBranchId, $record);
+    }
 
-$palembangBranchId = $branchIdByName['palembang'] ?? null;
-if ($palembangBranchId !== null && ($isSuperAdmin || (int) $branchId === $palembangBranchId)) {
-    $events = $db->query('SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
-                                 nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
-                          FROM palembang_events')->fetchAll();
-    foreach ($events as $record) $appendRecord((int) $palembangBranchId, $record);
+    $palembangBranchId = $branchIdByName['palembang'] ?? null;
+    if ($palembangBranchId !== null && ($isSuperAdmin || (int) $branchId === $palembangBranchId)) {
+        $events = $db->query('SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
+                                     nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
+                              FROM palembang_events')->fetchAll();
+        foreach ($events as $record) $appendRecord((int) $palembangBranchId, $record);
+    }
 }
 
 usort($records, static function (array $left, array $right): int {
@@ -127,14 +145,16 @@ usort($records, static function (array $left, array $right): int {
 });
 
 $branches = [];
-foreach ($branchNames as $id => $name) {
-    if (!$isSuperAdmin && (int) $branchId !== $id) continue;
-    $branches[] = [
-        'id' => $id,
-        'name' => $name,
-        'receivables' => $branchTotals[$id],
-        'customer_count' => count($branchCustomers[$id]),
-    ];
+if (!$isCustomer) {
+    foreach ($branchNames as $id => $name) {
+        if (!$isSuperAdmin && (int) $branchId !== $id) continue;
+        $branches[] = [
+            'id' => $id,
+            'name' => $name,
+            'receivables' => $branchTotals[$id],
+            'customer_count' => count($branchCustomers[$id]),
+        ];
+    }
 }
 
 respond([
@@ -142,6 +162,6 @@ respond([
     'summary' => $summary,
     'branches' => $branches,
     'recent_receivables' => $records,
-    'scope' => $isSuperAdmin ? 'all' : 'branch',
+    'scope' => $isCustomer ? 'customer' : ($isSuperAdmin ? 'all' : 'branch'),
     'user_id' => $userId,
 ]);

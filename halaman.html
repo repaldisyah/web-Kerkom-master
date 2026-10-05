@@ -1,1 +1,1953 @@
-C:\Users\HYPE AMD
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Piutang | Nusa Karsa Event</title>
+
+    <script>
+        if (window.location.protocol === "file:") {
+            window.location.replace("http://localhost/web-Kerkom-master/halaman.html");
+        }
+        const loadingEntry = new URLSearchParams(window.location.search).get("loadingEntry");
+        if (loadingEntry !== "1") {
+            const loadingUrl = new URL("loading.html", window.location.href);
+            loadingUrl.searchParams.set("next", window.location.href);
+            window.location.replace(loadingUrl.href);
+        } else {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete("loadingEntry");
+            window.history.replaceState({}, document.title, cleanUrl.href);
+        }
+    </script>
+
+        <!-- Logo kecil pada tab browser -->
+    <link rel="icon" type="image/png" href="assets/logo2.0.png">
+    <link rel="shortcut icon" href="assets/logo2.0.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        :root {
+            --navy: #102d4d;
+            --navy-2: #173d63;
+            --navy-3: #235581;
+            --blue: #246b95;
+            --cyan: #28b8c9;
+            --cyan-soft: #e4f7fa;
+            --purple: #5a34a3;
+            --gold: #c9962b;
+            --gold-soft: #fbf3df;
+            --orange: #ed5a1b;
+            --orange-soft: #fff0e8;
+            --green: #23805c;
+            --green-soft: #e7f6ef;
+            --text: #233b57;
+            --muted: #6e7c8e;
+            --line: #e7ebf0;
+            --bg: #f5f7fb;
+            --white: #ffffff;
+            --shadow: 0 10px 28px rgba(25, 52, 82, .09);
+        }
+
+        .branch-warp {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
+            background: var(--navy);
+        }
+
+        .branch-warp::before,
+        .branch-warp::after {
+            content: "";
+            position: absolute;
+            top: -20%;
+            width: 2px;
+            height: 140%;
+            background: var(--cyan);
+            transform: scaleY(0);
+        }
+
+        .branch-warp::before { left: 35%; }
+        .branch-warp::after { left: 65%; background: var(--gold); }
+        body.is-branch-warping .branch-warp { opacity: 1; animation: branchWarpFade .55s ease forwards; }
+        body.is-branch-warping .branch-warp::before,
+        body.is-branch-warping .branch-warp::after { animation: branchWarpLine .55s cubic-bezier(.2,.8,.2,1) forwards; }
+
+        @keyframes branchWarpFade { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes branchWarpLine { 0% { transform: scaleY(0); } 45% { transform: scaleY(1); } 100% { transform: translateX(-28vw) scaleY(0); } }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Poppins", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 75% 0%, rgba(37, 106, 149, .08), transparent 24rem),
+                var(--bg);
+            min-height: 100vh;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        /* ===================== SIDEBAR ===================== */
+
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: 275px;
+            background: linear-gradient(160deg, #102a48 0%, #173d63 55%, #102a48 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: "";
+            position: absolute;
+            width: 420px;
+            height: 180px;
+            left: -140px;
+            bottom: -115px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(39, 184, 201, .32), rgba(201, 150, 43, .12));
+            transform: rotate(-8deg);
+        }
+
+        .sidebar::after {
+            content: "";
+            position: absolute;
+            width: 390px;
+            height: 130px;
+            left: -50px;
+            bottom: -155px;
+            border-radius: 50%;
+            border-top: 7px solid #e9ad39;
+            transform: rotate(-10deg);
+            opacity: .95;
+        }
+
+        .brand-area {
+            min-height: 275px;
+            display: grid;
+            place-items: center;
+            padding: 30px 25px 22px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ===================== LOGO NUSA KARSA ===================== */
+        .logo-wrap {
+            width: 205px;
+            height: 205px;
+            display: grid;
+            place-items: center;
+            background: transparent;
+            overflow: visible;
+            filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .20));
+            transition: transform .25s ease;
+        }
+
+        .logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .logo-wrap:hover {
+            transform: scale(1.035);
+        }
+
+        .nav-menu {
+            padding: 0 16px;
+            display: grid;
+            gap: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .nav-item {
+            border: 0;
+            background: transparent;
+            color: rgba(255,255,255,.86);
+            text-decoration: none;
+            cursor: pointer;
+            border-radius: 17px;
+            min-height: 56px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: .96rem;
+            font-weight: 500;
+            transition: .22s ease;
+        }
+
+        .nav-item i {
+            width: 24px;
+            text-align: center;
+            font-size: 1.18rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,.08);
+            transform: translateX(4px);
+            color: white;
+        }
+
+        .nav-item.active {
+            color: white;
+            font-weight: 600;
+            background: linear-gradient(100deg, rgba(31, 157, 189, .78), rgba(65, 102, 180, .70));
+            box-shadow: 0 10px 24px rgba(0,0,0,.16);
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+            padding: 20px 16px 30px;
+            position: relative;
+            z-index: 3;
+        }
+
+        .logout {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: rgba(255,255,255,.92);
+            border-radius: 16px;
+            min-height: 54px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: .2s ease;
+        }
+
+        .logout:hover {
+            background: rgba(255,255,255,.09);
+            color: #ffd0c5;
+        }
+
+        /* ===================== MAIN ===================== */
+
+        .main {
+            margin-left: 275px;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            position: relative;
+            z-index: 30;
+            height: 104px;
+            padding: 0 38px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,.72);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+
+        .hamburger {
+            width: 38px;
+            height: 38px;
+            border: 0;
+            background: transparent;
+            color: var(--navy);
+            font-size: 1.6rem;
+            cursor: pointer;
+        }
+
+        .title-block h1 {
+            font-size: 1.75rem;
+            letter-spacing: -.04em;
+            line-height: 1.1;
+        }
+
+        .title-block p {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        /* ===================== TOPBAR ACCOUNT ===================== */
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-shrink: 0;
+        }
+
+        .notification {
+            width: 50px;
+            height: 50px;
+            border: 0;
+            border-radius: 15px;
+            background: transparent;
+            color: var(--navy);
+            position: relative;
+            font-size: 1.35rem;
+            cursor: pointer;
+            transition: background .2s ease, transform .2s ease;
+        }
+
+        .due-alert-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+        .due-alert-filters button { border: 1px solid #dbe3ea; border-radius: 999px; padding: 7px 12px; color: #475569; background: #fff; font: inherit; font-size: .8rem; cursor: pointer; }
+        .due-alert-filters button[aria-pressed="true"] { border-color: #246b95; color: #fff; background: #246b95; }
+        .due-alert-view-all { width: 100%; }
+        .notification-shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .notification-shortcuts button { min-height: 38px; }
+        .due-alerts-caption { margin: 5px 0 0; color: #64748b; font-size: .82rem; }
+        .due-alerts-list { display: grid; gap: 10px; }
+        .due-alert-row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.5fr) minmax(130px, .8fr) auto; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid #e5e7eb; border-left: 4px solid #d39600; border-radius: 12px; background: #fff; }
+        .due-alert-row.is-overdue { border-left-color: #dc4b36; }
+        .due-alert-row[hidden] { display: none; }
+        .due-alert-row.is-highlighted { outline: 3px solid rgba(36, 107, 149, .35); background: #eff8ff; }
+        .due-alert-row strong, .due-alert-row span { display: block; }
+        .due-alert-row strong { color: var(--navy); font-size: .9rem; }
+        .due-alert-row span { margin-top: 4px; color: #64748b; font-size: .8rem; }
+        .due-alert-status { color: #9a6700 !important; font-weight: 700; }
+        .due-alert-row.is-overdue .due-alert-status { color: #bd3526 !important; }
+        .due-alert-check { border: 0; border-radius: 8px; padding: 8px 13px; color: #fff; background: #246b95; font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; }
+        .due-alert-check:hover { background: #1d587b; }
+        @media (max-width: 700px) { .due-alert-row { grid-template-columns: 1fr auto; gap: 8px 12px; } .due-alert-status { grid-column: 1; } .due-alert-check { grid-column: 2; grid-row: 1 / span 3; } }
+        .notification-wrap { position: relative; }
+
+        .notification-panel {
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: min(360px, calc(100vw - 24px));
+            max-height: min(420px, 70vh);
+            overflow-y: auto;
+            padding: 18px;
+            border: 1px solid var(--border, #e5e7eb);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 16px 40px rgba(15, 35, 55, .18);
+        }
+
+        .notification-panel[hidden] { display: none; }
+        .notification-panel h2 { margin: 0 0 12px; font-size: 1rem; color: var(--navy); }
+        .notification-list { display: grid; gap: 8px; }
+        .notification-group { display: grid; gap: 8px; }
+        .notification-group + .notification-group { margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+        .notification-group h3 { color: var(--muted); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        .notification-item { padding: 11px 12px; border-radius: 10px; background: #f7f9fb; }
+        .notification-item.is-overdue { background: #fff1ed; }
+        .notification-item strong, .notification-item span { display: block; }
+        .notification-item strong { margin-bottom: 4px; font-size: .85rem; color: var(--navy); }
+        .notification-item span, .notification-empty { margin: 0; color: #64748b; font-size: .78rem; line-height: 1.45; }
+        .role-hidden { display: none !important; }
+        .receivable-explanation { display: block; min-width: 250px; max-width: 420px; color: #526274; font-size: .78rem; line-height: 1.55; }
+        .notification:hover {
+            background: rgba(36, 107, 149, .07);
+            transform: translateY(-1px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 1px;
+            right: 1px;
+            width: 22px;
+            height: 22px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--orange);
+            color: white;
+            font-size: .68rem;
+            font-weight: 700;
+            box-shadow: 0 3px 8px rgba(237, 90, 27, .25);
+        }
+
+        #authArea {
+            display: flex;
+            align-items: center;
+        }
+
+        .account-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 64px;
+            padding-left: 22px;
+            border-left: 1px solid var(--line);
+        }
+
+        .account-profile {
+            min-width: 0;
+            border: 0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 8px;
+            border-radius: 16px;
+            color: var(--text);
+            cursor: pointer;
+            transition: background .2s ease;
+        }
+
+        .account-profile:hover,
+        .account-profile[aria-expanded="true"] {
+            background: rgba(36, 107, 149, .07);
+        }
+
+        .avatar {
+            width: 56px;
+            height: 56px;
+            flex: 0 0 56px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            color: white;
+            font-size: 1.4rem;
+            box-shadow: 0 8px 20px rgba(36, 107, 149, .22);
+        }
+
+        .admin-info {
+            min-width: 126px;
+            text-align: left;
+        }
+
+        .admin-info strong,
+        .admin-info span {
+            display: block;
+            white-space: nowrap;
+        }
+
+        .admin-info strong {
+            font-size: .98rem;
+            line-height: 1.25;
+        }
+
+        .admin-info span {
+            color: var(--muted);
+            font-size: .82rem;
+            margin-top: 4px;
+        }
+
+        .admin-chevron {
+            color: var(--navy);
+            font-size: .85rem;
+            margin-left: 2px;
+            transition: transform .2s ease;
+        }
+
+        .account-profile[aria-expanded="true"] .admin-chevron {
+            transform: rotate(180deg);
+        }
+
+        .account-menu-wrap {
+            position: relative;
+        }
+
+        .account-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 220px;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255,255,255,.98);
+            box-shadow: 0 18px 42px rgba(16, 45, 77, .16);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            pointer-events: none;
+            transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+            z-index: 500;
+        }
+
+        .account-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .account-dropdown button {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 11px 12px;
+            border-radius: 11px;
+            text-align: left;
+            cursor: pointer;
+            transition: background .18s ease, color .18s ease;
+        }
+
+        .account-dropdown button:hover {
+            background: var(--cyan-soft);
+            color: #126b79;
+        }
+
+        .account-dropdown .dropdown-logout {
+            color: #c94b22;
+        }
+
+        .account-dropdown .dropdown-logout:hover {
+            background: var(--orange-soft);
+            color: #b33d17;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            margin: 7px 4px;
+            background: var(--line);
+        }
+
+        .btn-login-top {
+            height: 50px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 0 20px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #2785a0, var(--cyan));
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: .9rem;
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(40, 184, 201, .18);
+        }
+
+        .btn-login-top:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.04);
+            box-shadow: 0 12px 24px rgba(40, 184, 201, .25);
+        }
+
+        .content {
+            padding: 26px 34px 40px;
+        }
+
+        /* ===================== HERO ===================== */
+
+        .hero {
+            min-height: 173px;
+            border-radius: 20px;
+            padding: 30px 46px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 35px;
+            color: white;
+            overflow: hidden;
+            position: relative;
+            background:
+                radial-gradient(circle at 85% 55%, rgba(40, 184, 201, .52), transparent 15rem),
+                linear-gradient(105deg, #132f52, #1d496f 58%, #14758e);
+            box-shadow: var(--shadow);
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            width: 330px;
+            height: 330px;
+            border: 42px solid rgba(255,255,255,.10);
+            border-radius: 50%;
+            right: -145px;
+            top: -210px;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 370px;
+            height: 125px;
+            border-radius: 50%;
+            right: -50px;
+            bottom: -100px;
+            border-top: 8px solid #e7aa35;
+            background: rgba(10, 151, 175, .34);
+            transform: rotate(-6deg);
+        }
+
+        .hero-text {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-text h2 {
+            font-size: 1.52rem;
+            margin-bottom: 12px;
+        }
+
+        .hero-text h2 span {
+            color: #48c7dc;
+        }
+
+        .hero-text p {
+            color: rgba(255,255,255,.85);
+            max-width: 510px;
+            line-height: 1.75;
+            font-size: .94rem;
+        }
+
+        .hero-date {
+            min-width: 470px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding-left: 30px;
+            border-left: 1px solid rgba(255,255,255,.28);
+            position: relative;
+            z-index: 2;
+        }
+
+        .calendar-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #2386a4, #2e6eab);
+            font-size: 1.9rem;
+        }
+
+        .date-info strong {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 9px;
+        }
+
+        .date-info span {
+            color: rgba(255,255,255,.82);
+            font-size: .92rem;
+        }
+
+        /* ===================== SUMMARY ===================== */
+
+        .summary-grid {
+            margin-top: 26px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .summary-card {
+            min-height: 164px;
+            padding: 21px 25px 18px;
+            border-radius: 16px;
+            background: var(--white);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(220,226,234,.85);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .summary-card.total::after { background: #287ba3; }
+        .summary-card.unpaid::after { background: var(--orange); }
+        .summary-card.overdue::after { background: #dc4b36; }
+        .summary-card.paid::after { background: var(--green); }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #3e4f63;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .02em;
+        }
+
+        .summary-icon {
+            width: 50px;
+            height: 50px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            font-size: 1.4rem;
+        }
+
+        .total .summary-icon { background: #e7f2f6; color: #27749b; }
+        .unpaid .summary-icon { background: #fff0eb; color: #d95724; }
+        .overdue .summary-icon { background: #fff1ed; color: #bd3526; }
+        .paid .summary-icon { background: #e8f5ef; color: #2d8b66; }
+
+        .summary-value {
+            margin-top: 15px;
+            font-size: 1.45rem;
+            font-weight: 700;
+        }
+
+        .total .summary-value { color: #274d7b; }
+        .unpaid .summary-value { color: #d95420; }
+        .overdue .summary-value { color: #bd3526; }
+        .paid .summary-value { color: #287b5b; }
+
+        .summary-sub {
+            margin-top: 5px;
+            font-size: .82rem;
+            color: var(--text);
+        }
+
+        /* ===================== SECTIONS ===================== */
+
+        .section {
+            margin-top: 26px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .see-all {
+            border: 0;
+            background: transparent;
+            color: #1d5686;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: .86rem;
+        }
+
+        .see-all i {
+            margin-left: 6px;
+        }
+
+        /* ===================== BRANCHES ===================== */
+
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .branch-card {
+            min-height: 141px;
+            padding: 17px 15px;
+            background: white;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            border-radius: 15px;
+        }
+
+        .branch-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .branch-icon {
+            width: 45px;
+            font-size: 2rem;
+            text-align: center;
+            color: var(--branch-color, var(--blue));
+        }
+
+        .branch-info strong,
+        .branch-info span {
+            display: block;
+        }
+
+        .branch-info strong {
+            color: var(--text);
+            font-size: .9rem;
+        }
+
+        .branch-info span {
+            margin-top: 4px;
+            color: var(--text);
+            font-size: .82rem;
+            font-weight: 600;
+        }
+
+        .branch-info small {
+            display: block;
+            color: var(--muted);
+            font-size: .72rem;
+            margin-top: 5px;
+        }
+
+        .progress {
+            width: 100%;
+            height: 6px;
+            background: #edf0f3;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: var(--branch-color, var(--blue));
+        }
+
+        /* ===================== TABLE ===================== */
+
+        .table-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1050px;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f7f8fa;
+        }
+
+        th {
+            padding: 13px 16px;
+            text-align: left;
+            font-size: .74rem;
+            color: #33475e;
+            font-weight: 700;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid #edf0f3;
+            font-size: .77rem;
+            color: #35495e;
+        }
+
+        tbody tr:hover {
+            background: #fbfdff;
+        }
+
+        .money {
+            white-space: nowrap;
+        }
+
+        .debt-warning {
+            color: #df5722;
+            font-weight: 600;
+        }
+
+        .debt-paid {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .status {
+            display: inline-flex;
+            min-width: 98px;
+            justify-content: center;
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-size: .72rem;
+            white-space: nowrap;
+        }
+
+        .status.unpaid {
+            color: #d55525;
+            background: #fff0eb;
+        }
+
+        .status.partial {
+            color: #a66e00;
+            background: #fbf3df;
+        }
+
+        .status.paid {
+            color: #287d5b;
+            background: #e5f4ec;
+        }
+
+        /* ===================== RESPONSIVE ===================== */
+
+        @media (max-width: 1300px) {
+            .branch-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .hero-date {
+                min-width: auto;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .hero {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .hero-date {
+                padding-left: 0;
+                border-left: 0;
+            }
+        }
+
+        @media (max-width: 850px) {
+            .sidebar {
+                width: 80px;
+            }
+
+            .brand-area {
+                min-height: 110px;
+                padding: 15px 8px;
+            }
+
+            .logo-wrap {
+                width: 64px;
+                height: 64px;
+            }
+
+            .nav-item {
+                justify-content: center;
+                padding: 0;
+            }
+
+            .nav-item span,
+            .logout span {
+                display: none;
+            }
+
+            .logout {
+                justify-content: center;
+                padding: 0;
+            }
+
+            .main {
+                margin-left: 80px;
+            }
+
+            .topbar {
+                padding: 0 22px;
+            }
+
+            .account-section {
+                padding-left: 14px;
+                gap: 8px;
+            }
+
+            .admin-info,
+            .admin-chevron {
+                display: none;
+            }
+
+            .account-profile {
+                padding: 4px;
+            }
+
+            .account-dropdown {
+                right: -8px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .branch-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                height: 82px;
+                padding: 0 15px;
+            }
+
+            .title-block h1 {
+                font-size: 1.25rem;
+            }
+
+            .title-block p {
+                display: none;
+            }
+
+            .topbar-left {
+                gap: 10px;
+            }
+
+            .topbar-right {
+                gap: 6px;
+            }
+
+            .notification {
+                width: 44px;
+                height: 44px;
+                font-size: 1.15rem;
+            }
+
+            .account-section {
+                min-height: 50px;
+                padding-left: 8px;
+                border-left: 0;
+            }
+
+            .avatar {
+                width: 46px;
+                height: 46px;
+                flex-basis: 46px;
+                font-size: 1.15rem;
+            }
+
+            .btn-login-top {
+                width: 46px;
+                height: 46px;
+                padding: 0;
+                font-size: 0;
+                border-radius: 13px;
+            }
+
+            .btn-login-top i {
+                font-size: 1rem;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .hero {
+                padding: 24px;
+            }
+
+            .hero-text h2 {
+                font-size: 1.25rem;
+            }
+
+            .hero-date {
+                display: none;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .branch-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    
+        /* ===================== FINAL FIX: ACCOUNT INLINE ===================== */
+        #authArea {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            min-width: 0;
+        }
+
+        .account-section {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 14px !important;
+            white-space: nowrap !important;
+        }
+
+        .account-profile {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+        }
+
+        .account-menu-wrap {
+            position: relative;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .top-logout-inline {
+            height: 52px;
+            min-width: 120px;
+            display: inline-flex !important;
+            flex: 0 0 auto !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 9px;
+            padding: 0 20px;
+            border: 0;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #2785a0, var(--cyan));
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(40, 184, 201, .20);
+            transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+        }
+
+        .top-logout-inline:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.04);
+            box-shadow: 0 12px 24px rgba(40, 184, 201, .28);
+        }
+
+        @media (max-width: 1000px) {
+            .top-logout-inline {
+                min-width: 52px;
+                width: 52px;
+                padding: 0;
+            }
+
+            .top-logout-inline span {
+                display: none;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .account-section {
+                gap: 8px !important;
+                padding-left: 0 !important;
+                border-left: 0 !important;
+            }
+
+            .top-logout-inline {
+                width: 46px;
+                min-width: 46px;
+                height: 46px;
+                border-radius: 13px;
+            }
+        }
+
+        .branch-card { display: block; color: inherit; text-decoration: none; }
+        .dashboard-branch-link { color: var(--navy); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+        .dashboard-branch-link:hover { color: #246b95; }
+        @media (max-width: 620px) {
+            body.is-menu-open::before { content: ""; position: fixed; inset: 0; z-index: 90; background: rgba(8, 20, 35, .48); }
+            body.is-menu-open .sidebar { display: flex; width: min(275px, 88vw); z-index: 100; box-shadow: 12px 0 32px rgba(0, 0, 0, .22); }
+        }
+    </style>
+    <link rel="stylesheet" href="Css/navigation.css">
+</head>
+
+<body>
+
+    <div class="branch-warp" aria-hidden="true"></div>
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="dashboardSidebar">
+        <div class="brand-area">
+            <div class="logo-wrap">
+                <img src="assets/logo3.0.png" alt="Logo Nusa Karsa Event">
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="halaman.html" class="nav-item active">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="Html/login.html" class="nav-item" id="accountLink">
+                <i class="fa-regular fa-user"></i>
+                <span id="accountLinkText">Login Admin</span>
+            </a>
+            <a href="Html/cabang.html" class="nav-item">
+                <i class="fa-solid fa-code-branch"></i>
+                <span>Cabang</span>
+            </a>
+            <a href="Html/pelanggan.html" class="nav-item">
+                <i class="fa-solid fa-users"></i>
+                <span>Pelanggan</span>
+            </a>
+            <a href="Html/history.html" class="nav-item">
+                <i class="fa-regular fa-calendar-days"></i>
+                <span>Riwayat</span>
+            </a>
+            <a href="Html/piutang.html" class="nav-item">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>Piutang</span>
+            </a>
+            <a href="Html/pembayaran.html" class="nav-item">
+                <i class="fa-regular fa-credit-card"></i>
+                <span>Pembayaran</span>
+            </a>
+            <a href="Html/laporan.html" class="nav-item">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Laporan</span>
+            </a>
+            <a href="Html/admin-akun.html" class="nav-item role-hidden" id="branchAccountAdminLink">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Akun admin cabang</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <button class="logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Keluar</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ================= MAIN ================= -->
+    <main class="main">
+
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="hamburger" id="menuToggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="dashboardSidebar">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <div class="title-block">
+                    <h1>Dashboard Piutang</h1>
+                    <p>Nusa Karsa Event</p>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                                <div class="notification-wrap">
+                    <button class="notification" id="notificationToggle" type="button" aria-label="Notifikasi" aria-expanded="false" aria-controls="notificationPanel">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="notification-badge" id="notificationBadge" hidden>0</span>
+                    </button>
+                    <section class="notification-panel" id="notificationPanel" aria-label="Pemberitahuan jatuh tempo" hidden>
+                        <h2>Pemberitahuan tagihan</h2>
+                        <div class="notification-list" id="notificationList" aria-live="polite">
+                            <p class="notification-empty">Memuat data tagihan...</p>
+                        </div>
+                        <div class="notification-shortcuts" aria-label="Buka notifikasi berdasarkan status">
+                            <button type="button" class="due-alert-check" data-show-due-alerts="upcoming">Mendekati tempo</button>
+                            <button type="button" class="due-alert-check" data-show-due-alerts="due_today">Jatuh tempo hari ini</button>
+                            <button type="button" class="due-alert-check" data-show-due-alerts="overdue">Lewat tenggat</button>
+                            <button type="button" class="due-alert-check due-alert-view-all" data-show-due-alerts="all">Lihat semua notifikasi</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Area autentikasi dinamis -->
+                <div id="authArea">
+                    <!-- Diisi oleh JavaScript -->
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+
+            <!-- ================= HERO ================= -->
+            <section class="hero">
+                <div class="hero-text">
+                    <h2>Selamat datang, <span id="welcomeUserName">Admin Pusat!</span> 👋</h2>
+                    <p>
+                        Pantau seluruh transaksi, piutang, dan pembayaran
+                        Nusa Karsa Event dalam satu dashboard.
+                    </p>
+                </div>
+
+                <div class="hero-date">
+                    <div class="calendar-circle">
+                        <i class="fa-regular fa-calendar-days"></i>
+                    </div>
+
+                    <div class="date-info">
+                        <strong id="currentDate">Rabu, 27 Agustus 2026</strong>
+                        <span><i class="fa-regular fa-clock"></i> <span id="currentTime">10:21 WIB</span></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= SUMMARY ================= -->
+            <section class="summary-grid">
+
+                <article class="summary-card total">
+                    <div class="card-head">
+                        <span>TOTAL PIUTANG</span>
+                        <div class="summary-icon">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                    </div>
+                    <div class="summary-value" data-summary="total_receivables">Memuat...</div>
+                    <div class="summary-sub">dari data yang tersedia</div>
+                </article>
+
+                <article class="summary-card unpaid">
+                    <div class="card-head">
+                        <span>BELUM DIBAYAR</span>
+                        <div class="summary-icon">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                    </div>
+                    <div class="summary-value" data-summary="unpaid">Memuat...</div>
+                    <div class="summary-sub" id="unpaidSummaryCount">Tagihan tanpa pembayaran masuk</div>
+                </article>
+
+                <article class="summary-card overdue">
+                    <div class="card-head">
+                        <span>LEWAT JATUH TEMPO</span>
+                        <div class="summary-icon">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+                    <div class="summary-value" data-summary="overdue">Memuat...</div>
+                    <div class="summary-sub" id="overdueSummaryCount">Tagihan yang melewati tanggal jatuh tempo</div>
+                </article>
+
+                <article class="summary-card paid">
+                    <div class="card-head">
+                        <span>LUNAS</span>
+                        <div class="summary-icon">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                    <div class="summary-value" data-summary="paid">Memuat...</div>
+                    <div class="summary-sub">lunas</div>
+                </article>
+
+            </section>
+
+            <!-- ================= DUE ALERTS ================= -->
+            <section class="section" id="dueAlertsSection">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Notifikasi jatuh tempo</h2>
+                        <p class="due-alerts-caption">Tagihan dengan sisa pembayaran yang mendekati tempo, jatuh tempo hari ini, atau sudah lewat tenggat.</p>
+                    </div>
+                </div>
+                <div class="due-alert-filters" role="group" aria-label="Filter status jatuh tempo">
+                    <button type="button" data-due-filter="all" aria-pressed="true">Semua (<span id="dueAlertCountAll">0</span>)</button>
+                    <button type="button" data-due-filter="upcoming" aria-pressed="false">Mendekati tempo (<span id="dueAlertCountUpcoming">0</span>)</button>
+                    <button type="button" data-due-filter="due_today" aria-pressed="false">Jatuh tempo hari ini (<span id="dueAlertCountToday">0</span>)</button>
+                    <button type="button" data-due-filter="overdue" aria-pressed="false">Terlambat (<span id="dueAlertCountOverdue">0</span>)</button>
+                </div>                <div class="due-alerts-list" id="dueAlertsList" aria-live="polite">
+                    <p class="notification-empty">Memuat data tagihan...</p>
+                </div>
+                <p class="notification-empty" id="dueAlertsEmpty" hidden>Tidak ada pelanggan pada filter ini.</p>
+            </section>
+            <!-- ================= BRANCH ================= -->
+            <section class="section" data-dashboard-section="branches">
+                <div class="section-header">
+                    <h2 class="section-title">Ringkasan Piutang per Cabang</h2>
+                    <button type="button" class="see-all" data-see-all="branches">Lihat semua cabang <i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+
+                <div class="branch-grid">
+                    <p>Memuat data cabang...</p>
+                </div>
+            </section>
+
+            <!-- ================= TABLE ================= -->
+            <section class="section" data-dashboard-section="receivables">
+                <div class="section-header">
+                    <h2 class="section-title">Piutang Terbaru</h2>
+                    <button type="button" class="see-all" data-see-all="receivables">Lihat semua piutang <i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+
+                <div class="table-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pelanggan</th>
+                                <th>Cabang</th>
+                                <th>Event</th>
+                                <th>Tanggal</th>
+                                <th>Total Tagihan</th>
+                                <th>Sisa Piutang</th>
+                                <th>Jatuh Tempo</th>
+                                <th>Status</th>
+                                <th>Penjelasan piutang</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr><td colspan="9">Memuat data piutang...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // ================== FUNGSI UTAMA ==================
+
+        // Tanggal dan jam otomatis
+        const currentDate = document.getElementById("currentDate");
+        const currentTime = document.getElementById("currentTime");
+
+        function updateClock() {
+            const now = new Date();
+            const dateOptions = { weekday: "long", day: "numeric", month: "long", year: "numeric" };
+            currentDate.textContent = now.toLocaleDateString("id-ID", dateOptions);
+            const time = now.toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            });
+            currentTime.textContent = time + " WIB";
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        function navigateThroughLoading(destination) {
+            window.location.href = "loading.html?next=" + encodeURIComponent(destination.href);
+        }
+
+        document.addEventListener("click", function(event) {
+            const link = event.target.closest("a[href]");
+            if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (link.target === "_blank" || link.hasAttribute("download") || link.getAttribute("href") === "#") return;
+
+            const destination = new URL(link.href, window.location.href);
+            if (destination.origin !== window.location.origin || /loading\.html$/i.test(destination.pathname) || destination.href === window.location.href) return;
+
+            if (/\/cabang\.html$/i.test(destination.pathname)) {
+                event.preventDefault();
+                document.body.classList.add("is-branch-warping");
+                destination.searchParams.set("loadingEntry", "1");
+                window.setTimeout(() => { window.location.href = destination.href; }, 360);
+                return;
+            }
+
+            event.preventDefault();
+            navigateThroughLoading(destination);
+        });
+
+        // Efek aktif pada menu
+        document.querySelectorAll(".nav-item").forEach(item => {
+            item.addEventListener("click", function() {
+                document.querySelectorAll(".nav-item").forEach(nav => nav.classList.remove("active"));
+                this.classList.add("active");
+            });
+        });
+
+        // ================== LOGIKA LOGIN ==================
+        const authArea = document.getElementById("authArea");
+        const accountLink = document.getElementById("accountLink");
+        const accountLinkText = document.getElementById("accountLinkText");
+
+        function formatCurrency(value) {
+            const amount = Number(value);
+            return new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+                maximumFractionDigits: 0
+            }).format(Number.isFinite(amount) ? amount : 0);
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+            const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+            return Number.isNaN(date.getTime())
+                ? String(value)
+                : date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>'"]/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                "'": "&#39;",
+                "\"": "&quot;"
+            }[character]));
+        }
+
+        let dashboardData = null;
+        let dashboardLoadPromise = null;
+
+        function getBranchRoute(branchName) {
+            const key = String(branchName ?? "").trim().toLowerCase().replace(/^cabang\s+/, "");
+            const routes = {
+                palembang: "Html/cabangPalembang.html",
+                bali: "Html/cabangBali.html",
+                bandung: "Html/cabangBandung.html"
+            };
+            return routes[key] || "Html/cabang.html";
+        }
+
+        function getSeeAllRoute(section) {
+            if (section === "receivables") return "Html/piutang.html";
+            if (dashboardData?.scope === "branch") {
+                const branch = dashboardData.branches?.[0];
+                if (branch?.name) return getBranchRoute(branch.name);
+            }
+            return "Html/cabang.html";
+        }
+
+        async function navigateSeeAll(event) {
+            const section = event.currentTarget.dataset.seeAll;
+            await isLoggedIn();
+            if (!loggedIn) {
+                const destination = new URL("Html/login.html", window.location.href);
+                destination.searchParams.set("next", window.location.href);
+                navigateThroughLoading(destination);
+                return;
+            }
+            if (!dashboardData && dashboardLoadPromise) await dashboardLoadPromise;
+            if (currentUser?.role === "pelanggan") {
+                navigateThroughLoading(new URL("Html/history.html", window.location.href));
+                return;
+            }
+            const destinationPath = getSeeAllRoute(section);
+            navigateThroughLoading(new URL(destinationPath, window.location.href));
+        }
+        function parseDateOnly(value) {
+            const match = String(value ?? "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) return null;
+            const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+            return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? date : null;
+        }
+
+        function renderNotifications(receivables) {
+            const badge = document.getElementById("notificationBadge");
+            const list = document.getElementById("notificationList");
+            const dueAlertsList = document.getElementById("dueAlertsList");
+            if (!badge || !list || !dueAlertsList) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const alerts = receivables.flatMap(item => {
+                const due = parseDateOnly(item.due_date);
+                if (!due) return [];
+                const days = Math.round((due - today) / 86400000);
+                if (days < 0) return [{ ...item, days, kind: "overdue" }];
+                if (days === 0) return [{ ...item, days, kind: "due_today" }];
+                if (days <= 7) return [{ ...item, days, kind: "upcoming" }];
+                return [];
+            }).sort((a, b) => a.days - b.days || String(a.customer).localeCompare(String(b.customer), "id"));
+
+            badge.textContent = alerts.length > 99 ? "99+" : String(alerts.length);
+            badge.hidden = alerts.length === 0;
+            const notificationGroups = [
+                { kind: "overdue", title: "Piutang lewat tenggat" },
+                { kind: "due_today", title: "Piutang jatuh tempo hari ini" },
+                { kind: "upcoming", title: "Piutang hampir jatuh tempo" }
+            ];
+            list.innerHTML = notificationGroups.map(group => {
+                const groupAlerts = alerts
+                    .map((item, index) => ({ item, index }))
+                    .filter(({ item }) => item.kind === group.kind);
+                if (!groupAlerts.length) return "";
+                return `
+                    <section class="notification-group" aria-label="${group.title}">
+                        <h3>${group.title} (${groupAlerts.length})</h3>
+                        ${groupAlerts.map(({ item, index }) => `
+                            <article class="notification-item ${item.kind === "overdue" ? "is-overdue" : ""}">
+                                <strong>${escapeHtml(item.customer)} · ${escapeHtml(item.event)}</strong>
+                                <span>${item.kind === "overdue" ? "Lewat tenggat " + Math.abs(item.days) + " hari" : item.kind === "due_today" ? "Jatuh tempo hari ini" : "Jatuh tempo " + item.days + " hari lagi"} · ${formatCurrency(item.balance)} · ${escapeHtml(formatDate(item.due_date))}</span>
+                                <button type="button" class="due-alert-check" data-check-alert="${index}">Cek piutang</button>
+                            </article>`).join("")}
+                    </section>`;
+            }).join("") || '<p class="notification-empty">Tidak ada notifikasi jatuh tempo.</p>';
+
+            document.getElementById("dueAlertCountAll").textContent = String(alerts.length);
+            document.getElementById("dueAlertCountUpcoming").textContent = String(alerts.filter(item => item.kind === "upcoming").length);
+            document.getElementById("dueAlertCountToday").textContent = String(alerts.filter(item => item.kind === "due_today").length);
+            document.getElementById("dueAlertCountOverdue").textContent = String(alerts.filter(item => item.kind === "overdue").length);
+            dueAlertsList.innerHTML = alerts.map((item, index) => `
+                <article class="due-alert-row ${item.kind === "overdue" ? "is-overdue" : ""}" data-alert-kind="${item.kind}" id="due-alert-${index}" tabindex="-1">
+                    <div><strong>${escapeHtml(item.customer)}</strong><span>${escapeHtml(item.branch)}</span></div>
+                    <div><strong>${escapeHtml(item.event)}</strong><span>Sisa tagihan ${formatCurrency(item.balance)}</span></div>
+                    <div><strong>${escapeHtml(formatDate(item.due_date))}</strong><span class="due-alert-status">${item.kind === "overdue" ? "Lewat tenggat " + Math.abs(item.days) + " hari" : item.kind === "due_today" ? "Jatuh tempo hari ini" : "Mendekati tempo · " + item.days + " hari lagi"}</span></div>
+                    <button type="button" class="due-alert-check" data-check-alert="${index}">Cek</button>
+                </article>`).join("") || '<p class="notification-empty">Tidak ada notifikasi jatuh tempo.</p>';
+        }
+
+        function applyRolePresentation() {
+            if (!currentUser) return;
+            const role = currentUser.role;
+            const isCustomer = role === "pelanggan";
+            document.getElementById("branchAccountAdminLink")?.classList.toggle("role-hidden", !["admin_pusat", "super_admin"].includes(role));
+            const branchName = dashboardData?.branches?.[0]?.name;
+            const roleLabels = {
+                super_admin: "Admin Pusat",
+                admin_pusat: "Admin Pusat",
+                admin_cabang: branchName ? `Admin Cabang · ${branchName}` : "Admin Cabang",
+                pelanggan: "Pelanggan"
+            };
+            authArea.querySelector(".admin-info span")?.replaceChildren(document.createTextNode(roleLabels[role] || "Pengguna"));
+            document.getElementById("welcomeUserName").textContent = `${currentUser.name || roleLabels[role] || "Pengguna"}!`;
+
+            document.querySelectorAll("#dashboardSidebar .nav-item").forEach(link => {
+                const path = new URL(link.href, window.location.href).pathname.toLowerCase();
+                const restrictedForCustomer = /\/html\/(cabang|pelanggan|piutang|pembayaran|laporan)\.html$/.test(path);
+                link.classList.toggle("role-hidden", isCustomer && restrictedForCustomer);
+                if (isCustomer && /\/html\/history\.html$/.test(path)) {
+                    link.querySelector("span").textContent = "Riwayat Pembayaran";
+                }
+            });
+
+            document.querySelector('[data-dashboard-section="branches"]')?.classList.toggle("role-hidden", isCustomer);
+            document.querySelectorAll('[data-see-all="branches"]').forEach(button => button.classList.toggle("role-hidden", isCustomer));
+            document.querySelectorAll('[data-see-all="receivables"]').forEach(button => button.classList.toggle("role-hidden", isCustomer));
+            if (isCustomer) {
+                document.querySelector('[data-dashboard-section="receivables"] .section-title').textContent = "Piutang Saya";
+                document.querySelector(".due-alerts-caption").textContent = "Notifikasi ini hanya menampilkan piutang yang terhubung dengan akun pelanggan Anda.";
+                document.querySelector("#notificationPanel h2").textContent = "Notifikasi piutang saya";
+                document.querySelector("#notificationPanel").setAttribute("aria-label", "Notifikasi piutang pelanggan");
+                document.querySelector(".hero-text p").textContent = "Pantau sisa piutang, tenggat pembayaran, dan riwayat pembayaran milik Anda.";
+            }
+        }
+        const notificationToggle = document.getElementById("notificationToggle");
+        const notificationPanel = document.getElementById("notificationPanel");
+        document.body.appendChild(notificationPanel);
+
+        function positionNotificationPanel() {
+            const anchor = notificationToggle.getBoundingClientRect();
+            const panelWidth = notificationPanel.offsetWidth;
+            const panelHeight = notificationPanel.offsetHeight;
+            const margin = 12;
+            const left = Math.min(Math.max(margin, anchor.right - panelWidth), window.innerWidth - panelWidth - margin);
+            const top = Math.min(anchor.bottom + 8, window.innerHeight - panelHeight - margin);
+            notificationPanel.style.left = `${Math.max(margin, left)}px`;
+            notificationPanel.style.top = `${Math.max(margin, top)}px`;
+        }
+
+        function setNotificationPanelOpen(open) {
+            notificationPanel.hidden = !open;
+            notificationToggle.setAttribute("aria-expanded", String(open));
+            if (open) positionNotificationPanel();
+        }
+
+        notificationToggle.addEventListener("click", event => {
+            event.stopPropagation();
+            setNotificationPanelOpen(notificationPanel.hidden);
+        });
+        document.addEventListener("click", event => {
+            if (!notificationPanel.hidden && !notificationToggle.contains(event.target) && !notificationPanel.contains(event.target)) {
+                setNotificationPanelOpen(false);
+            }
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && !notificationPanel.hidden) {
+                setNotificationPanelOpen(false);
+                notificationToggle.focus();
+            }
+        });
+        window.addEventListener("resize", () => {
+            if (!notificationPanel.hidden) positionNotificationPanel();
+        });
+        window.addEventListener("scroll", () => {
+            if (!notificationPanel.hidden) positionNotificationPanel();
+        }, true);
+
+        function filterDueAlerts(kind) {
+            const rows = [...document.querySelectorAll(".due-alert-row")];
+            let visibleCount = 0;
+            rows.forEach(row => {
+                row.hidden = kind !== "all" && row.dataset.alertKind !== kind;
+                if (!row.hidden) visibleCount++;
+            });
+            document.querySelectorAll("[data-due-filter]").forEach(button => {
+                button.setAttribute("aria-pressed", String(button.dataset.dueFilter === kind));
+            });
+            const empty = document.getElementById("dueAlertsEmpty");
+            empty.hidden = visibleCount > 0;
+            empty.textContent = kind === "upcoming" ? "Tidak ada tagihan yang mendekati tempo." : kind === "due_today" ? "Tidak ada tagihan yang jatuh tempo hari ini." : kind === "overdue" ? "Tidak ada tagihan yang lewat tenggat." : "Tidak ada tagihan mendekati tempo, jatuh tempo hari ini, atau lewat tenggat.";
+        }
+
+        function showDueAlerts(kind) {
+            setNotificationPanelOpen(false);
+            filterDueAlerts(kind);
+            const section = document.getElementById("dueAlertsSection");
+            section.scrollIntoView({ behavior: "smooth", block: "start" });
+            section.querySelector("[data-due-filter][data-due-filter='" + kind + "']")?.focus({ preventScroll: true });
+        }
+        function checkDueAlert(index) {
+            filterDueAlerts("all");
+            const target = document.getElementById(`due-alert-${index}`);
+            if (!target) return;
+            setNotificationPanelOpen(false);
+            target.scrollIntoView({ behavior: "smooth", block: "center" });
+            target.focus({ preventScroll: true });
+            target.classList.add("is-highlighted");
+            window.setTimeout(() => target.classList.remove("is-highlighted"), 2200);
+        }
+        document.addEventListener("click", event => {
+            const filterButton = event.target.closest("[data-due-filter]");
+            if (filterButton) filterDueAlerts(filterButton.dataset.dueFilter);
+            const viewButton = event.target.closest("[data-show-due-alerts]");
+            if (viewButton) showDueAlerts(viewButton.dataset.showDueAlerts);
+            const checkButton = event.target.closest("[data-check-alert]");
+            if (checkButton) checkDueAlert(checkButton.dataset.checkAlert);
+        });
+        function clearDashboardData(message) {
+            document.querySelectorAll("[data-summary]").forEach(element => {
+                element.textContent = message;
+            });
+            document.querySelector(".branch-grid").innerHTML = `<p>${escapeHtml(message)}</p>`;
+            document.querySelector("tbody").innerHTML = `<tr><td colspan="9">${escapeHtml(message)}</td></tr>`;
+            renderNotifications([]);
+        }
+
+        function renderDashboardData(data) {
+            if (!data.summary || !Array.isArray(data.branches) || !Array.isArray(data.recent_receivables)) {
+                throw new Error("Format data dashboard dari server tidak valid.");
+            }
+            dashboardData = data;
+            renderNotifications(data.recent_receivables);
+            applyRolePresentation();
+
+            document.querySelectorAll("[data-summary]").forEach(element => {
+                const key = element.dataset.summary;
+                const value = data.summary[key];
+                if (value === undefined || !Number.isFinite(Number(value))) {
+                    throw new Error(`Nilai ringkasan "${key}" tidak valid.`);
+                }
+                element.textContent = formatCurrency(value);
+            });
+            document.getElementById("unpaidSummaryCount").textContent = `${new Intl.NumberFormat("id-ID").format(Number(data.summary.unpaid_count) || 0)} tagihan belum menerima pembayaran`;
+            document.getElementById("overdueSummaryCount").textContent = `${new Intl.NumberFormat("id-ID").format(Number(data.summary.overdue_count) || 0)} tagihan melewati tanggal jatuh tempo`;
+
+            const branchColors = { palembang: "#26789d", bali: "#d39600", bandung: "#eb5b22" };
+            const totalReceivables = data.branches.reduce((total, branch) => total + Math.max(0, Number(branch.receivables) || 0), 0);
+            document.querySelector(".branch-grid").innerHTML = data.branches.map(branch => {
+                const balance = Number(branch.receivables);
+                const customerCount = Number(branch.customer_count);
+                if (!branch.name || !Number.isFinite(balance) || !Number.isFinite(customerCount)) {
+                    throw new Error("Data salah satu cabang tidak valid.");
+                }
+                const branchKey = String(branch.name).trim().toLowerCase().replace(/^cabang\s+/, "");
+                const branchRoute = getBranchRoute(branch.name);
+                const share = totalReceivables > 0 ? Math.max(0, balance) / totalReceivables * 100 : 0;
+                const color = branchColors[branchKey] || "#246b95";
+                const icon = branchKey === "bali" ? "fa-landmark" : "fa-building";
+                return `
+                <a class="branch-card" href="${branchRoute}" style="--branch-color: ${color}" aria-label="Buka data piutang cabang ${escapeHtml(branch.name)}">
+                    <div class="branch-top">
+                        <div class="branch-icon"><i class="fa-solid ${icon}"></i></div>
+                        <div class="branch-info">
+                            <strong>${escapeHtml(branch.name)}</strong>
+                            <span>${formatCurrency(balance)}</span>
+                            <small>${new Intl.NumberFormat("id-ID").format(customerCount)} pelanggan</small>
+                        </div>
+                    </div>
+                    <div class="progress" role="img" aria-label="${escapeHtml(branch.name)}: ${share.toFixed(1)}% dari total piutang cabang">
+                        <span style="width: ${share.toFixed(2)}%"></span>
+                    </div>
+                </a>`;
+            }).join("") || "<p>Tidak ada data cabang.</p>";
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            document.querySelector("tbody").innerHTML = data.recent_receivables.map(receivable => {
+                const total = Math.max(0, Number(receivable.total_amount) || 0);
+                const balance = Math.max(0, Number(receivable.balance) || 0);
+                const paid = Math.max(0, total - balance);
+                const dueDate = parseDateOnly(receivable.due_date);
+                let dueExplanation = "Tanggal jatuh tempo belum tercatat.";
+                if (dueDate) {
+                    const days = Math.round((dueDate - today) / 86400000);
+                    dueExplanation = days < 0 ? `Terlambat ${Math.abs(days)} hari dari tenggat.` : days === 0 ? "Jatuh tempo hari ini." : `Jatuh tempo ${days} hari lagi.`;
+                }
+                return `
+                <tr>
+                    <td>${escapeHtml(receivable.customer)}</td>
+                    <td>${currentUser?.role === "pelanggan" ? escapeHtml(receivable.branch) : `<a class="dashboard-branch-link" href="${getBranchRoute(receivable.branch)}">${escapeHtml(receivable.branch)}</a>`}</td>
+                    <td>${escapeHtml(receivable.event)}</td>
+                    <td>${escapeHtml(formatDate(receivable.invoice_date))}</td>
+                    <td class="money">${formatCurrency(total)}</td>
+                    <td class="money debt-warning">${formatCurrency(balance)}</td>
+                    <td>${escapeHtml(formatDate(receivable.due_date))}</td>
+                    <td><span class="status ${["paid", "unpaid", "partial"].includes(receivable.status) ? receivable.status : ""}">${({ paid: "Lunas", unpaid: "Belum Dibayar", partial: "Sebagian" })[receivable.status] || escapeHtml(receivable.status)}</span></td>
+                    <td><span class="receivable-explanation">Nilai tagihan ${formatCurrency(total)}; sudah dibayar ${formatCurrency(paid)}; sisa piutang ${formatCurrency(balance)}. ${dueExplanation}</span></td>
+                </tr>`;
+            }).join("") || "<tr><td colspan=\"9\">Belum ada data piutang.</td></tr>";
+        }
+
+        async function loadDashboardData() {
+            clearDashboardData("Memuat...");
+            try {
+                const response = await fetch("api/dashboard.php", { cache: "no-store" });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || `Server mengembalikan status ${response.status}.`);
+                }
+                renderDashboardData(result);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Kesalahan tidak diketahui.";
+                clearDashboardData(`Gagal memuat data: ${message}`);
+            }
+        }
+
+        let loggedIn = false;
+        let currentUser = null;
+
+        async function isLoggedIn() {
+            const response = await fetch("api/session.php");
+            const result = await response.json();
+            loggedIn = result.authenticated === true;
+            currentUser = loggedIn ? result.user : null;
+            return loggedIn;
+        }
+
+        async function renderAuthArea() {
+            const authenticated = await isLoggedIn();
+            if (authenticated) {
+                const name = currentUser?.name || "Pengguna";
+                const roleLabels = { super_admin: "Admin Pusat", admin_pusat: "Admin Pusat", admin_cabang: "Admin Cabang", pelanggan: "Pelanggan" };
+                const role = roleLabels[currentUser?.role] || "Pengguna";
+                accountLink.href = "#";
+                accountLinkText.textContent = currentUser?.role === "pelanggan" ? "Akun Pelanggan" : "Akun Saya";
+                authArea.innerHTML = `
+                    <div class="account-section">
+                        <button class="account-profile" id="accountProfileBtn"
+                            type="button" aria-label="Informasi akun">
+                            <div class="avatar">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+
+                            <div class="admin-info">
+                                <strong>${escapeHtml(name)}</strong>
+                                <span>${escapeHtml(role)}</span>
+                            </div>
+
+                            <i class="fa-solid fa-chevron-down admin-chevron"></i>
+                        </button>
+
+                        <button class="top-logout-inline" id="logoutBtn" type="button">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>Keluar</span>
+                        </button>
+                    </div>
+                `;
+
+                document.getElementById("accountProfileBtn").addEventListener("click", function() {
+                    alert("Anda sedang login sebagai " + (currentUser?.name || "pengguna") + ".");
+                });
+
+                document.getElementById("logoutBtn").addEventListener("click", async function() {
+                    try {
+                        await fetch("api/logout.php", { method: "POST" });
+                    } finally {
+                        navigateThroughLoading(new URL("halaman.html", window.location.href));
+                    }
+                });
+                applyRolePresentation();
+            } else {
+                accountLink.href = "Html/login.html?next=" + encodeURIComponent(window.location.href);
+                accountLinkText.textContent = "Login Admin";
+                authArea.innerHTML = `
+                    <a href="Html/login.html" class="btn-login-top">
+                        <i class="fa-solid fa-right-to-bracket"></i> Login
+                    </a>
+                `;
+            }
+        }
+        document.querySelector(".sidebar-bottom .logout").addEventListener("click", async function() {
+            if (!loggedIn) {
+                const destination = new URL("Html/login.html", window.location.href);
+                destination.searchParams.set("next", window.location.href);
+                navigateThroughLoading(destination);
+                return;
+            }
+
+            try {
+                await fetch("api/logout.php", { method: "POST" });
+            } finally {
+                navigateThroughLoading(new URL("halaman.html", window.location.href));
+            }
+        });
+
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.querySelector(".sidebar");
+        function setMobileMenu(open) {
+            document.body.classList.toggle("is-menu-open", open);
+            sidebar.classList.toggle("is-open", open);
+            menuToggle.setAttribute("aria-expanded", String(open));
+        }
+        menuToggle.addEventListener("click", () => setMobileMenu(!document.body.classList.contains("is-menu-open")));
+        document.addEventListener("click", event => {
+            if (document.body.classList.contains("is-menu-open") && !event.target.closest(".sidebar") && !event.target.closest("#menuToggle")) setMobileMenu(false);
+        });
+        document.addEventListener("keydown", event => { if (event.key === "Escape") setMobileMenu(false); });
+        document.querySelectorAll("[data-see-all]").forEach(button => button.addEventListener("click", navigateSeeAll));
+        renderAuthArea();
+        dashboardLoadPromise = loadDashboardData();
+
+        // Menu Akun membawa pengguna yang belum login ke halaman login.
+        accountLink.addEventListener("click", function(event) {
+            if (loggedIn) {
+                event.preventDefault();
+                alert("Anda sedang login sebagai " + (currentUser?.name || "pengguna") + ".");
+            }
+        });
+
+        // Proteksi elemen yang memerlukan autentikasi
+        document.querySelectorAll(".requires-auth:not([data-see-all])").forEach(el => {
+            el.addEventListener("click", async function(e) {
+                if (!loggedIn) {
+                    e.preventDefault();
+                    const destination = new URL("Html/login.html", window.location.href);
+                    destination.searchParams.set("next", window.location.href);
+                    navigateThroughLoading(destination);
+                }
+                // Jika sudah login, biarkan aksi default berjalan
+            });
+        });
+
+        document.querySelectorAll(".nav-menu a[href]").forEach(link => {
+            if (link.id === "accountLink") return;
+            link.addEventListener("click", function(event) {
+                if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                const destination = new URL(link.href, window.location.href);
+                if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+                event.preventDefault();
+                navigateThroughLoading(destination);
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -24,6 +24,6 @@ if ($scope['role'] === 'admin_cabang') {
 $db = database();
 $summary = $db->prepare("SELECT COUNT(*) AS invoice_count, COALESCE(SUM(r.total_amount), 0) AS invoiced, COALESCE(SUM(r.balance), 0) AS outstanding, COALESCE(SUM(r.total_amount - r.balance), 0) AS collected FROM receivables r$filter");
 $summary->execute($params);
-$byBranch = $db->prepare("SELECT b.name AS branch, COUNT(r.id) AS invoice_count, COALESCE(SUM(r.total_amount), 0) AS invoiced, COALESCE(SUM(r.total_amount - r.balance), 0) AS collected, COALESCE(SUM(r.balance), 0) AS outstanding FROM branches b LEFT JOIN receivables r ON r.branch_id = b.id AND YEAR(r.invoice_date) = :year" . ($scope['role'] === 'admin_cabang' ? ' WHERE b.id = :branch_id' : '') . ' GROUP BY b.id, b.name ORDER BY b.name');
-$byBranch->execute($params);
+$byBranch = $db->prepare("SELECT b.name AS branch, COUNT(r.id) AS invoice_count, COALESCE(SUM(r.total_amount), 0) AS invoiced, COALESCE(SUM(r.total_amount - r.balance), 0) AS collected, COALESCE(SUM(r.balance), 0) AS outstanding FROM branches b LEFT JOIN receivables r ON r.branch_id = b.id AND YEAR(r.invoice_date) = :year GROUP BY b.id, b.name ORDER BY b.name");
+$byBranch->execute(['year' => $year]);
 respond(['success' => true, 'year' => $year, 'summary' => $summary->fetch(), 'by_branch' => $byBranch->fetchAll(), 'scope' => $scope['role']]);

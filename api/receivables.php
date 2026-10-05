@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
-require_login();
+$scope = require_operational_user();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     respond(['success' => false, 'message' => 'Metode harus GET.'], 405);
 }
 
 $db = database();
-$isSuperAdmin = in_array($_SESSION['user_role'] ?? '', ['admin_pusat', 'super_admin'], true);
-$branchId = $_SESSION['user_branch_id'] ?? null;
+$isSuperAdmin = in_array($scope['role'], ['admin_pusat', 'super_admin'], true);
+$branchId = $scope['branch_id'];
 if (!$isSuperAdmin && $branchId === null) {
     respond(['success' => false, 'message' => 'Akun belum memiliki cabang. Hubungi admin pusat.'], 403);
 }

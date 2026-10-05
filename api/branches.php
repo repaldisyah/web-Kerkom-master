@@ -17,12 +17,10 @@ if ($scope['role'] === 'admin_cabang' && !$scope['branch_id']) {
 
 $sql = 'SELECT b.id, b.name, b.city, (SELECT COUNT(*) FROM customers c WHERE c.branch_id = b.id) AS customer_count, (SELECT COUNT(*) FROM events e WHERE e.branch_id = b.id) AS event_count, (SELECT COALESCE(SUM(r.balance), 0) FROM receivables r WHERE r.branch_id = b.id) AS receivables FROM branches b';
 $params = [];
-if ($scope['role'] === 'admin_cabang') {
-    $sql .= ' WHERE b.id = :branch_id';
-    $params['branch_id'] = $scope['branch_id'];
-}
 $sql .= ' ORDER BY b.name';
 $statement = database()->prepare($sql);
 $statement->execute($params);
 
-respond(['success' => true, 'branches' => $statement->fetchAll(), 'scope' => $scope['role']]);
+$branches = $statement->fetchAll();
+// Cabang lain hanya tampil sebagai ringkasan, tanpa daftar pelanggan/event atau rincian transaksi.
+respond(['success' => true, 'branches' => $branches, 'scope' => $scope['role'], 'own_branch_id' => $scope['branch_id']]);

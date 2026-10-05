@@ -35,11 +35,38 @@ function addRow(values) {
     tableBody.append(row);
 }
 
-function setScope(role) {
-    const labels = { admin_pusat: 'Admin pusat · semua cabang', super_admin: 'Admin pusat · semua cabang', admin_cabang: 'Akun cabang', pelanggan: 'Akun pelanggan' };
+async function setScope(user) {
+    const role = user.role;
+    const labels = { admin_pusat: 'Admin pusat · semua cabang', super_admin: 'Admin pusat · semua cabang', admin_cabang: 'Admin cabang', pelanggan: 'Pelanggan · akun pribadi' };
     const badge = document.getElementById('scopeBadge');
     if (badge) badge.textContent = labels[role] || role;
-    if (role === 'pelanggan') document.querySelectorAll('.report-link').forEach(link => link.classList.add('hidden'));
+    if (role === 'pelanggan') {
+        document.querySelectorAll('.report-link').forEach(link => link.classList.add('hidden'));
+        document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
+            const path = new URL(link.href, window.location.href).pathname.toLowerCase();
+            if (/\/(cabang(?:palembang|bandung|bali)?|pelanggan|piutang|pembayaran|laporan|events-(?:bali|bandung))\.html$/.test(path)) {
+                link.classList.add('hidden');
+            }
+        });
+        document.querySelectorAll('.nav-menu .nav-branch').forEach(link => link.classList.add('hidden'));
+        document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
+            if (/\/history\.html$/i.test(new URL(link.href, window.location.href).pathname)) {
+                const label = link.querySelector('span');
+                if (label) label.textContent = 'Riwayat Pembayaran';
+            }
+        });
+        return;
+    }
+    if (role === 'admin_cabang') {
+        const data = await jsonFetch('../api/branches.php');
+        const branch = data.branches.find(item => Number(item.id) === Number(data.own_branch_id))?.name;
+        if (badge && branch) badge.textContent = `Admin cabang · ${branch}`;
+        const allowedBranches = new Set(branch ? [String(branch).trim().toLowerCase().replace(/^cabang\s+/, '')] : []);
+        document.querySelectorAll('.nav-menu .nav-branch').forEach(link => {
+            const branchKey = [...link.classList].find(name => name.startsWith('nav-branch-') && name !== 'nav-branch')?.replace('nav-branch-', '');
+            if (!allowedBranches.has(branchKey)) link.classList.add('hidden');
+        });
+    }
 }
 
 function showEmpty(show) {
@@ -99,7 +126,7 @@ async function initialize() {
     try {
         const session = await jsonFetch('../api/session.php');
         if (!session.authenticated) return redirectToLogin();
-        setScope(session.user.role);
+        await setScope(session.user);
         if (page === 'report') {
             const yearSelect = document.getElementById('yearSelect');
             const currentYear = new Date().getFullYear();

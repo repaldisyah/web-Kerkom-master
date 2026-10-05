@@ -112,17 +112,10 @@ function renderInvoice() {
 }
 
 function renderMethodDetails(method) {
-    const details = {
-        QRIS: '<strong>Scan QRIS Nusa Karsa</strong><div class="qr-preview" aria-label="Kode QRIS simulasi">' + "<span></span>".repeat(81) + '</div><span>Buka aplikasi pembayaran Anda dan scan kode QR di atas.</span>',
-        BRI: '<strong>Bank BRI</strong>Transfer ke rekening <b>1234 5678 9012</b> a.n. Nusa Karsa Event.',
-        BCA: '<strong>Bank BCA</strong>Transfer ke rekening <b>8123 456 789</b> a.n. Nusa Karsa Event.',
-        SEABANK: '<strong>SeaBank</strong>Transfer ke rekening <b>9012 3456 789</b> a.n. Nusa Karsa Event.',
-        PAYPAL: '<strong>PayPal</strong>Kirim pembayaran ke <b>billing@nusakarsa.com</b>. Pastikan mata uang sesuai instruksi invoice.'
-    };
-    methodDetails.innerHTML = details[method] || "";
+    const labels = { QRIS: 'QRIS', BRI: 'Bank BRI', BCA: 'Bank BCA', SEABANK: 'SeaBank', PAYPAL: 'PayPal' };
+    methodDetails.textContent = method ? `${labels[method] || method} dipilih. Pastikan dana sudah diterima sebelum mencatat pembayaran.` : '';
     methodDetails.hidden = !method;
 }
-
 function renderReceipt(data) {
     latestReceipt = data;
     document.getElementById("receiptToken").textContent = data.token;
@@ -269,7 +262,7 @@ submitButton.addEventListener("click", async () => {
     } catch (error) {
         showAlert(error.message);
     } finally {
-        submitButton.querySelector("span").textContent = "Konfirmasi pembayaran";
+        submitButton.querySelector("span").textContent = "Catat pembayaran";
         updateSubmitState();
     }
 });
@@ -281,18 +274,7 @@ shareReceiptButton.addEventListener("click", shareReceipt);
 (async function initializePaymentPage() {
     try {
         if (await ensureAuthenticated()) await loadReceivables();
-        if (false && receivables.length) {
-            const placeholder = document.createElement("option");
-            placeholder.value = "";
-            placeholder.textContent = "Pilih tagihan...";
-            receivableSelect.replaceChildren(placeholder);
-            receivables.forEach(item => {
-                const option = document.createElement("option");
-                option.value = String(item.id);
-                option.textContent = `${escapeHtml(item.customer)} · ${money(item.balance)} tersisa`;
-                receivableSelect.append(option);
-            });
-        }
+
     } catch (error) {
         sessionStatus.textContent = "Sesi tidak dapat diperiksa";
         showAlert(error.message || "Tidak dapat menghubungi server.");

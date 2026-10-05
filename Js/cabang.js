@@ -30,14 +30,23 @@ async function enforceBranchScope() {
         const result = await branchResponse.json();
         if (!branchResponse.ok || !result.success) throw new Error(result.message || "Data cabang tidak dapat dimuat.");
 
-        const allowedNames = new Set((result.branches || []).map(branch => String(branch.name).toLowerCase()));
+        const ownBranch = (result.branches || []).find(branch => Number(branch.id) === Number(result.own_branch_id));
+        const ownName = String(ownBranch?.name || '').toLowerCase();
         document.querySelectorAll(".branch-card").forEach(card => {
             const branchName = card.querySelector("h3")?.textContent.trim().toLowerCase();
-            card.hidden = !allowedNames.has(branchName);
+            const branch = (result.branches || []).find(item => String(item.name).trim().toLowerCase() === branchName);
+            if (result.scope === 'admin_cabang' && branch && branchName !== ownName) {
+                const description = card.querySelector('.branch-copy p');
+                if (description) description.textContent = `Ringkasan: ${branch.customer_count} pelanggan, ${branch.event_count} event, piutang ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(branch.receivables) || 0)}.`;
+                card.removeAttribute('href');
+                card.setAttribute('aria-disabled', 'true');
+                card.classList.add('summary-only');
+            }
+            card.hidden = !branch;
         });
         if (result.scope === "admin_cabang") {
             const description = document.querySelector(".branch-hero p");
-            if (description) description.textContent = "Akun cabang hanya dapat membuka ruang operasional cabang yang ditugaskan.";
+            if (description) description.textContent = "Rincian operasional hanya tersedia untuk cabang yang ditugaskan. Cabang lain ditampilkan sebagai ringkasan.";
         }
     } catch (error) {
         const status = document.getElementById("activeDescription");

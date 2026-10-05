@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Akun Admin Cabang | Nusa Karsa Event</title>
+  <link rel="stylesheet" href="../Css/portal.css"><link rel="stylesheet" href="../Css/navigation.css">
+  <style>
+    .account-form{max-width:720px;display:grid;grid-template-columns:1fr 1fr;gap:16px}.account-form label{display:grid;gap:6px;font-weight:600}.account-form input,.account-form select{padding:12px;border:1px solid #dce3eb;border-radius:10px;font:inherit}.account-form button{grid-column:1/-1;justify-self:start;padding:12px 20px;border:0;border-radius:10px;background:#173d63;color:white;font:inherit;font-weight:700;cursor:pointer}.account-form button:disabled{opacity:.6;cursor:wait}.notice{margin:14px 0;padding:12px;border-radius:10px}.notice.error{background:#fff0ee;color:#982a1b}.notice.success{background:#e7f6ef;color:#176342}@media(max-width:600px){.account-form{grid-template-columns:1fr}}
+  </style>
+</head>
+<body class="portal-body">
+  <main class="portal-shell">
+    <header class="portal-header"><div><p class="eyebrow">NUSA KARSA EVENT / ADMINISTRASI</p><h1>Buat akun admin cabang</h1><p class="subtitle">Setiap akun terikat ke satu cabang. Hak akses data mengikuti cabang yang dipilih.</p></div><a class="back-link" href="../halaman.html">Dashboard</a></header>
+    <section class="portal-card">
+      <p id="accessStatus" class="status" role="status">Memeriksa hak akses...</p>
+      <form id="accountForm" class="account-form" hidden>
+        <label>Nama lengkap<input name="name" maxlength="100" required autocomplete="name"></label>
+        <label>Cabang yang diawasi<select name="branch_id" required><option value="">Pilih cabang</option></select></label>
+        <label>Username<input name="username" minlength="3" maxlength="50" pattern="[A-Za-z0-9_.-]+" required autocomplete="username"></label>
+        <label>Email<input name="email" type="email" maxlength="150" required autocomplete="email"></label>
+        <label>Kata sandi sementara<input name="password" type="password" minlength="10" required autocomplete="new-password"></label>
+        <button type="submit">Buat akun</button>
+      </form>
+      <p id="formMessage" class="notice" hidden></p>
+    </section>
+  </main>
+  <script>
+    const form=document.getElementById('accountForm'), statusEl=document.getElementById('accessStatus'), messageEl=document.getElementById('formMessage');
+    async function api(url,options={}){const response=await fetch(url,{cache:'no-store',...options});const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||'Permintaan gagal.');return data;}
+    async function init(){try{const session=await api('../api/session.php');if(!session.authenticated){location.href='login.html';return;}if(!['admin_pusat','super_admin'].includes(session.user.role)){statusEl.textContent='Halaman ini hanya tersedia untuk admin pusat.';return;}const result=await api('../api/branches.php');const select=form.elements.branch_id;result.branches.forEach(branch=>{const option=document.createElement('option');option.value=branch.id;option.textContent=branch.name;select.append(option);});form.hidden=false;statusEl.textContent='Akun admin cabang baru akan dibuat dengan akses ke satu cabang pilihan.';}catch(error){statusEl.textContent=error.message;}}
+    form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');button.disabled=true;messageEl.hidden=true;try{const payload=Object.fromEntries(new FormData(form));const result=await api('../api/branch-users.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});messageEl.textContent=`${result.message} Username: ${result.user.username}.`;messageEl.className='notice success';messageEl.hidden=false;form.reset();}catch(error){messageEl.textContent=error.message;messageEl.className='notice error';messageEl.hidden=false;}finally{button.disabled=false;}});
+    init();
+  </script>
+</body>
+</html>

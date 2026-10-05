@@ -14,7 +14,7 @@
 body { margin: 0; min-height: 100vh; color: var(--text); font-family: "Poppins", sans-serif; background: radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 27rem), var(--bg); transition: background .6s ease, color .6s ease; }
 body[data-branch="bandung"] { --accent: #db5d38; --accent-soft: #fff0e8; }
 body[data-branch="bali"] { --accent: #c99320; --accent-soft: #fff7df; }
-body[data-branch="palembang"] { --accent: #238ba4; --accent-soft: #e5f7f5; }
+body[data-branch="palembang"] { --accent: #684895; --accent-soft: #f0eafa; }
 a { color: inherit; }
 .sidebar { position: fixed; inset: 0 auto 0 0; width: 275px; display: flex; flex-direction: column; overflow: hidden; color: #fff; background: linear-gradient(160deg, #102a48, #173d63 55%, #102a48); }
 .sidebar::after { content: ""; position: absolute; width: 420px; height: 180px; left: -140px; bottom: -115px; border-radius: 50%; background: linear-gradient(135deg, rgba(39,184,201,.3), rgba(201,150,43,.12)); transform: rotate(-8deg); }
@@ -40,8 +40,11 @@ h1, h2, h3, p { margin-top: 0; } h1 { margin-bottom: 7px; font-size: clamp(1.5re
 .branch-card { position: relative; min-height: 270px; display: flex; flex-direction: column; justify-content: space-between; padding: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); border-radius: 18px; color: #fff; text-decoration: none; box-shadow: var(--shadow); isolation: isolate; transition: transform .3s ease, box-shadow .3s ease, filter .3s ease; }
 .branch-card::after { content: ""; position: absolute; inset: auto -45px -65px auto; width: 180px; height: 180px; border: 1px solid rgba(255,255,255,.28); border-radius: 50%; z-index: -1; }
 .branch-card:hover { transform: translateY(-7px); box-shadow: 0 24px 45px rgba(25,52,82,.22); filter: saturate(1.08); }
-.branch-card:focus-visible { outline: 4px solid rgba(35,139,164,.28); outline-offset: 4px; }
-.branch-card.palembang { background: linear-gradient(145deg, #147d91, #0e6274); } .branch-card.bandung { background: linear-gradient(145deg, #ca5635, #a73c25); } .branch-card.bali { background: linear-gradient(145deg, #c99825, #9c6b0b); }
+.branch-card.summary-only { cursor: default; }
+.branch-card.summary-only:hover { transform: none; filter: none; }
+.branch-card.summary-only .enter { visibility: hidden; }
+.branch-card:focus-visible { outline: 4px solid color-mix(in srgb, var(--accent) 28%, transparent); outline-offset: 4px; }
+.branch-card.palembang { background: linear-gradient(145deg, #7651a8, #50337e); } .branch-card.bandung { background: linear-gradient(145deg, #ca5635, #a73c25); } .branch-card.bali { background: linear-gradient(145deg, #c99825, #9c6b0b); }
 .branch-symbol { width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.4); border-radius: 14px; background: rgba(255,255,255,.14); font-size: 1.25rem; }
 .branch-copy { margin-top: 28px; } .branch-label { font-size: .62rem; font-weight: 700; letter-spacing: .14em; opacity: .78; } .branch-copy h3 { margin: 7px 0 6px; font-size: 1.55rem; } .branch-copy p { max-width: 210px; margin: 0; font-size: .77rem; line-height: 1.55; opacity: .88; }
 .enter { align-self: flex-end; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.4); border-radius: 50%; transition: transform .3s ease, background .3s ease; } .branch-card:hover .enter { transform: translateX(5px); background: rgba(255,255,255,.18); }

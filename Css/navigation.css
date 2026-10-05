@@ -7,24 +7,24 @@
 }
 
 body[data-branch="palembang"] {
-    --navigation-bg: linear-gradient(160deg, #124d5b 0%, #147d91 56%, #0d5968 100%);
-    --navigation-active: linear-gradient(100deg, #d18b32, #a95a28);
-    --navigation-accent: #f2b24b;
-    --navigation-accent-soft: rgba(242, 178, 75, .24);
+    --navigation-bg: linear-gradient(160deg, #50337e 0%, #7651a8 56%, #402761 100%);
+    --navigation-active: linear-gradient(100deg, #9b72c9, #684895);
+    --navigation-accent: #d9b7f2;
+    --navigation-accent-soft: rgba(217, 183, 242, .24);
 }
 
 body[data-branch="bandung"] {
-    --navigation-bg: linear-gradient(160deg, #214936 0%, #39734e 56%, #193b2c 100%);
-    --navigation-active: linear-gradient(100deg, #d58b45, #b55b3b);
-    --navigation-accent: #e3a254;
-    --navigation-accent-soft: rgba(227, 162, 84, .24);
+    --navigation-bg: linear-gradient(160deg, #a73c25 0%, #ca5635 56%, #7d2d20 100%);
+    --navigation-active: linear-gradient(100deg, #e47b56, #b9432a);
+    --navigation-accent: #ffc09a;
+    --navigation-accent-soft: rgba(255, 192, 154, .24);
 }
 
 body[data-branch="bali"] {
-    --navigation-bg: linear-gradient(160deg, #07536b 0%, #087f91 56%, #06495d 100%);
-    --navigation-active: linear-gradient(100deg, #d59b2c, #b96828);
-    --navigation-accent: #f3c15b;
-    --navigation-accent-soft: rgba(243, 193, 91, .24);
+    --navigation-bg: linear-gradient(160deg, #9c6b0b 0%, #c99825 56%, #795208 100%);
+    --navigation-active: linear-gradient(100deg, #e4b74c, #b58216);
+    --navigation-accent: #ffe09a;
+    --navigation-accent-soft: rgba(255, 224, 154, .24);
 }
 
 .sidebar,
@@ -89,6 +89,7 @@ body[data-branch="bali"] {
 .nav-menu { display: grid; gap: 8px; padding: 0 16px; position: relative; z-index: 1; overflow-y: auto; }
 .nav-section-label { margin: 12px 20px 0; color: rgba(255,255,255,.5); font-size: .62rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .nav-item { min-height: 56px; display: flex; align-items: center; gap: 20px; padding: 0 20px; border: 0; border-radius: 17px; color: rgba(255, 255, 255, .86); background: transparent; font-size: .96rem; font-weight: 500; text-decoration: none; cursor: pointer; transition: .22s ease; }
+.nav-item[hidden] { display: none !important; }
 .nav-item i { width: 24px; text-align: center; font-size: 1.18rem; }
 .nav-item:hover { color: #fff; background: rgba(255, 255, 255, .09); transform: translateX(4px); }
 .nav-item.active { color: #fff; font-weight: 700; background: var(--navigation-active); box-shadow: 0 10px 24px rgba(0, 0, 0, .16); }

@@ -367,4 +367,17 @@ Sistem dirancang dengan paduan teknologi modern berstandar enterprise:
   - **Spring Scheduler**: Eksekusi tugas latar belakang berkala untuk memeriksa tagihan jatuh tempo dan membuat notifikasi otomatis.
   - **Platform Deployment**: Layanan cloud / VPS yang mendukung lingkungan Java (seperti **Railway, Render, AWS, atau VPS mandiri**).
 - **Basis Data:**
-  - **MySQL**: Sistem manajemen basis data relasional (RDBMS) utama untuk penyimpanan data transaksi yang konsisten dan terintegrasi.
+- **MySQL**: Sistem manajemen basis data relasional (RDBMS) utama untuk penyimpanan data transaksi yang konsisten dan terintegrasi.
+
+## Akun awal lokal
+
+Setelah mengimpor `database/nusa_karsa.sql` dan menjalankan `database/migration_separate_admin_pusat.sql`, jalankan `database/migration_seed_admin_accounts.sql` satu kali. Kredensial setup lokal:
+
+| Peran | Cabang | Username | Password awal |
+|---|---|---|---|
+| Admin pusat | Semua cabang | `admin` | `NK-Pusat!26_R7q#4` |
+| Admin cabang | Palembang | `admin_palembang` | `NK-Palembang!26_R7q` |
+| Admin cabang | Bali | `admin_bali` | `NK-Bali!26_X4p#9` |
+| Admin cabang | Bandung | `admin_bandung` | `NK-Bandung!26_T8m#2` |
+
+Ganti semua password awal sebelum aplikasi digunakan di lingkungan nyata. Jangan publikasikan kredensial ini ke repositori atau server produksi.

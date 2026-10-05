@@ -1,7 +1,7 @@
 # Menjalankan backend lokal
 
 1. Jalankan **Apache** dan **MySQL** dari XAMPP.
-2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`. Setelah itu jalankan `migration_separate_admin_pusat.sql` satu kali untuk memindahkan akun `admin` ke database khusus `admin_pusat`; username dan password tetap sama.
+2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`. Setelah itu jalankan `migration_separate_admin_pusat.sql` satu kali untuk memindahkan akun `admin` ke database khusus `admin_pusat`; setelahnya jalankan `migration_seed_admin_accounts.sql` satu kali untuk membuat akun awal pusat dan cabang.
 3. Impor `events_bali.sql` dan `events_bandung.sql` untuk membuat database event tiap cabang. Untuk instalasi baru, setelah itu jalankan `events_bandung_upsert.sql` agar jadwal DP/Termin 2/Pelunasan Bandung tersimpan. Untuk database Bandung lama, jalankan `migration_add_bandung_schedules.sql` satu kali, lalu jalankan `events_bandung_upsert.sql`.
 4. Sesuaikan `../api/config.php` bila username, password, port, atau nama database MySQL Anda berbeda. Pemetaan cabang mengikuti data `nusa_karsa.sql`: Bali = `branch_id` 2 dan Bandung = `branch_id` 3.
 5. Letakkan folder proyek ini di `C:/xampp/htdocs/web-Kerkom-master` (atau atur virtual host ke folder proyek), kemudian buka `http://localhost/web-Kerkom-master/halaman.html`.
@@ -20,11 +20,16 @@ Untuk database `events_bali` lama, jalankan `migration_update_bali_events.sql` s
 
 ## Akun awal
 
-- Username: `admin`
-- Email: `admin@nusakarsa.com`
-- Password: `Admin123!`
+Jalankan `migration_seed_admin_accounts.sql` satu kali setelah kedua database dibuat. Skrip tersebut membuat atau memperbarui akun berikut:
 
-Ganti password akun ini sebelum aplikasi dipakai secara nyata.
+| Peran | Cabang | Username | Email | Password awal |
+|---|---|---|---|---|
+| Admin pusat | Semua cabang | `admin` | `admin@nusakarsa.com` | `NK-Pusat!26_R7q#4` |
+| Admin cabang | Palembang | `admin_palembang` | `admin.palembang@nusakarsa.com` | `NK-Palembang!26_R7q` |
+| Admin cabang | Bali | `admin_bali` | `admin.bali@nusakarsa.com` | `NK-Bali!26_X4p#9` |
+| Admin cabang | Bandung | `admin_bandung` | `admin.bandung@nusakarsa.com` | `NK-Bandung!26_T8m#2` |
+
+Gunakan kredensial ini hanya untuk setup lokal, lalu ganti password setelah login pertama dan sebelum aplikasi dipakai secara nyata. Jangan publikasikan README atau kredensial ini ke repositori/lingkungan produksi.
 
 ## Endpoint awal
 
