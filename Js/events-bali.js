@@ -12,6 +12,8 @@ const formTitle = document.querySelector('#formTitle');
 const submitButton = document.querySelector('#submitButton');
 let events = [];
 let editId = null;
+let canManageEvents = false;
+let canRequestDeletion = false;
 
 const money = value => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -86,9 +88,23 @@ function renderRows() {
         + '<td>' + money(event.nilai_kontrak) + '</td><td>' + money(event.dp) + '</td><td>' + money(event.termin_2) + '</td><td>' + money(event.pelunasan) + '</td>'
         + '<td>' + money(event.total_dibayar) + '</td><td><strong>' + money(event.piutang) + '</strong></td><td>' + displayDate(event.tgl_jatuh_tempo) + '</td>'
         + '<td>' + escapeHtml(event.status_data) + '</td><td><span class="tag ' + escapeHtml(event.indikator_warna) + '">' + escapeHtml(event.status_piutang) + '</span></td>'
-        + '<td class="actions"><button type="button" data-edit="' + escapeHtml(event.id) + '" aria-label="Ubah ' + escapeHtml(event.nama_event) + '">Ubah</button>'
-        + '<button type="button" class="delete" data-delete="' + escapeHtml(event.id) + '" aria-label="Hapus ' + escapeHtml(event.nama_event) + '">Hapus</button></td></tr>'
+        + '<td class="actions">' + (Number(event.piutang) > 0 ? '<a href="pembayaran.html?source=event&amp;branch=bali&amp;event_id=' + encodeURIComponent(event.id) + '">Catat pembayaran</a>' : 'Lunas') + (canManageEvents ? '<button type="button" data-edit="' + escapeHtml(event.id) + '" aria-label="Ubah ' + escapeHtml(event.nama_event) + '">Ubah</button><button type="button" class="delete" data-delete="' + escapeHtml(event.id) + '" aria-label="Hapus ' + escapeHtml(event.nama_event) + '">Hapus</button>' : canRequestDeletion ? '<button type="button" data-request-delete="' + escapeHtml(event.id) + '">Minta hapus</button>' : '') + '</td></tr>'
     ).join('');
+}
+
+async function loadAccess() {
+    const session = await request('../api/session.php');
+    if (!session.authenticated) {
+        const login = new URL('login.html', window.location.href);
+        login.searchParams.set('next', window.location.href);
+        window.location.replace(login.href);
+        return false;
+    }
+    canManageEvents = ['admin_pusat', 'super_admin'].includes(session.user.role);
+    canRequestDeletion = session.user.role === 'admin_cabang';
+    if (!canManageEvents) document.querySelector('#formTitle').textContent = 'Tambah event Bali';
+    renderRows();
+    return true;
 }
 
 async function load() {
@@ -120,6 +136,7 @@ function resetForm() {
 }
 
 function edit(id) {
+    if (!canManageEvents) return;
     const event = events.find(item => item.id === id);
     if (!event) return;
     Object.entries(event).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
@@ -148,6 +165,18 @@ form.addEventListener('submit', async event => {
 });
 
 rows.addEventListener('click', async event => {
+    if (!canManageEvents && !canRequestDeletion) return;
+    const requestId = event.target.dataset.requestDelete;
+    if (requestId) {
+        const reason = prompt('Jelaskan alasan penghapusan event ini:');
+        if (!reason || !reason.trim()) return;
+        try {
+            const result = await request('../api/deletion-requests.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ branch: 'bali', event_id: requestId, reason: reason.trim() }) });
+            showNotice(result.message);
+        } catch (error) { showNotice(error.message, true); }
+        return;
+    }
+    if (!canManageEvents) return;
     const id = event.target.dataset.edit || event.target.dataset.delete;
     if (!id) return;
     if (event.target.dataset.edit) return edit(id);
@@ -164,5 +193,8 @@ rows.addEventListener('click', async event => {
 [search, statusFilter, scaleFilter, partyFilter].forEach(control => control.addEventListener('input', renderRows));
 [statusFilter, scaleFilter, partyFilter].forEach(control => control.addEventListener('change', renderRows));
 document.querySelector('#resetButton').addEventListener('click', resetForm);
-resetForm();
-load();
+(async () => {
+    try {
+        if (await loadAccess()) { resetForm(); await load(); }
+    } catch (error) { showNotice(error.message, true); }
+})();

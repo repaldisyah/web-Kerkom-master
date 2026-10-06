@@ -32,7 +32,7 @@
             <section id="summary" class="palembang-summary" aria-label="Ringkasan piutang Bali" aria-live="polite"></section>
             <p id="notice" class="bali-notice" role="status" hidden></p>
             <form id="eventForm" class="bali-form-card">
-                <div class="bali-card-head"><div><h2 id="formTitle">Tambah event Bali</h2><p>Pengelolaan data hanya tersedia untuk admin.</p></div><button id="resetButton" class="bali-secondary" type="button">Form baru</button></div>
+                <div class="bali-card-head"><div><h2 id="formTitle">Tambah event Bali</h2><p>Admin cabang dapat menambah event dan mencatat pembayaran. Admin pusat dapat mengubah atau menghapus event.</p></div><button id="resetButton" class="bali-secondary" type="button">Form baru</button></div>
                 <div class="bali-form-grid">
                     <label>ID Event<input name="id" required pattern="EDK-[A-Za-z0-9-]+" placeholder="EDK-021"></label>
                     <label>Nama event<input name="nama_event" required></label>
@@ -45,7 +45,7 @@
                     <label>Status data<select name="status_data"><option>Draft</option><option>Final</option></select></label>
                     <label>HPP / RAB<input name="hpp_rab" type="number" min="0" step="0.01" value="0" required></label>
                     <label>Margin<input name="margin" type="number" min="0" step="0.01" value="0" required></label>
-                    <label>Total dibayar<input name="total_dibayar" type="number" min="0" step="0.01" value="0" required></label>
+                    <label>Total dibayar<input name="total_dibayar" type="number" min="0" step="0.01" value="0" readonly></label>
                 </div>
                 <div id="calculator" class="bali-calculator" aria-live="polite"></div>
                 <button id="submitButton" class="bali-primary" type="submit">Simpan event</button>

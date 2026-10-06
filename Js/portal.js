@@ -2,6 +2,7 @@ const page = document.body.dataset.page;
 const statusBox = document.getElementById('status');
 const tableBody = document.getElementById('tableBody');
 const emptyState = document.getElementById('emptyState');
+let activeRole = null;
 const money = value => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
 
 function setStatus(message, error = false) {
@@ -37,6 +38,7 @@ function addRow(values) {
 
 async function setScope(user) {
     const role = user.role;
+    activeRole = role;
     const labels = { admin_pusat: 'Admin pusat · semua cabang', super_admin: 'Admin pusat · semua cabang', admin_cabang: 'Admin cabang', pelanggan: 'Pelanggan · akun pribadi' };
     const badge = document.getElementById('scopeBadge');
     if (badge) badge.textContent = labels[role] || role;
@@ -56,6 +58,10 @@ async function setScope(user) {
             }
         });
         return;
+    }
+    if (['admin_pusat', 'super_admin'].includes(role)) {
+        const filter = document.getElementById('historyBranchFilterWrap');
+        if (filter) filter.hidden = false;
     }
     if (role === 'admin_cabang') {
         const data = await jsonFetch('../api/branches.php');
@@ -89,9 +95,23 @@ function renderCustomers(customers, role) {
 
 function renderHistory(payments) {
     payments.forEach(payment => addRow([
-        payment.payment_date, payment.payment_token, payment.customer, payment.branch,
-        payment.payment_method, money(payment.amount)
+        payment.payment_date || 'Tanggal tidak tercatat', payment.payment_token, payment.customer, payment.branch,
+        payment.event, payment.record_type === 'historical_balance' ? 'Saldo historis' : payment.payment_method, money(payment.amount), payment.note
     ]));
+}
+
+async function loadHistory() {
+    tableBody.replaceChildren();
+    setStatus('Memuat riwayat pembayaran...');
+    try {
+        const branch = document.getElementById('historyBranchFilter')?.value || '';
+        const suffix = activeRole && ['admin_pusat', 'super_admin'].includes(activeRole) && branch ? `?branch=${encodeURIComponent(branch)}` : '';
+        const data = await jsonFetch(`../api/payment-history.php${suffix}`);
+        renderHistory(data.payments || []);
+        showEmpty((data.payments || []).length === 0);
+        const warningText = (data.warnings || []).join(' ');
+        setStatus(`${data.payments.length} transaksi dimuat.${warningText ? ` ${warningText}` : ''}`, Boolean(warningText));
+    } catch (error) { setStatus(error.message, true); }
 }
 
 function renderReport(report) {
@@ -135,6 +155,11 @@ async function initialize() {
             }
             yearSelect.addEventListener('change', loadReport);
             await loadReport();
+            return;
+        }
+        if (page === 'history') {
+            document.getElementById('historyBranchFilter')?.addEventListener('change', loadHistory);
+            await loadHistory();
             return;
         }
         const endpoint = page === 'customers' ? '../api/customers.php' : '../api/payment-history.php';

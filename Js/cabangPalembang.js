@@ -4,6 +4,8 @@ const errorBox = document.getElementById("error");
 const searchInput = document.getElementById("search");
 const statusFilter = document.getElementById("statusFilter");
 let events = [];
+let canDeleteEvents = false;
+let canRequestDeletion = false;
 
 const money = value => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value) || 0);
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -43,6 +45,9 @@ function renderRows() {
             ? `${formatDate(event.tgl_jatuh_tempo)}<br><span class="event-id">Terlambat ${Number(event.hari_terlambat).toLocaleString("id-ID")} hari</span>`
             : formatDate(event.tgl_jatuh_tempo);
         const paymentUrl = `pembayaran.html?source=palembang&event_id=${encodeURIComponent(event.id)}`;
+        const deletionAction = canDeleteEvents
+            ? `<button type="button" data-delete="${escapeHtml(event.id)}">Hapus</button>`
+            : canRequestDeletion ? `<button type="button" data-request-delete="${escapeHtml(event.id)}">Minta hapus</button>` : '';
         return `<tr>
             <td><span class="event-name">${escapeHtml(event.nama_event)}</span><span class="event-id">${escapeHtml(event.id)} · Sumber: ${escapeHtml(event.sumber_data)}</span></td>
             <td>${escapeHtml(event.skala)}<br><span class="event-id">${escapeHtml(event.jenis_acara)}</span></td>
@@ -55,7 +60,7 @@ function renderRows() {
             <td><strong>${money(event.piutang)}</strong></td>
             <td>${dueLabel}</td>
             <td><span class="palembang-status ${statusClass}">${escapeHtml(event.status_terkini)}</span><span class="event-id">Data sumber: ${escapeHtml(event.status_sumber)}</span></td>
-            <td>${paid ? '<span class="palembang-pay disabled">Lunas</span>' : `<a class="palembang-pay" href="${paymentUrl}"><i class="fa-solid fa-money-bill-wave"></i> Bayar ${money(event.piutang)}</a>`}</td>
+            <td>${paid ? '<span class="palembang-pay disabled">Lunas</span>' : `<a class="palembang-pay" href="${paymentUrl}"><i class="fa-solid fa-money-bill-wave"></i> Bayar ${money(event.piutang)}</a>`} ${deletionAction}</td>
         </tr>`;
     }).join("");
 }
@@ -76,6 +81,37 @@ async function loadEvents() {
     }
 }
 
+rows.addEventListener('click', async event => {
+    const requestId = event.target.dataset.requestDelete;
+    const deleteId = event.target.dataset.delete;
+    if (requestId && canRequestDeletion) {
+        const reason = prompt('Jelaskan alasan penghapusan event ini:');
+        if (!reason || !reason.trim()) return;
+        try {
+            const response = await fetch('../api/deletion-requests.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ branch: 'palembang', event_id: requestId, reason: reason.trim() }) });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Permintaan gagal.');
+            errorBox.textContent = result.message; errorBox.hidden = false;
+        } catch (error) { errorBox.textContent = error.message; errorBox.hidden = false; }
+    } else if (deleteId && canDeleteEvents && confirm(`Hapus ${deleteId}? Riwayat pembayaran akan tetap tersimpan.`)) {
+        try {
+            const response = await fetch(`../api/palembang-events.php?id=${encodeURIComponent(deleteId)}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Penghapusan gagal.');
+            await loadEvents();
+        } catch (error) { errorBox.textContent = error.message; errorBox.hidden = false; }
+    }
+});
+
 searchInput.addEventListener("input", renderRows);
 statusFilter.addEventListener("change", renderRows);
-loadEvents();
+(async () => {
+    try {
+        const response = await fetch('../api/session.php', { cache: 'no-store' });
+        const session = await response.json();
+        if (!session.authenticated) { const login = new URL('login.html', window.location.href); login.searchParams.set('next', window.location.href); location.replace(login.href); return; }
+        canDeleteEvents = ['admin_pusat', 'super_admin'].includes(session.user.role);
+        canRequestDeletion = session.user.role === 'admin_cabang';
+        await loadEvents();
+    } catch (error) { errorBox.textContent = error.message; errorBox.hidden = false; }
+})();

@@ -2,9 +2,11 @@
 
 1. Jalankan **Apache** dan **MySQL** dari XAMPP.
 2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`. Setelah itu jalankan `migration_separate_admin_pusat.sql` satu kali untuk memindahkan akun `admin` ke database khusus `admin_pusat`; setelahnya jalankan `migration_seed_admin_accounts.sql` satu kali untuk membuat akun awal pusat dan cabang.
-3. Impor `events_bali.sql` dan `events_bandung.sql` untuk membuat database event tiap cabang. Untuk instalasi baru, setelah itu jalankan `events_bandung_upsert.sql` agar jadwal DP/Termin 2/Pelunasan Bandung tersimpan. Untuk database Bandung lama, jalankan `migration_add_bandung_schedules.sql` satu kali, lalu jalankan `events_bandung_upsert.sql`.
+3. Jalankan `migration_add_palembang_events.sql` satu kali untuk membuat tabel event dan pembayaran Palembang. Impor `events_bali.sql` dan `events_bandung.sql` untuk membuat database event tiap cabang. Untuk instalasi baru, setelah itu jalankan `events_bandung_upsert.sql` agar jadwal DP/Termin 2/Pelunasan Bandung tersimpan. Untuk database Bandung lama, jalankan `migration_add_bandung_schedules.sql` satu kali, lalu jalankan `events_bandung_upsert.sql`.
 4. Sesuaikan `../api/config.php` bila username, password, port, atau nama database MySQL Anda berbeda. Pemetaan cabang mengikuti data `nusa_karsa.sql`: Bali = `branch_id` 2 dan Bandung = `branch_id` 3.
-5. Letakkan folder proyek ini di `C:/xampp/htdocs/web-Kerkom-master` (atau atur virtual host ke folder proyek), kemudian buka `http://localhost/web-Kerkom-master/halaman.html`.
+5. Jalankan `migration_add_branch_payment_history.sql` satu kali setelah database Palembang, Bali, dan Bandung siap. Skrip ini menambahkan tabel/kolom riwayat dan mencatat satu saldo historis per event yang sudah memiliki pembayaran; tanggal dibiarkan kosong karena tanggal transaksi lama tidak tersedia.
+6. Jalankan `migration_add_deletion_requests.sql` satu kali setelah migrasi riwayat pembayaran dan tabel event Palembang tersedia. Skrip ini membuat antrean permintaan penghapusan dan snapshot pembayaran Palembang.
+7. Letakkan folder proyek ini di `C:/xampp/htdocs/web-Kerkom-master` (atau atur virtual host ke folder proyek), kemudian buka `http://localhost/web-Kerkom-master/halaman.html`.
 
 Halaman `Html/cabangBali.html` dan `Html/cabangBandung.html` memakai stylesheet serta JavaScript eksternal masing-masing. Data tabel, ringkasan, tambah, ubah, dan hapus diambil dari `api/events.php` atau `api/events-bandung.php`; akun `admin_cabang` hanya dapat mengakses database cabangnya, sedangkan akun `admin_pusat` pada database `admin_pusat` dapat mengakses seluruh cabang.
 
@@ -17,6 +19,7 @@ View `vw_events_dashboard` menghitung nilai kontrak, piutang, dan status terkini
 Untuk database yang sudah pernah diimpor, jalankan migration sesuai urutan nama file. Fitur akun pelanggan membutuhkan `migration_add_customer_account.sql`; token riwayat pembayaran membutuhkan `migration_add_payment_token.sql`.
 Untuk database event yang sudah berisi data, jalankan `migration_add_event_calculations.sql` agar view kalkulasi menampilkan Termin 2 dan Pelunasan terbaru tanpa menghapus 20 seed event.
 Untuk database `events_bali` lama, jalankan `migration_update_bali_events.sql` satu kali setelah migrasi kalkulasi; skrip ini menambahkan kolom jadwal pembayaran dan memperbarui 20 ID EDK terbaru. Untuk instalasi baru, impor `events_bali.sql` yang sudah memuat struktur dan data tersebut. Jangan impor ulang file seed setelah pembayaran operasional dicatat karena nilai total dibayar akan kembali ke nilai sumber.
+Pembayaran baru event Bali/Bandung dicatat melalui `event_payments` dan menaikkan `total_dibayar` dalam transaksi database yang sama. Admin cabang dapat menambahkan event dan pembayaran, tetapi tidak dapat mengubah atau menghapus event. Untuk meminta penghapusan, admin cabang mengisi alasan melalui tombol **Minta hapus**; admin pusat meninjau pada halaman **Permintaan hapus** dan dapat menyetujui atau menolak. Admin pusat dapat menghapus event langsung dari halaman cabang. Riwayat transaksi tersedia di halaman Riwayat Pembayaran dan dapat difilter per cabang oleh admin pusat. Saldo historis hanya berupa total kumulatif lama per event, bukan rincian cicilan.
 
 ## Akun awal
 

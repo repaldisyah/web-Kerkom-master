@@ -38,7 +38,7 @@ function bandung_date(mixed $value): ?string
 
 function bandung_payload(array $data, bool $create): array
 {
-    $fields = ['nama_event', 'skala', 'jenis_acara', 'tgl_event', 'lokasi', 'pelanggan', 'jenis_pihak', 'hpp_rab', 'margin', 'total_dibayar', 'tgl_jatuh_tempo', 'status_data'];
+    $fields = ['nama_event', 'skala', 'jenis_acara', 'tgl_event', 'lokasi', 'pelanggan', 'jenis_pihak', 'hpp_rab', 'margin', 'tgl_jatuh_tempo', 'status_data'];
     $payload = [];
     foreach ($fields as $field) if ($create || array_key_exists($field, $data)) $payload[$field] = $data[$field] ?? null;
     if ($create && !preg_match('/^ED-[A-Za-z0-9-]+$/', (string) ($data['id'] ?? ''))) throw new InvalidArgumentException('ID event wajib berformat ED-... .');
@@ -47,7 +47,7 @@ function bandung_payload(array $data, bool $create): array
     if (array_key_exists('skala', $payload) && !in_array($payload['skala'], ['Kecil', 'Sedang', 'Besar'], true)) throw new InvalidArgumentException('Skala tidak valid.');
     if (array_key_exists('jenis_pihak', $payload) && !in_array($payload['jenis_pihak'], ['Perorangan', 'Perusahaan'], true)) throw new InvalidArgumentException('Jenis pihak tidak valid.');
     if (array_key_exists('status_data', $payload) && !in_array($payload['status_data'], ['Draft', 'Final'], true)) throw new InvalidArgumentException('Status data tidak valid.');
-    foreach (['hpp_rab', 'margin', 'total_dibayar'] as $field) {
+    foreach (['hpp_rab', 'margin'] as $field) {
         if (!array_key_exists($field, $payload)) continue;
         if (!is_numeric($payload[$field]) || (float) $payload[$field] < 0) throw new InvalidArgumentException("$field harus bernilai nol atau lebih.");
         $payload[$field] = (float) $payload[$field];
@@ -71,6 +71,9 @@ $id = trim((string) ($_GET['id'] ?? ''));
 $db = bandung_database();
 $scope = current_scope();
 require_branch_access($scope, bandung_branch_id());
+if (in_array($method, ['PUT', 'DELETE'], true) && !in_array($scope['role'], ['admin_pusat', 'super_admin'], true)) {
+    respond(['success' => false, 'message' => 'Admin cabang hanya dapat menambahkan event. Perubahan dan penghapusan hanya dapat dilakukan admin pusat.'], 403);
+}
 
 try {
     if ($method === 'GET') {
@@ -92,7 +95,6 @@ try {
 
     if ($method === 'POST') {
         $payload = bandung_payload($data, true);
-        if ($payload['total_dibayar'] > $payload['hpp_rab'] + $payload['margin']) throw new InvalidArgumentException('Total pembayaran tidak boleh melebihi nilai kontrak.');
         $payload['id'] = trim((string) $data['id']);
         $columns = array_keys($payload);
         $db->prepare('INSERT INTO events (' . implode(', ', $columns) . ') VALUES (:' . implode(', :', $columns) . ')')->execute($payload);

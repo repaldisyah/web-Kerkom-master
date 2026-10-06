@@ -37,6 +37,13 @@
                 accountLink.innerHTML = '<i class="fa-solid fa-user-plus"></i><span>Akun admin cabang</span>';
                 document.querySelector('.nav-menu')?.append(accountLink);
             }
+            if (['admin_pusat', 'super_admin', 'admin_cabang'].includes(session.user.role)) {
+                const requestLink = document.createElement('a');
+                requestLink.className = 'nav-item';
+                requestLink.href = hrefFor('deletion-requests.html');
+                requestLink.innerHTML = '<i class="fa-solid fa-clipboard-check"></i><span>Permintaan hapus</span>';
+                document.querySelector('.nav-menu')?.append(requestLink);
+            }
             if (session.user.role === 'pelanggan') {
                 const restricted = /\/(cabang(?:palembang|bandung|bali)?|pelanggan|piutang|pembayaran|laporan|events-(?:bali|bandung))\.html$/i;
                 links.forEach(link => {

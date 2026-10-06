@@ -48,7 +48,7 @@ function event_payload(array $data, bool $isCreate): array
     $allowedStatuses = ['Draft', 'Final'];
     $fields = [
         'nama_event', 'skala', 'jenis_acara', 'tgl_event', 'lokasi', 'pelanggan',
-        'jenis_pihak', 'hpp_rab', 'margin', 'total_dibayar', 'tgl_jatuh_tempo', 'status_data',
+        'jenis_pihak', 'hpp_rab', 'margin', 'tgl_jatuh_tempo', 'status_data',
     ];
     $payload = [];
     foreach ($fields as $field) {
@@ -70,7 +70,7 @@ function event_payload(array $data, bool $isCreate): array
     if (array_key_exists('status_data', $payload) && !in_array($payload['status_data'], $allowedStatuses, true)) {
         throw new InvalidArgumentException('Status data tidak valid.');
     }
-    foreach (['hpp_rab', 'margin', 'total_dibayar'] as $moneyField) {
+    foreach (['hpp_rab', 'margin'] as $moneyField) {
         if (!array_key_exists($moneyField, $payload)) continue;
         if (!is_numeric($payload[$moneyField]) || (float) $payload[$moneyField] < 0) {
             throw new InvalidArgumentException("$moneyField harus berupa angka nol atau lebih.");
@@ -100,6 +100,9 @@ $id = trim((string) ($_GET['id'] ?? ''));
 $db = events_database();
 $scope = current_scope();
 require_branch_access($scope, events_branch_id());
+if (in_array($method, ['PUT', 'DELETE'], true) && !in_array($scope['role'], ['admin_pusat', 'super_admin'], true)) {
+    respond(['success' => false, 'message' => 'Admin cabang hanya dapat menambahkan event. Perubahan dan penghapusan hanya dapat dilakukan admin pusat.'], 403);
+}
 
 try {
     if ($method === 'GET') {
@@ -122,7 +125,6 @@ try {
     if ($method === 'POST') {
         $payload = event_payload($data, true);
         $nilaiKontrak = $payload['hpp_rab'] + $payload['margin'];
-        if ($payload['total_dibayar'] > $nilaiKontrak) throw new InvalidArgumentException('Total pembayaran tidak boleh melebihi nilai kontrak.');
         $payload['id'] = trim((string) $data['id']);
         $columns = array_keys($payload);
         $sql = 'INSERT INTO events (' . implode(', ', $columns) . ') VALUES (:' . implode(', :', $columns) . ')';

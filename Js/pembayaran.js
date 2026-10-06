@@ -2,6 +2,7 @@ const receivableSelect = document.getElementById("receivableSelect");
 const invoiceSummary = document.getElementById("invoiceSummary");
 const amountInput = document.getElementById("amount");
 const amountHint = document.getElementById("amountHint");
+const paymentDateInput = document.getElementById("paymentDate");
 const noteInput = document.getElementById("note");
 const methodDetails = document.getElementById("methodDetails");
 const submitButton = document.getElementById("submitPayment");
@@ -14,12 +15,17 @@ const copyReceiptTokenButton = document.getElementById("copyReceiptToken");
 const whatsappReceiptLink = document.getElementById("whatsappReceipt");
 const paymentParams = new URLSearchParams(window.location.search);
 const isPalembangPayment = paymentParams.get("source") === "palembang";
+const eventPaymentBranch = paymentParams.get("source") === "event" ? paymentParams.get("branch") : "";
+const isBranchEventPayment = ["bali", "bandung"].includes(eventPaymentBranch);
 let requestedEventId = paymentParams.get("event_id");
 let receivables = [];
 let selectedMethod = "";
 let latestReceipt = null;
 
 const money = value => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value) || 0);
+ const todayLocal = new Date();
+paymentDateInput.value = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, "0")}-${String(todayLocal.getDate()).padStart(2, "0")}`;
+paymentDateInput.disabled = !isBranchEventPayment;
 
 const escapeHtml = value => String(value ?? "").replace(/[&<>'"]/g, character => ({
     "&": "&amp;",
@@ -96,6 +102,7 @@ function renderInvoice() {
         invoiceSummary.innerHTML = '<i class="fa-regular fa-hand-pointer"></i><p>Pilih tagihan untuk melanjutkan pembayaran.</p>';
         amountInput.value = "";
         amountInput.disabled = true;
+        paymentDateInput.disabled = true;
         noteInput.disabled = true;
         amountHint.textContent = "Maksimal sesuai sisa tagihan.";
         updateSubmitState();
@@ -104,6 +111,7 @@ function renderInvoice() {
     invoiceSummary.className = "invoice-summary";
     invoiceSummary.innerHTML = `<strong>${escapeHtml(receivable.customer)}</strong><span>${escapeHtml(receivable.branch)} · ${escapeHtml(receivable.event)}</span><span>Jatuh tempo ${escapeHtml(receivable.due_date)}</span><span class="balance">Sisa ${money(receivable.balance)}</span>`;
     amountInput.disabled = false;
+    paymentDateInput.disabled = !isBranchEventPayment;
     noteInput.disabled = false;
     amountInput.max = receivable.balance;
     amountInput.value = receivable.balance;
@@ -186,6 +194,23 @@ async function shareReceipt() {
 
 async function loadReceivables() {
     try {
+        if (isBranchEventPayment) {
+            if (!requestedEventId) throw new Error("Event pembayaran tidak ditentukan.");
+            const endpoint = eventPaymentBranch === "bali" ? "../api/events.php" : "../api/events-bandung.php";
+            const response = await fetch(`${endpoint}?id=${encodeURIComponent(requestedEventId)}`, { cache: "no-store" });
+            const result = await readJson(response);
+            if (response.status === 401) { redirectToLogin(); return; }
+            if (!response.ok || !result.success || !result.event) throw new Error(result.message || "Event tidak dapat dimuat.");
+            const item = result.event;
+            receivables = Number(item.piutang) > 0 ? [{ id: item.id, customer: item.pelanggan, branch: eventPaymentBranch === "bali" ? "Bali" : "Bandung", event: item.nama_event, due_date: item.tgl_jatuh_tempo, total_amount: item.nilai_kontrak, balance: item.piutang }] : [];
+            renderReceivableOptions();
+            if (receivables.length) {
+                receivableSelect.value = String(item.id);
+                renderInvoice();
+                noteInput.value = `Pembayaran event ${item.id}`;
+            } else showAlert("Event ini sudah lunas atau tidak memiliki sisa tagihan.");
+            return;
+        }
         const endpoint = isPalembangPayment ? "../api/palembang-events.php" : "../api/receivables.php";
         const response = await fetch(endpoint, { cache: "no-store" });
         const result = await readJson(response);
@@ -236,10 +261,16 @@ submitButton.addEventListener("click", async () => {
     submitButton.disabled = true;
     submitButton.querySelector("span").textContent = "Menyimpan pembayaran...";
     try {
-        const response = await fetch(isPalembangPayment ? "../api/palembang-events.php" : "../api/payments.php", {
+        const endpoint = isBranchEventPayment ? `../api/event-payments.php?branch=${encodeURIComponent(eventPaymentBranch)}` : isPalembangPayment ? "../api/palembang-events.php" : "../api/payments.php";
+        const body = isBranchEventPayment
+            ? { event_id: receivable.id, amount: Number(amountInput.value), payment_date: paymentDateInput.value, payment_method: selectedMethod, note: noteInput.value.trim() }
+            : isPalembangPayment
+                ? { event_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() }
+                : { receivable_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() };
+        const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(isPalembangPayment ? { event_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() } : { receivable_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() })
+            body: JSON.stringify(body)
         });
         const result = await readJson(response);
         if (response.status === 401) {
@@ -248,7 +279,8 @@ submitButton.addEventListener("click", async () => {
         }
         if (!response.ok || !result.success) throw new Error(result.message || "Pembayaran gagal disimpan.");
         showAlert("Pembayaran berhasil dicatat dan saldo piutang telah diperbarui.", true);
-        renderReceipt(result.receipt);
+        const receiptData = result.receipt || (result.payment ? { ...result.payment, token: result.payment.payment_token } : null);
+        renderReceipt(receiptData);
         if (isPalembangPayment && requestedEventId) {
             const currentUrl = new URL(window.location.href);
             currentUrl.searchParams.delete("event_id");
@@ -257,7 +289,8 @@ submitButton.addEventListener("click", async () => {
         }
         await loadReceivables();
         renderReceivableOptions();
-        receivableSelect.value = "";
+        if (isBranchEventPayment && receivables.length) receivableSelect.value = String(receivables[0].id);
+        else receivableSelect.value = "";
         renderInvoice();
     } catch (error) {
         showAlert(error.message);

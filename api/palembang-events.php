@@ -23,6 +23,18 @@ if ($method === 'GET') {
     respond(['success' => true, 'events' => $events, 'summary' => $summary]);
 }
 
+if ($method === 'DELETE') {
+    if (!in_array($scope['role'], ['admin_pusat', 'super_admin'], true)) {
+        respond(['success' => false, 'message' => 'Hanya admin pusat yang dapat menghapus event. Admin cabang harus mengajukan permintaan.'], 403);
+    }
+    $eventId = trim((string) ($_GET['id'] ?? ''));
+    if ($eventId === '') respond(['success' => false, 'message' => 'ID event wajib diisi.'], 422);
+    $delete = $db->prepare('DELETE FROM palembang_events WHERE id = :id');
+    $delete->execute(['id' => $eventId]);
+    if ($delete->rowCount() === 0) respond(['success' => false, 'message' => 'Event Palembang tidak ditemukan.'], 404);
+    respond(['success' => true, 'message' => 'Event Palembang berhasil dihapus. Riwayat pembayarannya tetap tersimpan.']);
+}
+
 if ($method !== 'POST') {
     respond(['success' => false, 'message' => 'Metode tidak didukung.'], 405);
 }
@@ -52,8 +64,8 @@ try {
     }
 
     $token = 'NK-P-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
-    $insert = $db->prepare('INSERT INTO palembang_payments (event_id, payment_date, amount, payment_method, payment_token, note) VALUES (:event_id, CURDATE(), :amount, :payment_method, :payment_token, :note)');
-    $insert->execute(['event_id' => $eventId, 'amount' => $amount, 'payment_method' => $paymentMethod, 'payment_token' => $token, 'note' => $note !== '' ? $note : null]);
+    $insert = $db->prepare('INSERT INTO palembang_payments (event_id, event_name, customer_name, payment_date, amount, payment_method, payment_token, note) VALUES (:event_id, :event_name, :customer_name, CURDATE(), :amount, :payment_method, :payment_token, :note)');
+    $insert->execute(['event_id' => $eventId, 'event_name' => $event['nama_event'], 'customer_name' => $event['pelanggan'], 'amount' => $amount, 'payment_method' => $paymentMethod, 'payment_token' => $token, 'note' => $note !== '' ? $note : null]);
 
     $update = $db->prepare('UPDATE palembang_events SET total_dibayar = LEAST(nilai_kontrak, total_dibayar + :paid), piutang = GREATEST(0, piutang - :balance), pelunasan = pelunasan + :settlement WHERE id = :id');
     $update->execute(['paid' => $amount, 'balance' => $amount, 'settlement' => $amount, 'id' => $eventId]);
