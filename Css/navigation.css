@@ -139,3 +139,62 @@ body[data-branch="bali"] {
     .portal-body .portal-shell,
     .app-sidebar ~ .shell { margin-left: 0; }
 }
+
+/* Shared keyboard and touch affordances. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--navigation-accent, #38b8c9) 70%, white);
+    outline-offset: 3px;
+}
+
+@media (max-width: 430px) {
+    .sidebar,
+    .app-sidebar {
+        display: flex;
+        inset: auto 10px 10px;
+        width: auto;
+        height: 68px;
+        border: 1px solid rgba(255, 255, 255, .16);
+        border-radius: 18px;
+        box-shadow: 0 12px 36px rgba(10, 28, 48, .24);
+    }
+
+    .brand-area,
+    .app-brand,
+    .sidebar-bottom { display: none; }
+
+    .nav-menu {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        padding: 6px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+
+    .nav-menu::-webkit-scrollbar { display: none; }
+
+    .nav-item {
+        flex: 0 0 54px;
+        min-height: 52px;
+        justify-content: center;
+        padding: 0;
+        border-radius: 13px;
+    }
+
+    .nav-item span { display: none; }
+    .nav-item i { width: auto; font-size: 1.1rem; }
+    .main,
+    .portal-body .portal-shell,
+    .app-sidebar ~ .shell { margin-left: 0; padding-bottom: 88px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}

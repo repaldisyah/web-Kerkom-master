@@ -1,2 +1,34 @@
 @import url('./events-bali.css');
-:root{--brand:#a34c27;--ink:#48291e;--canvas:#fcf7f4;--success:#18754d;--warning:#a36c00;--danger:#bd443f}
+
+:root {
+    --ink: #48291e;
+    --muted: #80675d;
+    --line: #eadbd4;
+    --paper: #fff;
+    --canvas: #fcf7f4;
+    --brand: #a34c27;
+    --danger: #a83232;
+    --warning: #805500;
+    --success: #176542;
+}
+
+body[data-branch="bandung"] {
+    background:
+        radial-gradient(circle at 90% 0%, rgba(202, 86, 53, .08), transparent 26rem),
+        var(--canvas);
+}
+
+body[data-branch="bandung"] .eyebrow { color: var(--brand); }
+body[data-branch="bandung"] .primary { background: #9f4227; }
+body[data-branch="bandung"] .primary:hover { background: #80351f; }
+
+body[data-branch="bandung"] :where(input, select, button, a):focus-visible {
+    outline: 3px solid rgba(202, 86, 53, .3);
+    outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+    body[data-branch="bandung"] .shell { padding: 18px 14px 28px; }
+    body[data-branch="bandung"] .card { padding: 17px; }
+    body[data-branch="bandung"] .card-title { align-items: flex-start; flex-wrap: wrap; }
+}
