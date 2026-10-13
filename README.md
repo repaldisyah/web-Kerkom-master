@@ -1,10 +1,11 @@
-# 📊 Nusa Karsa Event — Sistem Informasi Digitalisasi Pencatatan dan Monitoring Piutang Pelanggan
+﻿> **Status dokumentasi:** Bagian fitur/arsitektur pada dokumen ini memuat rancangan kebutuhan lama dan bukan bukti bahwa semua fitur sudah tersedia. Implementasi aktual memakai HTML/CSS/JavaScript, PHP 8+ (PDO), dan MySQL. PRD aktual dan daftar kesenjangan ada di [prd (1).md](prd%20(1).md) dan [AUDIT-PENYEMPURNAAN.md](AUDIT-PENYEMPURNAAN.md). Pengingat otomatis terjadwal, ekspor laporan penuh, dan pemulihan password belum boleh dianggap tersedia tanpa implementasi serta verifikasi.
+# ðŸ“Š Nusa Karsa Event â€” Sistem Informasi Digitalisasi Pencatatan dan Monitoring Piutang Pelanggan
 
 **Sistem Informasi Digitalisasi Pencatatan dan Monitoring Piutang Pelanggan** adalah aplikasi web terpadu yang dirancang sebagai pusat data (*single source of truth*) bagi seluruh aktivitas pengelolaan piutang usaha pada **Nusa Karsa Event**. Sistem ini mengotomatisasi pencatatan tagihan, rekonsiliasi pembayaran, pemantauan jatuh tempo, dan penyusunan laporan manajemen secara terpusat serta berbasis hak akses wilayah cabang.
 
 ---
 
-## 📋 Daftar Isi
+## ðŸ“‹ Daftar Isi
 
 1. [Ringkasan Sistem (Overview)](#-ringkasan-sistem-overview)
 2. [Kebutuhan Sistem (System Requirements)](#-kebutuhan-sistem-system-requirements)
@@ -17,7 +18,7 @@
 
 ---
 
-## 🎯 Ringkasan Sistem (Overview)
+## ðŸŽ¯ Ringkasan Sistem (Overview)
 
 ### Latar Belakang
 Sebelum penerapan sistem ini, pengelolaan piutang di **Nusa Karsa Event** dilakukan secara manual. Hal tersebut menimbulkan sejumlah tantangan operasional:
@@ -36,7 +37,7 @@ Sistem ini hadir untuk mengintegrasikan seluruh operasional piutang dengan prins
 
 ---
 
-## 📌 Kebutuhan Sistem (System Requirements)
+## ðŸ“Œ Kebutuhan Sistem (System Requirements)
 
 ### Kebutuhan Fungsional Utama
 - **3 Jalur Akses Pengguna**: Sistem menyediakan akses untuk Admin Pusat, Admin Cabang, dan Pelanggan.
@@ -58,17 +59,17 @@ Sistem ini hadir untuk mengintegrasikan seluruh operasional piutang dengan prins
 
 ---
 
-## 🚀 Fitur Utama Sistem (Core Features)
+## ðŸš€ Fitur Utama Sistem (Core Features)
 
 Sistem dirancang ke dalam 5 fase fitur utama:
 
-### Fase 1 — Monitoring Tagihan
+### Fase 1 â€” Monitoring Tagihan
 - **Ringkasan Piutang**: Menampilkan kartu ringkasan total nilai piutang, total dana yang sudah tertagih, dan sisa saldo piutang yang belum terbayar.
 - **Daftar Semua Tagihan**: Menampilkan seluruh data tagihan piutang beserta status pembayaran, tanggal jatuh tempo, dan sisa kewajiban pembayaran.
 - **Cari & Filter Tagihan**: Mempermudah pencarian tagihan berdasarkan nama pelanggan, status pembayaran, atau cabang pelaksana.
 - **Detail Tagihan**: Menyajikan rincian lengkap satu tagihan beserta riwayat seluruh setoran pembayaran yang telah dilakukan.
 
-### Fase 2 — Kelola Tagihan & Pembayaran
+### Fase 2 â€” Kelola Tagihan & Pembayaran
 - **Kelola Tagihan**:
   - *Tambah Tagihan*: Menerbitkan tagihan baru dengan menentukan pelanggan, rincian nominal, deskripsi event, dan tanggal jatuh tempo.
   - *Ubah Tagihan*: Memperbarui data tagihan apabila terdapat penyesuaian informasi.
@@ -78,7 +79,7 @@ Sistem dirancang ke dalam 5 fase fitur utama:
   - *Riwayat Pembayaran*: Menampilkan kronologi seluruh transaksi pembayaran lengkap dengan tanggal, metode bayar, dan nominal.
   - *Detail Pembayaran*: Menampilkan rincian tanda terima dari setiap transaksi pembayaran.
 
-### Fase 3 — Kelola Pelanggan & Laporan Piutang
+### Fase 3 â€” Kelola Pelanggan & Laporan Piutang
 - **Kelola Pelanggan**:
   - *Tambah Pelanggan*: Mendaftarkan profil pelanggan baru (nama, kontak, alamat, dan cabang yang melayani).
   - *Ubah Pelanggan*: Memperbarui data kontak dan identitas pelanggan.
@@ -90,7 +91,7 @@ Sistem dirancang ke dalam 5 fase fitur utama:
   - *Filter Periode*: Menyaring data laporan berdasarkan rentang tanggal atau tahun tertentu.
   - *Unduh Laporan*: Mengekspor berkas laporan piutang untuk keperluan arsip dan evaluasi manajemen.
 
-### Fase 4 — Kontrol Akses, Privasi Tagihan, dan Login Pengguna
+### Fase 4 â€” Kontrol Akses, Privasi Tagihan, dan Login Pengguna
 - **Privasi Tagihan**:
   - *Tandai Tagihan Publik*: Menjadikan tagihan dapat dilihat oleh pelanggan bersangkutan di portal akunnya.
   - *Tandai Tagihan Privat*: Menyembunyikan tagihan dari pelanggan sehingga hanya admin yang memiliki akses melihat.
@@ -101,14 +102,14 @@ Sistem dirancang ke dalam 5 fase fitur utama:
   - *Kelola Akun & Peran*: Mengatur akun staf, penugasan cabang, dan hierarki kewenangan.
   - *Keluar Akun*: Mengakhiri sesi pengguna secara aman.
 
-### Fase 5 — Pengingat Jatuh Tempo
+### Fase 5 â€” Pengingat Jatuh Tempo
 - **Notifikasi Tagihan**: Menerima peringatan otomatis di dashboard saat tagihan mulai mendekati tanggal jatuh tempo.
 - **Daftar Tagihan Tertunggak**: Menyajikan daftar tagihan yang telah melewati batas jatuh tempo (*overdue*).
 - **Atur Pengingat (Reminder Rules)**: Menentukan konfigurasi waktu pemberitahuan pengingat (misal: 7 hari atau 3 hari sebelum jatuh tempo).
 
 ---
 
-## 🔄 Alur Pengguna (User Flow)
+## ðŸ”„ Alur Pengguna (User Flow)
 
 ### 1. Alur Admin Pusat
 ```mermaid
@@ -172,7 +173,7 @@ flowchart TD
 
 ---
 
-## 🏛️ Arsitektur Sistem
+## ðŸ›ï¸ Arsitektur Sistem
 
 Sistem mengadopsi arsitektur terpisah (*decoupled architecture*) antara Frontend dan Backend REST API untuk menjamin skalabilitas, performa, dan kemudahan pemeliharaan:
 
@@ -206,7 +207,7 @@ sequenceDiagram
 
 ---
 
-## 🗄️ Skema Basis Data (Database Schema & ERD)
+## ðŸ—„ï¸ Skema Basis Data (Database Schema & ERD)
 
 ### Entity Relationship Diagram (ERD)
 ```mermaid
@@ -333,7 +334,7 @@ Menyimpan konfigurasi batas waktu pengiriman pengingat tagihan sebelum jatuh tem
 
 ---
 
-## 👥 Matriks Peran & Hak Akses (RBAC)
+## ðŸ‘¥ Matriks Peran & Hak Akses (RBAC)
 
 Penerapan Role-Based Access Control (RBAC) memastikan perlindungan dan pemisahan data antar tingkat pengguna:
 
@@ -342,32 +343,24 @@ Penerapan Role-Based Access Control (RBAC) memastikan perlindungan dan pemisahan
 | **Akses Dashboard** | Seluruh Cabang | Khusus Cabang Sendiri | Tagihan Pribadi |
 | **Kelola Master Cabang** | Penuh (CRUD) | Hanya Baca Cabang Sendiri | Tidak Ada Akses |
 | **Kelola Data Pelanggan** | Seluruh Cabang | Khusus Cabang Sendiri | Data Pribadi |
-| **Buat & Ubah Tagihan** | ✅ Semua Cabang | ✅ Cabang Sendiri | ❌ Tidak Boleh |
-| **Atur Tagihan Publik / Privat** | ✅ Ya | ✅ Ya (Cabang Sendiri) | ❌ Tidak Boleh |
-| **Lihat Tagihan Publik** | ✅ Ya | ✅ Ya | ✅ Milik Sendiri Saja |
-| **Lihat Tagihan Privat** | ✅ Ya | ✅ Ya (Cabang Sendiri) | ❌ Tersembunyi |
-| **Pencatatan Pembayaran** | ✅ Semua Cabang | ✅ Cabang Sendiri | ❌ Tidak Boleh |
-| **Riwayat Pembayaran** | ✅ Seluruh Transaksi | ✅ Transaksi Cabang Sendiri | ✅ Transaksi Sendiri |
-| **Laporan Piutang & Rekap** | ✅ Lintas Cabang | ✅ Khusus Cabang Sendiri | ❌ Tidak Ada Akses |
-| **Konfigurasi Pengingat** | ✅ Global & Cabang | ✅ Cabang Sendiri | ❌ Tidak Ada Akses |
+| **Buat & Ubah Tagihan** | âœ… Semua Cabang | âœ… Cabang Sendiri | âŒ Tidak Boleh |
+| **Atur Tagihan Publik / Privat** | âœ… Ya | âœ… Ya (Cabang Sendiri) | âŒ Tidak Boleh |
+| **Lihat Tagihan Publik** | âœ… Ya | âœ… Ya | âœ… Milik Sendiri Saja |
+| **Lihat Tagihan Privat** | âœ… Ya | âœ… Ya (Cabang Sendiri) | âŒ Tersembunyi |
+| **Pencatatan Pembayaran** | âœ… Semua Cabang | âœ… Cabang Sendiri | âŒ Tidak Boleh |
+| **Riwayat Pembayaran** | âœ… Seluruh Transaksi | âœ… Transaksi Cabang Sendiri | âœ… Transaksi Sendiri |
+| **Laporan Piutang & Rekap** | âœ… Lintas Cabang | âœ… Khusus Cabang Sendiri | âŒ Tidak Ada Akses |
+| **Konfigurasi Pengingat** | âœ… Global & Cabang | âœ… Cabang Sendiri | âŒ Tidak Ada Akses |
 
 ---
 
-## 💻 Teknologi Sistem (Tech Stack)
+## Teknologi yang digunakan saat ini
 
-Sistem dirancang dengan paduan teknologi modern berstandar enterprise:
+- **Frontend:** HTML, CSS, dan JavaScript vanilla pada folder `Html/`, `Css/`, dan `Js/`.
+- **Backend:** PHP 8+ dengan PDO untuk endpoint JSON di folder `api/`.
+- **Database:** MySQL 8+, dijalankan lokal melalui XAMPP.
 
-- **Frontend:**
-  - **Next.js dengan TypeScript**: Framework pengembangan antarmuka web modern dengan performa tinggi.
-  - **Tailwind CSS & shadcn/ui**: Komponen antarmuka pengguna yang konsisten, elegan, dan adaptif pada berbagai ukuran layar.
-  - **Platform Deployment**: Di-deploy pada platform **Vercel**.
-- **Backend:**
-  - **Spring Boot (Java)**: Framework penyedia RESTful API yang tangguh untuk pemrosesan logika bisnis, validasi, dan manajemen data.
-  - **Spring Security (RBAC)**: Pengelolaan keamanan autentikasi dan otorisasi berbasis token akses.
-  - **Spring Scheduler**: Eksekusi tugas latar belakang berkala untuk memeriksa tagihan jatuh tempo dan membuat notifikasi otomatis.
-  - **Platform Deployment**: Layanan cloud / VPS yang mendukung lingkungan Java (seperti **Railway, Render, AWS, atau VPS mandiri**).
-- **Basis Data:**
-- **MySQL**: Sistem manajemen basis data relasional (RDBMS) utama untuk penyimpanan data transaksi yang konsisten dan terintegrasi.
+Dokumentasi lama yang menyebut Next.js dan Spring Boot adalah rancangan, bukan stack kode yang ada saat ini.
 
 ## Akun awal lokal
 
@@ -381,3 +374,22 @@ Setelah mengimpor `database/nusa_karsa.sql` dan menjalankan `database/migration_
 | Admin cabang | Bandung | `admin_bandung` | `NK-Bandung!26_T8m#2` |
 
 Ganti semua password awal sebelum aplikasi digunakan di lingkungan nyata. Jangan publikasikan kredensial ini ke repositori atau server produksi.
+
+## Akun demo pelanggan
+
+Pada database baru dari `database/nusa_karsa.sql`, aktifkan MySQL XAMPP lalu jalankan `database/migration_seed_demo_customers.sql`. Untuk database lama, jalankan `database/migration_add_customer_account.sql` satu kali terlebih dahulu jika kolom `customer_id` belum tersedia. Migrasi ini membuat akun dengan peran `pelanggan` dan menautkan masing-masing akun ke data perusahaan seed yang sudah ada.
+
+| ID akun (setup bersih) | ID pelanggan | Cabang | Nama akun | Perusahaan tertaut | Email untuk login | Username | Password demo |
+|---:|---:|---|---|---|---|---|---|
+| 5 | 1 | Palembang | Ilyas | PT. Maju Bersama | `ilyas.palembang@demo.nusakarsa.com` | `ilyas.palembang` | `Demo-Ilyas-2026!` |
+| 6 | 3 | Bandung | Keyla | PT. Sukses Jaya | `keyla.bandung@demo.nusakarsa.com` | `keyla.bandung` | `Demo-Keyla-2026!` |
+| 7 | 2 | Bali | Dhini | CV. Kreatif Abadi | `dhini.bali@demo.nusakarsa.com` | `dhini.bali` | `Demo-Dhini-2026!` |
+
+ID akun 5, 6, dan 7 adalah perkiraan untuk instalasi bersih setelah migrasi akun admin; ID aktual dapat berbeda di database yang sudah berisi data. ID pelanggan mengikuti data seed. Migrasi menampilkan kembali ID aktual beserta username setelah selesai. Pada halaman login, pilih **Pelanggan**; akun admin tetap masuk dengan pilihan **Admin**. Alamat email berdomain demo hanya identitas login contoh, bukan mailbox Gmail. Password demo hanya untuk presentasi lokal.
+
+
+## Catatan kesenjangan dan pekerjaan lanjutan
+
+Lihat [AUDIT-PENYEMPURNAAN.md](AUDIT-PENYEMPURNAAN.md) untuk daftar prioritas berdasarkan pemeriksaan kode. PRD yang diselaraskan tersedia di [prd (1).md](prd%20(1).md). Pengingat otomatis terjadwal, pemulihan password, dan ekspor laporan penuh perlu diverifikasi/diimplementasikan sebelum dianggap tersedia.
+
+

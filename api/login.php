@@ -8,6 +8,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $data = request_data();
+$accountType = (string) ($data['account_type'] ?? '');
+if (!in_array($accountType, ['admin', 'pelanggan'], true)) {
+    respond(['success' => false, 'message' => 'Pilih jenis akun admin atau pelanggan.'], 422);
+}
 $login = trim((string) ($data['username'] ?? ''));
 $password = (string) ($data['password'] ?? '');
 if ($login === '' || $password === '') {
@@ -37,6 +41,11 @@ if (!$user) {
 
 if (!$user || !password_verify($password, $user['password_hash'])) {
     respond(['success' => false, 'message' => 'Username/email atau password tidak valid.'], 401);
+}
+
+$isCustomerAccount = $user['role'] === 'pelanggan';
+if (($accountType === 'pelanggan') !== $isCustomerAccount) {
+    respond(['success' => false, 'message' => 'Jenis akun yang dipilih tidak sesuai dengan akun ini.'], 403);
 }
 
 session_regenerate_id(true);

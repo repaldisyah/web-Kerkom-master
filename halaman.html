@@ -362,6 +362,8 @@
         .notification-item strong, .notification-item span { display: block; }
         .notification-item strong { margin-bottom: 4px; font-size: .85rem; color: var(--navy); }
         .notification-item span, .notification-empty { margin: 0; color: #64748b; font-size: .78rem; line-height: 1.45; }
+        .notification-read-status { display: block; margin: 7px 0 8px; color: #a15c00; font-size: .76rem; font-weight: 700; }
+        .notification-read-status.is-read { color: #21815b; }
         .role-hidden { display: none !important; }
         .receivable-explanation { display: block; min-width: 250px; max-width: 420px; color: #526274; font-size: .78rem; line-height: 1.55; }
         .notification:hover {
@@ -1300,7 +1302,7 @@
             <!-- ================= HERO ================= -->
             <section class="hero">
                 <div class="hero-text">
-                    <h2>Selamat datang, <span id="welcomeUserName">Admin Pusat!</span> 👋</h2>
+                    <h2>Selamat datang, <span id="welcomeUserName">Admin Pusat!</span> ðŸ‘‹</h2>
                     <p>
                         Pantau seluruh transaksi, piutang, dan pembayaran
                         Nusa Karsa Event dalam satu dashboard.
@@ -1573,11 +1575,33 @@
             return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? date : null;
         }
 
-        function renderNotifications(receivables) {
+        let notificationReadStorageKey = "";
+        let readNotificationKeys = new Set();
+        let dashboardAlerts = [];
+
+        function notificationReadKey(item) {
+            return [item.branch, item.id, item.customer, item.event, item.due_date].map(value => String(value ?? "")).join("|");
+        }
+
+        function loadReadNotifications(userId) {
+            const account = `${currentUser?.role || "unknown"}:${userId ?? "guest"}`;
+            const storageKey = `nusaKarsa:readNotifications:${account}`;
+            if (storageKey === notificationReadStorageKey) return;
+            notificationReadStorageKey = storageKey;
+            try {
+                const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+                readNotificationKeys = new Set(Array.isArray(saved) ? saved : []);
+            } catch (error) {
+                readNotificationKeys = new Set();
+            }
+        }
+
+        function renderNotifications(receivables, userId = null) {
             const badge = document.getElementById("notificationBadge");
             const list = document.getElementById("notificationList");
             const dueAlertsList = document.getElementById("dueAlertsList");
             if (!badge || !list || !dueAlertsList) return;
+            loadReadNotifications(userId);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const alerts = receivables.flatMap(item => {
@@ -1589,9 +1613,12 @@
                 if (days <= 7) return [{ ...item, days, kind: "upcoming" }];
                 return [];
             }).sort((a, b) => a.days - b.days || String(a.customer).localeCompare(String(b.customer), "id"));
+            dashboardAlerts = alerts;
 
-            badge.textContent = alerts.length > 99 ? "99+" : String(alerts.length);
-            badge.hidden = alerts.length === 0;
+            const unreadCount = alerts.filter(item => !readNotificationKeys.has(notificationReadKey(item))).length;
+            badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
+            badge.hidden = unreadCount === 0;
+            notificationToggle.setAttribute("aria-label", `Notifikasi, ${unreadCount} belum dibaca`);
             const notificationGroups = [
                 { kind: "overdue", title: "Piutang lewat tenggat" },
                 { kind: "due_today", title: "Piutang jatuh tempo hari ini" },
@@ -1602,15 +1629,20 @@
                     .map((item, index) => ({ item, index }))
                     .filter(({ item }) => item.kind === group.kind);
                 if (!groupAlerts.length) return "";
+                const unreadInGroup = groupAlerts.filter(({ item }) => !readNotificationKeys.has(notificationReadKey(item))).length;
                 return `
                     <section class="notification-group" aria-label="${group.title}">
-                        <h3>${group.title} (${groupAlerts.length})</h3>
-                        ${groupAlerts.map(({ item, index }) => `
+                        <h3>${group.title} (${unreadInGroup} belum dibaca)</h3>
+                        ${groupAlerts.map(({ item, index }) => {
+                            const isRead = readNotificationKeys.has(notificationReadKey(item));
+                            return `
                             <article class="notification-item ${item.kind === "overdue" ? "is-overdue" : ""}">
-                                <strong>${escapeHtml(item.customer)} · ${escapeHtml(item.event)}</strong>
-                                <span>${item.kind === "overdue" ? "Lewat tenggat " + Math.abs(item.days) + " hari" : item.kind === "due_today" ? "Jatuh tempo hari ini" : "Jatuh tempo " + item.days + " hari lagi"} · ${formatCurrency(item.balance)} · ${escapeHtml(formatDate(item.due_date))}</span>
-                                <button type="button" class="due-alert-check" data-check-alert="${index}">Cek piutang</button>
-                            </article>`).join("")}
+                                <strong>${escapeHtml(item.customer)} - ${escapeHtml(item.event)}</strong>
+                                <span>${item.kind === "overdue" ? "Lewat tenggat " + Math.abs(item.days) + " hari" : item.kind === "due_today" ? "Jatuh tempo hari ini" : "Jatuh tempo " + item.days + " hari lagi"} - ${formatCurrency(item.balance)} - ${escapeHtml(formatDate(item.due_date))}</span>
+                                <small class="notification-read-status ${isRead ? "is-read" : ""}">${isRead ? "Sudah dibaca" : "Belum dibaca"}</small>
+                                <button type="button" class="due-alert-check" data-check-alert="${index}">${isRead ? "Lihat piutang" : "Cek piutang"}</button>
+                            </article>`;
+                        }).join("")}
                     </section>`;
             }).join("") || '<p class="notification-empty">Tidak ada notifikasi jatuh tempo.</p>';
 
@@ -1618,13 +1650,16 @@
             document.getElementById("dueAlertCountUpcoming").textContent = String(alerts.filter(item => item.kind === "upcoming").length);
             document.getElementById("dueAlertCountToday").textContent = String(alerts.filter(item => item.kind === "due_today").length);
             document.getElementById("dueAlertCountOverdue").textContent = String(alerts.filter(item => item.kind === "overdue").length);
-            dueAlertsList.innerHTML = alerts.map((item, index) => `
+            dueAlertsList.innerHTML = alerts.map((item, index) => {
+                const isRead = readNotificationKeys.has(notificationReadKey(item));
+                return `
                 <article class="due-alert-row ${item.kind === "overdue" ? "is-overdue" : ""}" data-alert-kind="${item.kind}" id="due-alert-${index}" tabindex="-1">
                     <div><strong>${escapeHtml(item.customer)}</strong><span>${escapeHtml(item.branch)}</span></div>
                     <div><strong>${escapeHtml(item.event)}</strong><span>Sisa tagihan ${formatCurrency(item.balance)}</span></div>
-                    <div><strong>${escapeHtml(formatDate(item.due_date))}</strong><span class="due-alert-status">${item.kind === "overdue" ? "Lewat tenggat " + Math.abs(item.days) + " hari" : item.kind === "due_today" ? "Jatuh tempo hari ini" : "Mendekati tempo · " + item.days + " hari lagi"}</span></div>
-                    <button type="button" class="due-alert-check" data-check-alert="${index}">Cek</button>
-                </article>`).join("") || '<p class="notification-empty">Tidak ada notifikasi jatuh tempo.</p>';
+                    <div><strong>${escapeHtml(formatDate(item.due_date))}</strong><span class="due-alert-status">${item.kind === "overdue" ? "Lewat tenggat " + Math.abs(item.days) + " hari" : item.kind === "due_today" ? "Jatuh tempo hari ini" : "Mendekati tempo - " + item.days + " hari lagi"}</span><span class="notification-read-status ${isRead ? "is-read" : ""}">${isRead ? "Sudah dibaca" : "Belum dibaca"}</span></div>
+                    <button type="button" class="due-alert-check" data-check-alert="${index}">${isRead ? "Lihat" : "Cek"}</button>
+                </article>`;
+            }).join("") || '<p class="notification-empty">Tidak ada notifikasi jatuh tempo.</p>';
         }
 
         function applyRolePresentation() {
@@ -1636,7 +1671,7 @@
             const roleLabels = {
                 super_admin: "Admin Pusat",
                 admin_pusat: "Admin Pusat",
-                admin_cabang: branchName ? `Admin Cabang · ${branchName}` : "Admin Cabang",
+                admin_cabang: branchName ? `Admin Cabang Â· ${branchName}` : "Admin Cabang",
                 pelanggan: "Pelanggan"
             };
             authArea.querySelector(".admin-info span")?.replaceChildren(document.createTextNode(roleLabels[role] || "Pengguna"));
@@ -1644,7 +1679,7 @@
 
             document.querySelectorAll("#dashboardSidebar .nav-item").forEach(link => {
                 const path = new URL(link.href, window.location.href).pathname.toLowerCase();
-                const restrictedForCustomer = /\/html\/(cabang|pelanggan|piutang|pembayaran|laporan)\.html$/.test(path);
+                const restrictedForCustomer = /\/html\/(cabang|pelanggan|pembayaran|laporan)\.html$/.test(path);
                 link.classList.toggle("role-hidden", isCustomer && restrictedForCustomer);
                 if (isCustomer && /\/html\/history\.html$/.test(path)) {
                     link.querySelector("span").textContent = "Riwayat Pembayaran";
@@ -1730,8 +1765,18 @@
             section.querySelector("[data-due-filter][data-due-filter='" + kind + "']")?.focus({ preventScroll: true });
         }
         function checkDueAlert(index) {
+            const alertIndex = Number(index);
+            const alertItem = dashboardAlerts[alertIndex];
+            if (!alertItem) return;
+            readNotificationKeys.add(notificationReadKey(alertItem));
+            try {
+                localStorage.setItem(notificationReadStorageKey, JSON.stringify([...readNotificationKeys]));
+            } catch (error) {
+                // Status tetap terbaca untuk sesi ini meskipun penyimpanan browser tidak tersedia.
+            }
+            if (dashboardData) renderNotifications(dashboardData.recent_receivables, dashboardData.user_id);
             filterDueAlerts("all");
-            const target = document.getElementById(`due-alert-${index}`);
+            const target = document.getElementById(`due-alert-${alertIndex}`);
             if (!target) return;
             setNotificationPanelOpen(false);
             target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1761,7 +1806,7 @@
                 throw new Error("Format data dashboard dari server tidak valid.");
             }
             dashboardData = data;
-            renderNotifications(data.recent_receivables);
+            renderNotifications(data.recent_receivables, data.user_id);
             applyRolePresentation();
 
             document.querySelectorAll("[data-summary]").forEach(element => {
@@ -1841,12 +1886,12 @@
                 if (!response.ok || !data.success) throw new Error(data.message || "Riwayat pembayaran tidak dapat dimuat.");
                 paymentsList.innerHTML = (data.recent_payments || []).map(payment => `
                     <div class="activity-row">
-                        <div><strong>${escapeHtml(payment.customer)} · ${escapeHtml(payment.event)}</strong><small>${escapeHtml(payment.branch)} · ${escapeHtml(formatDate(payment.payment_date))} · ${escapeHtml(payment.payment_method || "Manual")}</small></div>
+                        <div><strong>${escapeHtml(payment.customer)} Â· ${escapeHtml(payment.event)}</strong><small>${escapeHtml(payment.branch)} Â· ${escapeHtml(formatDate(payment.payment_date))} Â· ${escapeHtml(payment.payment_method || "Manual")}</small></div>
                         <span class="activity-amount">${formatCurrency(payment.amount)}</span>
                     </div>`).join("") || '<p class="activity-empty">Belum ada transaksi pembayaran tercatat.</p>';
                 customersList.innerHTML = (data.recent_customers || []).map(customer => `
                     <div class="activity-row">
-                        <div><strong>${escapeHtml(customer.customer)}</strong><small>${escapeHtml(customer.branch)} · ${customer.record_type === "historical_balance" ? "Saldo historis; tanggal transaksi tidak tersedia" : `Terakhir membayar ${escapeHtml(formatDate(customer.last_payment_date))}`}</small></div>
+                        <div><strong>${escapeHtml(customer.customer)}</strong><small>${escapeHtml(customer.branch)} Â· ${customer.record_type === "historical_balance" ? "Saldo historis; tanggal transaksi tidak tersedia" : `Terakhir membayar ${escapeHtml(formatDate(customer.last_payment_date))}`}</small></div>
                         <span class="activity-amount">${formatCurrency(customer.last_payment_amount)}</span>
                     </div>`).join("") || '<p class="activity-empty">Belum ada pelanggan yang memiliki pembayaran tercatat.</p>';
             } catch (error) {

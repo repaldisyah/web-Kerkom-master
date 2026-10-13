@@ -63,13 +63,15 @@ async function initializeReceivables() {
             return;
         }
         if (session.user.role === 'pelanggan') {
-            window.location.replace(new URL('history.html', window.location.href));
-            return;
+            document.querySelector('header h1').textContent = 'Piutang saya';
+            document.querySelector('.toolbar h2').textContent = 'Tagihan saya yang belum lunas';
+            document.querySelector('.toolbar > a')?.setAttribute('hidden', '');
+            document.querySelector('.data-table thead th:nth-child(2)').textContent = 'Nama akun';
         }
         showStatus('Memuat daftar piutang...');
         const result = await requestJson('../api/receivables.php');
         renderReceivables(result.receivables || []);
-        showStatus('Daftar piutang berhasil dimuat.');
+        showStatus(session.user.role === 'pelanggan' ? 'Daftar piutang milik akun Anda berhasil dimuat.' : 'Daftar piutang berhasil dimuat.');
     } catch (error) {
         rowCount.textContent = 'Daftar piutang belum tersedia';
         renderReceivables([]);

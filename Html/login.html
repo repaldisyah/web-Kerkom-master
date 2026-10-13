@@ -317,15 +317,25 @@
             </div>
 
             <!-- Form -->
-            <h1 class="form-title">Login Administrasi</h1>
-            <p class="form-subtitle">Masuk untuk mengelola data piutang cabang Palembang, Bali, dan Bandung.</p>
+            <h1 class="form-title">Masuk ke Nusa Karsa Event</h1>
+            <p class="form-subtitle">Pilih jenis akun untuk membuka dashboard sesuai hak akses Anda.</p>
 
             <form id="loginForm" action="#" method="post">
+                <div class="input-group">
+                    <label for="accountType">Masuk sebagai</label>
+                    <div class="input-field">
+                        <i class="fa-solid fa-users"></i>
+                        <select id="accountType" name="account_type" required style="flex:1;border:0;outline:0;background:transparent;padding:13px 0;font:inherit;color:var(--text)">
+                            <option value="admin">Admin</option>
+                            <option value="pelanggan">Pelanggan</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="input-group">
                     <label for="username">Username / Email</label>
                     <div class="input-field">
                         <i class="fa-solid fa-user"></i>
-                        <input type="text" id="username" name="username" placeholder="admin@nusakarsa.com" required autofocus>
+                        <input type="text" id="username" name="username" placeholder="Username atau email" required autofocus>
                     </div>
                 </div>
 
@@ -367,6 +377,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        account_type: document.getElementById('accountType').value,
                         username: document.getElementById('username').value,
                         password: document.getElementById('password').value
                     })

@@ -1,4 +1,4 @@
-# Menjalankan backend lokal
+﻿# Menjalankan backend lokal
 
 1. Jalankan **Apache** dan **MySQL** dari XAMPP.
 2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`. Setelah itu jalankan `migration_separate_admin_pusat.sql` satu kali untuk memindahkan akun `admin` ke database khusus `admin_pusat`; setelahnya jalankan `migration_seed_admin_accounts.sql` satu kali untuk membuat akun awal pusat dan cabang.
@@ -36,11 +36,24 @@ Gunakan kredensial ini hanya untuk setup lokal, lalu ganti password setelah logi
 
 ## Endpoint awal
 
-- `POST /api/login.php` — membuat sesi admin.
-- `POST /api/logout.php` — menghapus sesi.
-- `GET /api/session.php` — membaca status sesi.
-- `GET /api/dashboard.php` — ringkasan dan daftar piutang terbaru; wajib login.
-- `GET /api/branches.php` — cabang yang diizinkan untuk akun operasional.
-- `GET /api/customers.php` — pelanggan sesuai lingkup akun.
-- `GET /api/payment-history.php` — riwayat pembayaran sesuai lingkup akun.
-- `GET /api/reports.php?year=2026` — rekap tahunan untuk admin pusat atau cabang.
+- `POST /api/login.php` â€” membuat sesi admin.
+- `POST /api/logout.php` â€” menghapus sesi.
+- `GET /api/session.php` â€” membaca status sesi.
+- `GET /api/dashboard.php` â€” ringkasan dan daftar piutang terbaru; wajib login.
+- `GET /api/branches.php` â€” cabang yang diizinkan untuk akun operasional.
+- `GET /api/customers.php` â€” pelanggan sesuai lingkup akun.
+- `GET /api/payment-history.php` â€” riwayat pembayaran sesuai lingkup akun.
+- `GET /api/reports.php?year=2026` â€” rekap tahunan untuk admin pusat atau cabang.
+
+## Pemeriksaan sebelum setup atau migrasi
+
+1. Hentikan perubahan data sementara dan ekspor/backup seluruh database yang akan disentuh.
+2. Untuk instalasi baru, buat database melalui skema dan seed yang sesuai. Jalankan migrasi yang disebut di panduan setup di atas satu kali dan berurutan; jangan menjalankan ulang seed terhadap data transaksi aktif.
+3. Untuk instalasi lama, cocokkan struktur aktual database dengan setiap migrasi sebelum menjalankannya. Migrasi proyek ini tidak semuanya idempoten.
+4. Pastikan `api/config.php` lokal tidak dipublikasikan. Gunakan akun MySQL berhak minimum di luar komputer pengembangan.
+5. Setelah migrasi, cek login tiap peran, pembatasan cabang, pencatatan pembayaran, saldo, dan riwayat sebelum membuka sistem untuk staf.
+6. Simpan backup terenkripsi di lokasi terpisah dan lakukan uji pemulihan berkala. Backup yang belum pernah diuji belum menjamin database dapat dipulihkan.
+
+## Batas fitur pengingat
+
+Dashboard menghitung nilai mendekati jatuh tempo/tertunggak. Ini belum sama dengan pengiriman notifikasi otomatis. Repositori saat ini belum mendokumentasikan worker terjadwal dan kanal pengiriman pengingat; jangan mengandalkan pengingat otomatis sampai worker, deduplikasi, zona waktu, dan proses pemantauannya dibuat serta diuji.
