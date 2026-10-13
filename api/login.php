@@ -18,22 +18,31 @@ if ($login === '' || $password === '') {
     respond(['success' => false, 'message' => 'Username/email dan password wajib diisi.'], 422);
 }
 
-// Akun pusat dicari di database khusus terlebih dahulu.
-$centralStatement = admin_database()->prepare(
-    "SELECT id, name, username, email, password_hash, 'admin_pusat' AS role,
-            NULL AS branch_id, NULL AS customer_id
-     FROM users WHERE username = :login OR email = :login LIMIT 1"
-);
-$centralStatement->execute(['login' => $login]);
-$user = $centralStatement->fetch();
+$user = null;
 
-// Akun admin cabang/pelanggan tetap tersimpan di database operasional.
+// Pelanggan berada di database operasional. Jangan membuka database admin pusat
+// untuk jenis akun ini agar login pelanggan tetap berfungsi tanpa database admin.
+if ($accountType === 'admin') {
+    $centralDatabase = try_admin_database();
+    if ($centralDatabase instanceof PDO) {
+        $centralStatement = $centralDatabase->prepare(
+            "SELECT id, name, username, email, password_hash, 'admin_pusat' AS role,
+                    NULL AS branch_id, NULL AS customer_id
+             FROM users WHERE username = :login OR email = :login LIMIT 1"
+        );
+        $centralStatement->execute(['login' => $login]);
+        $user = $centralStatement->fetch();
+    }
+}
+
+// Akun admin cabang dan pelanggan tersimpan di database operasional.
 if (!$user) {
     $customerColumn = has_customer_account_column() ? 'customer_id' : 'NULL AS customer_id';
+    $roles = $accountType === 'pelanggan' ? "'pelanggan'" : "'admin_cabang'";
     $statement = database()->prepare(
         "SELECT id, name, username, email, password_hash, role, branch_id, $customerColumn
          FROM users WHERE (username = :login OR email = :login)
-         AND role IN ('admin_cabang', 'pelanggan') LIMIT 1"
+         AND role IN ($roles) LIMIT 1"
     );
     $statement->execute(['login' => $login]);
     $user = $statement->fetch();

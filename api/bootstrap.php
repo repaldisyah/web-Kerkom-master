@@ -63,12 +63,16 @@ function database(): PDO
     }
 }
 
-function admin_database(): PDO
+function try_admin_database(): ?PDO
 {
     static $connection = null;
-    if ($connection instanceof PDO) return $connection;
+    static $attempted = false;
+    if ($attempted) return $connection;
+    $attempted = true;
 
-    $config = require __DIR__ . '/config.php';
+    $configFile = __DIR__ . '/config.php';
+    if (!is_file($configFile)) return null;
+    $config = require $configFile;
     $databaseName = $config['admin_db_name'] ?? 'admin_pusat';
     try {
         $connection = new PDO(
@@ -77,10 +81,19 @@ function admin_database(): PDO
             $config['db_pass'],
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
         );
-        return $connection;
     } catch (PDOException) {
+        $connection = null;
+    }
+    return $connection;
+}
+
+function admin_database(): PDO
+{
+    $connection = try_admin_database();
+    if (!$connection instanceof PDO) {
         respond(['success' => false, 'message' => 'Database admin pusat belum disiapkan. Jalankan database/migration_separate_admin_pusat.sql.'], 500);
     }
+    return $connection;
 }
 function require_login(): int
 {

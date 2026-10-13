@@ -87,9 +87,20 @@ function renderCustomers(customers, role) {
         document.getElementById('sectionTitle').textContent = 'Data akun pelanggan';
         document.getElementById('sectionDescription').textContent = 'Anda hanya dapat melihat data yang terhubung dengan akun ini.';
     }
-    customers.forEach(customer => addRow([
-        customer.name, customer.branch, [customer.email, customer.phone].filter(Boolean).join(' · ') || '-',
-        `${customer.event_count} event`, money(customer.outstanding_balance)
+
+    const orderedCustomers = [...customers].sort((left, right) => {
+        const balanceDifference = (Number(right.outstanding_balance) || 0) - (Number(left.outstanding_balance) || 0);
+        if (balanceDifference !== 0) return balanceDifference;
+
+        const eventDifference = (Number(right.event_count) || 0) - (Number(left.event_count) || 0);
+        if (eventDifference !== 0) return eventDifference;
+
+        return String(left.name).localeCompare(String(right.name), 'id');
+    });
+
+    orderedCustomers.forEach(customer => addRow([
+        customer.id, customer.name, customer.email || '-', customer.phone || '-', customer.address || '-', customer.branch,
+        String(customer.event_count) + ' event', money(customer.outstanding_balance)
     ]));
 }
 
