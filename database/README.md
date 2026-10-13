@@ -1,7 +1,7 @@
 ﻿# Menjalankan backend lokal
 
 1. Jalankan **Apache** dan **MySQL** dari XAMPP.
-2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`. Setelah itu jalankan `migration_separate_admin_pusat.sql` satu kali untuk memindahkan akun `admin` ke database khusus `admin_pusat`; setelahnya jalankan `migration_seed_admin_accounts.sql` satu kali untuk membuat akun awal pusat dan cabang.
+2. Buka `http://localhost/phpmyadmin`, lalu impor file `nusa_karsa.sql`. Setelah itu jalankan `migration_separate_admin_pusat.sql` satu kali untuk memindahkan akun `admin` ke database khusus `admin_pusat`; setelahnya jalankan `migration_seed_admin_accounts.sql` satu kali untuk membuat akun awal pusat dan cabang. Agar akun pelanggan yang tercantum di `README.md` tersedia untuk login, jalankan `migration_seed_demo_customers.sql` pada database `nusa_karsa`. Untuk database lama yang belum memiliki kolom `users.customer_id`, jalankan `migration_add_customer_account.sql` terlebih dahulu; jangan jalankan migrasi kolom itu lagi jika kolomnya sudah ada.
 3. Jalankan `migration_add_palembang_events.sql` satu kali untuk membuat tabel event dan pembayaran Palembang. Impor `events_bali.sql` dan `events_bandung.sql` untuk membuat database event tiap cabang. Untuk instalasi baru, setelah itu jalankan `events_bandung_upsert.sql` agar jadwal DP/Termin 2/Pelunasan Bandung tersimpan. Untuk database Bandung lama, jalankan `migration_add_bandung_schedules.sql` satu kali, lalu jalankan `events_bandung_upsert.sql`.
 4. Sesuaikan `../api/config.php` bila username, password, port, atau nama database MySQL Anda berbeda. Pemetaan cabang mengikuti data `nusa_karsa.sql`: Bali = `branch_id` 2 dan Bandung = `branch_id` 3.
 5. Jalankan `migration_add_branch_payment_history.sql` satu kali setelah database Palembang, Bali, dan Bandung siap. Skrip ini menambahkan tabel/kolom riwayat dan mencatat satu saldo historis per event yang sudah memiliki pembayaran; tanggal dibiarkan kosong karena tanggal transaksi lama tidak tersedia.
@@ -13,13 +13,15 @@ Halaman `Html/cabangBali.html` dan `Html/cabangBandung.html` memakai stylesheet 
 ## Modul event Bali/Bandung
 
 Stack yang digunakan adalah PHP 8+ dengan PDO MySQL untuk backend, MySQL 8+ untuk database/view kalkulasi, serta HTML/CSS/JavaScript vanilla untuk frontend. Setelah impor SQL, buka `Html/events-bali.html` atau `Html/cabangBali.html` melalui Apache XAMPP, lalu login sebagai admin.
-
 View `vw_events_dashboard` menghitung nilai kontrak, piutang, dan status terkini. Untuk Cabang Bali, nilai DP, Termin 2, dan Pelunasan pada 20 event sumber disimpan pada kolom jadwal tersendiri; total dibayar tetap merupakan pembayaran yang benar-benar telah diterima. Event baru tanpa jadwal khusus tetap memakai rumus bawaan berdasarkan skala. Cabang Bandung tetap memakai rumus otomatis berdasarkan skala.
-
 Untuk database yang sudah pernah diimpor, jalankan migration sesuai urutan nama file. Fitur akun pelanggan membutuhkan `migration_add_customer_account.sql`; token riwayat pembayaran membutuhkan `migration_add_payment_token.sql`.
 Untuk database event yang sudah berisi data, jalankan `migration_add_event_calculations.sql` agar view kalkulasi menampilkan Termin 2 dan Pelunasan terbaru tanpa menghapus 20 seed event.
 Untuk database `events_bali` lama, jalankan `migration_update_bali_events.sql` satu kali setelah migrasi kalkulasi; skrip ini menambahkan kolom jadwal pembayaran dan memperbarui 20 ID EDK terbaru. Untuk instalasi baru, impor `events_bali.sql` yang sudah memuat struktur dan data tersebut. Jangan impor ulang file seed setelah pembayaran operasional dicatat karena nilai total dibayar akan kembali ke nilai sumber.
 Pembayaran baru event Bali/Bandung dicatat melalui `event_payments` dan menaikkan `total_dibayar` dalam transaksi database yang sama. Admin cabang dapat menambahkan event dan pembayaran, tetapi tidak dapat mengubah atau menghapus event. Untuk meminta penghapusan, admin cabang mengisi alasan melalui tombol **Minta hapus**; admin pusat meninjau pada halaman **Permintaan hapus** dan dapat menyetujui atau menolak. Admin pusat dapat menghapus event langsung dari halaman cabang. Riwayat transaksi tersedia di halaman Riwayat Pembayaran dan dapat difilter per cabang oleh admin pusat. Saldo historis hanya berupa total kumulatif lama per event, bukan rincian cicilan.
+
+## Akun demo pelanggan
+
+Akun pelanggan pada `README.md` baru muncul di database setelah `migration_seed_demo_customers.sql` dijalankan. Skrip ini menautkan akun `ilyas.palembang`, `keyla.bandung`, dan `dhini.bali` ke data pelanggan contoh. Setelah menjalankan SQL, periksa hasil `SELECT` di bagian akhir skrip; lalu pilih jenis akun **Pelanggan** pada halaman login.
 
 ## Akun awal
 
@@ -57,3 +59,5 @@ Gunakan kredensial ini hanya untuk setup lokal, lalu ganti password setelah logi
 ## Batas fitur pengingat
 
 Dashboard menghitung nilai mendekati jatuh tempo/tertunggak. Ini belum sama dengan pengiriman notifikasi otomatis. Repositori saat ini belum mendokumentasikan worker terjadwal dan kanal pengiriman pengingat; jangan mengandalkan pengingat otomatis sampai worker, deduplikasi, zona waktu, dan proses pemantauannya dibuat serta diuji.
+
+
