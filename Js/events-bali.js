@@ -13,6 +13,7 @@ const submitButton = document.querySelector('#submitButton');
 let events = [];
 let editId = null;
 let canManageEvents = false;
+let canEditEvents = false;
 let canRequestDeletion = false;
 
 const money = value => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
@@ -88,7 +89,7 @@ function renderRows() {
         + '<td>' + money(event.nilai_kontrak) + '</td><td>' + money(event.dp) + '</td><td>' + money(event.termin_2) + '</td><td>' + money(event.pelunasan) + '</td>'
         + '<td>' + money(event.total_dibayar) + '</td><td><strong>' + money(event.piutang) + '</strong></td><td>' + displayDate(event.tgl_jatuh_tempo) + '</td>'
         + '<td>' + escapeHtml(event.status_data) + '</td><td><span class="tag ' + escapeHtml(event.indikator_warna) + '">' + escapeHtml(event.status_piutang) + '</span></td>'
-        + '<td class="actions">' + (Number(event.piutang) > 0 ? '<a href="pembayaran.html?source=event&amp;branch=bali&amp;event_id=' + encodeURIComponent(event.id) + '">Catat pembayaran</a>' : 'Lunas') + (canManageEvents ? '<button type="button" data-edit="' + escapeHtml(event.id) + '" aria-label="Ubah ' + escapeHtml(event.nama_event) + '">Ubah</button><button type="button" class="delete" data-delete="' + escapeHtml(event.id) + '" aria-label="Hapus ' + escapeHtml(event.nama_event) + '">Hapus</button>' : canRequestDeletion ? '<button type="button" data-request-delete="' + escapeHtml(event.id) + '">Minta hapus</button>' : '') + '</td></tr>'
+        + '<td class="actions">' + (Number(event.piutang) > 0 ? '<a href="pembayaran.html?source=event&amp;branch=bali&amp;event_id=' + encodeURIComponent(event.id) + '">Catat pembayaran</a>' : 'Lunas') + (canEditEvents ? '<button type="button" data-edit="' + escapeHtml(event.id) + '" aria-label="Ubah ' + escapeHtml(event.nama_event) + '">Ubah</button>' : '') + (canManageEvents ? '<button type="button" class="delete" data-delete="' + escapeHtml(event.id) + '" aria-label="Hapus ' + escapeHtml(event.nama_event) + '">Hapus</button>' : canRequestDeletion ? '<button type="button" data-request-delete="' + escapeHtml(event.id) + '">Minta hapus</button>' : '') + '</td></tr>'
     ).join('');
 }
 
@@ -101,6 +102,7 @@ async function loadAccess() {
         return false;
     }
     canManageEvents = ['admin_pusat', 'super_admin'].includes(session.user.role);
+    canEditEvents = canManageEvents || session.user.role === 'admin_cabang';
     canRequestDeletion = session.user.role === 'admin_cabang';
     if (!canManageEvents) document.querySelector('#formTitle').textContent = 'Tambah event Bali';
     renderRows();
@@ -136,7 +138,7 @@ function resetForm() {
 }
 
 function edit(id) {
-    if (!canManageEvents) return;
+    if (!canEditEvents) return;
     const event = events.find(item => item.id === id);
     if (!event) return;
     Object.entries(event).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
@@ -165,7 +167,7 @@ form.addEventListener('submit', async event => {
 });
 
 rows.addEventListener('click', async event => {
-    if (!canManageEvents && !canRequestDeletion) return;
+    if (!canEditEvents && !canRequestDeletion) return;
     const requestId = event.target.dataset.requestDelete;
     if (requestId) {
         const reason = prompt('Jelaskan alasan penghapusan event ini:');
@@ -176,7 +178,7 @@ rows.addEventListener('click', async event => {
         } catch (error) { showNotice(error.message, true); }
         return;
     }
-    if (!canManageEvents) return;
+    if (!canEditEvents) return;
     const id = event.target.dataset.edit || event.target.dataset.delete;
     if (!id) return;
     if (event.target.dataset.edit) return edit(id);

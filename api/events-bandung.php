@@ -71,8 +71,8 @@ $id = trim((string) ($_GET['id'] ?? ''));
 $db = bandung_database();
 $scope = current_scope();
 require_branch_access($scope, bandung_branch_id());
-if (in_array($method, ['PUT', 'DELETE'], true) && !in_array($scope['role'], ['admin_pusat', 'super_admin'], true)) {
-    respond(['success' => false, 'message' => 'Admin cabang hanya dapat menambahkan event. Perubahan dan penghapusan hanya dapat dilakukan admin pusat.'], 403);
+if ($method === 'DELETE' && !in_array($scope['role'], ['admin_pusat', 'super_admin'], true)) {
+    respond(['success' => false, 'message' => 'Admin cabang harus mengajukan permintaan penghapusan kepada admin pusat.'], 403);
 }
 
 try {

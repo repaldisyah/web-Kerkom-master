@@ -21,25 +21,28 @@ Jalankan Apache dan MySQL dari XAMPP. Sebelum impor atau migrasi, pastikan datab
 2. Jalankan migration_separate_admin_pusat.sql satu kali untuk membuat database admin_pusat dan memindahkan akun pusat.
 3. Jalankan migration_seed_admin_accounts.sql satu kali untuk membuat akun admin pusat dan admin cabang.
 4. Periksa apakah nusa_karsa.users sudah memiliki kolom customer_id. Jika belum, jalankan migration_add_customer_account.sql satu kali.
-5. Jalankan migration_seed_customer_accounts_by_branch.sql untuk membuat sembilan akun pelanggan contoh. Jika perlu akun demo untuk presentasi, jalankan migration_seed_demo_customers.sql setelah data perusahaan contoh tersedia.
-6. Jalankan migration_add_palembang_events.sql satu kali untuk membuat tabel event dan pembayaran Palembang.
-7. Impor events_bali.sql ke database events_bali dan events_bandung.sql ke database events_bandung. Setelah impor Bandung, jalankan events_bandung_upsert.sql untuk memasukkan jadwal pembayaran contoh.
-8. Jalankan migration_add_branch_payment_history.sql setelah database Palembang, Bali, dan Bandung tersedia. Setelah itu jalankan migration_add_deletion_requests.sql.
-9. Periksa ../api/config.php, pastikan nama database dan kredensial MySQL sesuai, lalu buka http://localhost/web-Kerkom-master/halaman.html melalui Apache.
+5. Jalankan migration_seed_customer_accounts_by_branch.sql untuk membuat akun pelanggan yang ditautkan ke profil masing-masing. Untuk tiga akun tambahan, pastikan profil yang dirujuk tersedia, lalu jalankan migration_seed_demo_customers.sql.
+6. Jalankan migration_add_payment_method.sql dan migration_add_payment_token.sql bila kolom tersebut belum tersedia.
+7. Jalankan migration_add_palembang_events.sql satu kali untuk membuat tabel event dan pembayaran Palembang.
+8. Impor events_bali.sql ke database events_bali dan events_bandung.sql ke database events_bandung. Setelah impor Bandung, jalankan events_bandung_upsert.sql untuk memasukkan data jadwal pembayaran.
+9. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event tersedia, kemudian migration_add_deletion_requests.sql.
+10. Periksa ../api/config.php, pastikan nama database dan kredensial MySQL sesuai, lalu buka http://localhost/web-Kerkom-master/halaman.html melalui Apache.
 
-Urutan seed akun pelanggan wajib mempertahankan kolom customer_id dan data perusahaan yang dirujuk. Skrip demo pelanggan tidak membuat perusahaan baru; skrip menautkan akun demo ke perusahaan seed yang sudah ada. Skrip seed dapat mengubah atau menambahkan data. Jangan jalankan ulang pada database operasional tanpa memeriksa SQL dan membuat backup lebih dahulu.
+Seed akun membutuhkan kolom customer_id, cabang, dan profil pelanggan yang dirujuk. Akun pelanggan hanya menampilkan data yang tertaut pada customer_id. Tidak ada seed pembayaran sintetis; laporan mengambil angka dari transaksi dan saldo event yang tersimpan di database. Buat backup sebelum perubahan skema atau data.
 
 ## Pembaruan database lama
 
 1. Ekspor backup seluruh database yang akan disentuh.
 2. Periksa struktur tabel dan kolom saat ini melalui phpMyAdmin. Migrasi proyek tidak semuanya aman untuk dijalankan berulang kali.
-3. Jalankan hanya migrasi yang belum diterapkan. Untuk akun pelanggan, pastikan migration_add_customer_account.sql sudah diterapkan sebelum menjalankan seed pelanggan.
+3. Jalankan hanya migrasi yang belum diterapkan. Untuk akun pelanggan, pastikan migration_add_customer_account.sql sudah diterapkan dan data cabang/profil pelanggan tersedia sebelum menjalankan seed akun. Jalankan migration_add_payment_method.sql dan migration_add_payment_token.sql bila kolom belum ada.
 4. Database events_bali lama memerlukan migration_add_event_calculations.sql, lalu migration_update_bali_events.sql sesuai kondisi skemanya. Jangan impor ulang events_bali.sql ke database yang telah menerima pembayaran.
 5. Database events_bandung lama yang belum memiliki kolom jadwal memerlukan migration_add_bandung_schedules.sql, lalu events_bandung_upsert.sql.
 6. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event siap; lanjutkan dengan migration_add_deletion_requests.sql.
 7. Setelah migrasi, cek login ketiga peran, pembatasan cabang, pencatatan pembayaran, saldo, dan riwayat sebelum sistem dipakai.
 
 Cocokkan nama dan urutan migrasi dengan struktur aktual sebelum menjalankan SQL. Jika hasil atau kondisi skema berbeda dari panduan, hentikan migrasi dan buat backup sebelum melakukan perubahan manual.
+
+Riwayat event lama tanpa transaksi bertanggal akan menampilkan satu saldo historis per event, tanpa tanggal transaksi. Pembayaran yang dicatat setelah migrasi tersimpan sebagai transaksi individual. Jika database pernah menjalankan seed progres sintetis, jalankan migration_remove_demo_payment_progress.sql untuk membersihkan baris tersebut.
 
 ## Peran dan cakupan akun
 
@@ -49,7 +52,7 @@ Tabel users menyimpan akun aplikasi. Nilai role menentukan pangkat akses; branch
 |---|---|---|
 | admin_pusat | admin_pusat | Admin pusat untuk memantau dan mengelola operasi lintas cabang, mengelola akun admin cabang, melihat laporan, serta meninjau permintaan penghapusan event. |
 | admin_cabang | nusa_karsa | Admin operasional yang dapat menambahkan event dan mencatat pembayaran di cabangnya, melihat data lingkup cabang, serta mengajukan permintaan penghapusan. Tidak dapat mengelola cabang lain atau menyetujui permintaan hapus. |
-| pelanggan | nusa_karsa | Pengguna portal pelanggan. Akun hanya terhubung ke satu customer_id untuk melihat data tagihan dan pembayaran milik profil tersebut. |
+| pelanggan | nusa_karsa | Pengguna portal pelanggan. Akun hanya terhubung ke satu customer_id untuk melihat tagihan dan riwayat pembayaran milik profil tersebut; halaman laporan hanya tersedia untuk admin. |
 
 Pada halaman login, pilih jenis akun Admin untuk admin_pusat dan admin_cabang. Pilih Pelanggan untuk role pelanggan.
 
@@ -66,31 +69,31 @@ Akun berikut dibuat atau diperbarui oleh migration_seed_admin_accounts.sql. Pass
 
 ## Akun pelanggan seed per cabang
 
-migration_seed_customer_accounts_by_branch.sql membuat sembilan akun contoh, masing-masing ditautkan ke profil perusahaan berikut. Semua memakai role pelanggan dan password seed yang sama. Kredensial ini hanya untuk pengujian lokal.
+migration_seed_customer_accounts_by_branch.sql membuat sembilan akun contoh, masing-masing ditautkan ke profil perusahaan berikut. Semua memakai role pelanggan. Password seed tidak dicantumkan di dokumentasi; atur atau ganti kredensial secara lokal sebelum login.
 
-| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Password seed lokal |
+| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Kredensial |
 |---|---|---|---|---|---|
-| rani.siger | rani.siger@example.com | Rani Puspita | PT Siger Event Kreatif | Palembang | Pelanggan123! |
-| dimas.sriwijaya | dimas.sriwijaya@example.com | Dimas Pratama | CV Sriwijaya Cahaya | Palembang | Pelanggan123! |
-| nadia.musi | nadia.musi@example.com | Nadia Putri | PT Musi Gemilang Abadi | Palembang | Pelanggan123! |
-| made.dewata | made.dewata@example.com | Made Aditya | PT Dewata Kreasi Nusantara | Bali | Pelanggan123! |
-| ayu.purnama | ayu.purnama@example.com | Ayu Lestari | CV Purnama Bali Event | Bali | Pelanggan123! |
-| komang.aruna | komang.aruna@example.com | Komang Sari | PT Aruna Nusa Hospitality | Bali | Pelanggan123! |
-| fajar.parahyangan | fajar.parahyangan@example.com | Fajar Nugraha | PT Parahyangan Cipta Acara | Bandung | Pelanggan123! |
-| intan.lembur | intan.lembur@example.com | Intan Permata | CV Lembur Kreatif | Bandung | Pelanggan123! |
-| rizky.priangan | rizky.priangan@example.com | Rizky Maulana | PT Priangan Eventika | Bandung | Pelanggan123! |
+| rani.siger | rani.siger@example.com | Rani Puspita | PT Siger Event Kreatif | Palembang | Atur secara lokal |
+| dimas.sriwijaya | dimas.sriwijaya@example.com | Dimas Pratama | CV Sriwijaya Cahaya | Palembang | Atur secara lokal |
+| nadia.musi | nadia.musi@example.com | Nadia Putri | PT Musi Gemilang Abadi | Palembang | Atur secara lokal |
+| made.dewata | made.dewata@example.com | Made Aditya | PT Dewata Kreasi Nusantara | Bali | Atur secara lokal |
+| ayu.purnama | ayu.purnama@example.com | Ayu Lestari | CV Purnama Bali Event | Bali | Atur secara lokal |
+| komang.aruna | komang.aruna@example.com | Komang Sari | PT Aruna Nusa Hospitality | Bali | Atur secara lokal |
+| fajar.parahyangan | fajar.parahyangan@example.com | Fajar Nugraha | PT Parahyangan Cipta Acara | Bandung | Atur secara lokal |
+| intan.lembur | intan.lembur@example.com | Intan Permata | CV Lembur Kreatif | Bandung | Atur secara lokal |
+| rizky.priangan | rizky.priangan@example.com | Rizky Maulana | PT Priangan Eventika | Bandung | Atur secara lokal |
 
 ## Akun demo pelanggan
 
-migration_seed_demo_customers.sql membuat tiga akun presentasi tambahan. Akun ini menautkan pengguna ke data perusahaan contoh yang sudah ada, terpisah dari sembilan akun seed di atas. Password berikut hanya untuk pengujian atau presentasi lokal.
+migration_seed_demo_customers.sql membuat tiga akun presentasi tambahan. Akun ini menautkan pengguna ke data perusahaan contoh yang sudah ada, terpisah dari sembilan akun seed di atas. Kredensial seed ditetapkan oleh skrip SQL dan tidak dicantumkan di sini. Atur password secara lokal sebelum digunakan.
 
-| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Password demo lokal |
+| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Kredensial |
 |---|---|---|---|---|---|
-| ilyas.palembang | ilyas.palembang@demo.nusakarsa.com | Ilyas | PT. Maju Bersama | Palembang | Demo-Ilyas-2026! |
-| keyla.bandung | keyla.bandung@demo.nusakarsa.com | Keyla | PT. Sukses Jaya | Bandung | Demo-Keyla-2026! |
-| dhini.bali | dhini.bali@demo.nusakarsa.com | Dhini | CV. Kreatif Abadi | Bali | Demo-Dhini-2026! |
+| ilyas.palembang | ilyas.palembang@demo.nusakarsa.com | Ilyas | PT. Maju Bersama | Palembang | Atur secara lokal |
+| keyla.bandung | keyla.bandung@demo.nusakarsa.com | Keyla | PT. Sukses Jaya | Bandung | Atur secara lokal |
+| dhini.bali | dhini.bali@demo.nusakarsa.com | Dhini | CV. Kreatif Abadi | Bali | Atur secara lokal |
 
-Daftar di atas adalah kredensial awal yang dipasang oleh seed. Akun di database aktif dapat berbeda jika password pernah diganti, akun baru dibuat, atau akun seed dihapus. Untuk login, email atau username dapat digunakan. Email demo hanya identitas login contoh dan bukan alamat mailbox. Jangan gunakan password seed pada data nyata atau layanan yang dapat diakses publik; ganti password sebelum pemakaian operasional.
+Akun di atas dibuat oleh seed. Akun di database aktif dapat berbeda jika password pernah diganti, akun baru dibuat, atau akun seed dihapus. Untuk login, email atau username dapat digunakan. Email demo hanya identitas login contoh dan bukan alamat mailbox. Jangan gunakan password seed pada data nyata atau layanan yang dapat diakses publik; ganti password sebelum pemakaian operasional.
 
 ## Melihat semua akun yang tersimpan
 
@@ -150,3 +153,5 @@ Endpoint tulis memerlukan sesi dan hak akses yang sesuai. Gunakan halaman aplika
 ## Batasan fitur
 
 Dashboard dapat menghitung tagihan yang mendekati jatuh tempo atau tertunggak, tetapi belum ada worker terjadwal yang mengirim pengingat otomatis. README ini juga tidak mengasumsikan adanya pemulihan password, pengiriman email/WhatsApp, atau ekspor laporan penuh.
+
+Jika database pernah menjalankan migration_seed_customer_payment_progress.sql, jalankan migration_remove_demo_payment_progress.sql untuk menghapus event pembayaran sintetis dari laporan dan riwayat. Data transaksi operasional tetap dikelola dari tabel pembayaran.

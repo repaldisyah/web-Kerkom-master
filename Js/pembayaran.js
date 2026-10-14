@@ -121,7 +121,11 @@ function renderInvoice() {
 
 function renderMethodDetails(method) {
     const labels = { QRIS: 'QRIS', BRI: 'Bank BRI', BCA: 'Bank BCA', SEABANK: 'SeaBank', PAYPAL: 'PayPal' };
-    methodDetails.textContent = method ? `${labels[method] || method} dipilih. Pastikan dana sudah diterima sebelum mencatat pembayaran.` : '';
+    if (method === 'QRIS') {
+        methodDetails.innerHTML = '<div class="qris-payment-guide"><strong>Bayar melalui QRIS</strong><p>Scan kode ini menggunakan aplikasi pembayaran Anda. Catat pembayaran setelah dana diterima.</p><img src="../assets/QRIS.jpeg" alt="Kode QRIS pembayaran Nusa Karsa"></div>';
+    } else {
+        methodDetails.textContent = method ? `${labels[method] || method} dipilih. Pastikan dana sudah diterima sebelum mencatat pembayaran.` : '';
+    }
     methodDetails.hidden = !method;
 }
 function renderReceipt(data) {

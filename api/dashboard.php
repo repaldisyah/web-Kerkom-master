@@ -16,6 +16,16 @@ if (!$isSuperAdmin && !$isCustomer && $branchId === null) {
 if ($isCustomer && $scope['customer_id'] === null) {
     respond(['success' => false, 'message' => 'Akun pelanggan belum terhubung ke data pelanggan. Hubungi admin.'], 403);
 }
+$customerName = null;
+$customerBranchId = null;
+if ($isCustomer) {
+    $profile = $db->prepare('SELECT c.name, c.branch_id FROM customers c JOIN users u ON u.customer_id = c.id WHERE u.id = :user_id AND u.customer_id = :customer_id AND u.role = \'pelanggan\' LIMIT 1');
+    $profile->execute(['user_id' => $userId, 'customer_id' => $scope['customer_id']]);
+    $profileRow = $profile->fetch();
+    if (!$profileRow) respond(['success' => false, 'message' => 'Profil pelanggan akun ini tidak ditemukan.'], 403);
+    $customerName = (string) $profileRow['name'];
+    $customerBranchId = (int) $profileRow['branch_id'];
+}
 
 $branchRows = $db->query('SELECT id, name FROM branches ORDER BY name')->fetchAll();
 $branchNames = [];
@@ -116,27 +126,42 @@ $loadEventDatabase = static function (string $databaseName): PDO {
     }
 };
 
-if (!$isCustomer) {
-    foreach ([
-        'bali' => (string) ($config['events_bali_db_name'] ?? 'events_bali'),
-        'bandung' => (string) ($config['events_bandung_db_name'] ?? 'events_bandung'),
-    ] as $branchKey => $databaseName) {
-        $eventBranchId = $branchIdByName[$branchKey] ?? null;
-        if ($eventBranchId === null || (!$isSuperAdmin && (int) $branchId !== $eventBranchId)) continue;
-        $eventDb = $loadEventDatabase($databaseName);
-        $events = $eventDb->query('SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
-                                          nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
-                                   FROM vw_events_dashboard')->fetchAll();
-        foreach ($events as $record) $appendRecord((int) $eventBranchId, $record);
+foreach ([
+    'bali' => (string) ($config['events_bali_db_name'] ?? 'events_bali'),
+    'bandung' => (string) ($config['events_bandung_db_name'] ?? 'events_bandung'),
+] as $branchKey => $databaseName) {
+    $eventBranchId = $branchIdByName[$branchKey] ?? null;
+    if ($eventBranchId === null) continue;
+    if ($isCustomer && $customerBranchId !== $eventBranchId) continue;
+    if (!$isCustomer && !$isSuperAdmin && (int) $branchId !== $eventBranchId) continue;
+    $eventDb = $loadEventDatabase($databaseName);
+    $eventSql = 'SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
+                        nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
+                 FROM vw_events_dashboard';
+    $eventParams = [];
+    if ($isCustomer) {
+        $eventSql .= ' WHERE pelanggan = :customer_name';
+        $eventParams['customer_name'] = $customerName;
     }
+    $eventQuery = $eventDb->prepare($eventSql);
+    $eventQuery->execute($eventParams);
+    foreach ($eventQuery->fetchAll() as $record) $appendRecord((int) $eventBranchId, $record);
+}
 
-    $palembangBranchId = $branchIdByName['palembang'] ?? null;
-    if ($palembangBranchId !== null && ($isSuperAdmin || (int) $branchId === $palembangBranchId)) {
-        $events = $db->query('SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
-                                     nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
-                              FROM palembang_events')->fetchAll();
-        foreach ($events as $record) $appendRecord((int) $palembangBranchId, $record);
+$palembangBranchId = $branchIdByName['palembang'] ?? null;
+$canSeePalembang = $isCustomer ? $customerBranchId === $palembangBranchId : ($isSuperAdmin || (int) $branchId === $palembangBranchId);
+if ($palembangBranchId !== null && $canSeePalembang) {
+    $eventSql = 'SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
+                        nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
+                 FROM palembang_events';
+    $eventParams = [];
+    if ($isCustomer) {
+        $eventSql .= ' WHERE pelanggan = :customer_name';
+        $eventParams['customer_name'] = $customerName;
     }
+    $eventQuery = $db->prepare($eventSql);
+    $eventQuery->execute($eventParams);
+    foreach ($eventQuery->fetchAll() as $record) $appendRecord((int) $palembangBranchId, $record);
 }
 
 usort($records, static function (array $left, array $right): int {

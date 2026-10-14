@@ -39,7 +39,7 @@ WHERE NOT EXISTS (
 
 INSERT INTO users (name, username, email, password_hash, role, branch_id, customer_id)
 SELECT s.contact_name, s.username, s.account_email,
-       '$2y$12$iLe89bK/gaFv53yxC0CIs.NPkDGRag.iFx56RysdBSzET3eLOLoba',
+       '$2y$12$jUkcSYkUNXsOkS8Lrl1klOgJQTgYovw6aE8C8uu2xF5kSOYT6n7Ue',
        'pelanggan', c.branch_id, c.id
 FROM seed_customer_accounts s
 JOIN customers c ON c.email = s.customer_email

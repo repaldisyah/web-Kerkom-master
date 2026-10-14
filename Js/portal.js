@@ -105,10 +105,19 @@ function renderCustomers(customers, role) {
 }
 
 function renderHistory(payments) {
-    payments.forEach(payment => addRow([
-        payment.payment_date || 'Tanggal tidak tercatat', payment.payment_token, payment.customer, payment.branch,
-        payment.event, payment.record_type === 'historical_balance' ? 'Saldo historis' : payment.payment_method, money(payment.amount), payment.note
-    ]));
+    payments.forEach(payment => {
+        const total = Number(payment.total_amount);
+        const balance = Number(payment.balance);
+        const progress = Number.isFinite(total) && total > 0
+            ? Math.max(0, Math.min(100, Math.round(((total - balance) / total) * 100)))
+            : null;
+        const progressNote = progress === null ? '' : `Progres tagihan saat ini ${progress}% lunas`;
+        const note = [payment.note, progressNote].filter(Boolean).join(' · ');
+        addRow([
+            payment.payment_date || 'Tanggal tidak tercatat', payment.payment_token, payment.customer, payment.branch,
+            payment.event, payment.record_type === 'historical_balance' ? 'Saldo historis' : payment.payment_method, money(payment.amount), note || '-'
+        ]);
+    });
 }
 
 async function loadHistory() {
@@ -138,18 +147,31 @@ function renderReport(report) {
     });
     report.by_branch.forEach(branch => addRow([branch.branch, branch.invoice_count, money(branch.invoiced), money(branch.collected), money(branch.outstanding)]));
     document.getElementById('yearLabel').textContent = report.year;
-    showEmpty(Number(summary.invoice_count) === 0);
+    const hasReportData = ['invoice_count', 'invoiced', 'collected', 'outstanding'].some(key => Number(summary[key]) !== 0);
+    showEmpty(!hasReportData);
 }
 
-async function loadReport() {
+async function loadReport(useLatestYear = false) {
     const yearSelect = document.getElementById('yearSelect');
     tableBody.replaceChildren();
     document.getElementById('summaryGrid').replaceChildren();
     setStatus('Memuat laporan...');
     try {
-        const report = await jsonFetch(`../api/reports.php?year=${encodeURIComponent(yearSelect.value)}`);
+        const reportUrl = useLatestYear ? '../api/reports.php' : `../api/reports.php?year=${encodeURIComponent(yearSelect.value)}`;
+        const report = await jsonFetch(reportUrl);
+        if (useLatestYear) {
+            const reportYear = String(report.year);
+            if (![...yearSelect.options].some(option => option.value === reportYear)) {
+                const option = document.createElement('option');
+                option.value = reportYear;
+                option.textContent = reportYear;
+                yearSelect.prepend(option);
+            }
+            yearSelect.value = reportYear;
+        }
         renderReport(report);
-        setStatus(`Laporan ${report.year} berhasil dimuat.`);
+        const warningText = (report.warnings || []).join(' ');
+        setStatus(`Laporan ${report.year} berhasil dimuat.${warningText ? ` ${warningText}` : ''}`, Boolean(warningText));
     } catch (error) { setStatus(error.message, true); }
 }
 
@@ -159,13 +181,17 @@ async function initialize() {
         if (!session.authenticated) return redirectToLogin();
         await setScope(session.user);
         if (page === 'report') {
+            if (session.user.role === 'pelanggan') {
+                window.location.replace('../halaman.html');
+                return;
+            }
             const yearSelect = document.getElementById('yearSelect');
             const currentYear = new Date().getFullYear();
             for (let year = currentYear; year >= 2020; year -= 1) {
                 const option = document.createElement('option'); option.value = year; option.textContent = year; yearSelect.append(option);
             }
-            yearSelect.addEventListener('change', loadReport);
-            await loadReport();
+            yearSelect.addEventListener('change', () => loadReport());
+            await loadReport(true);
             return;
         }
         if (page === 'history') {
