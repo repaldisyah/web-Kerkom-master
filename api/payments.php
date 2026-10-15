@@ -64,6 +64,8 @@ try {
             'customer' => $receivable['customer'],
             'branch' => $receivable['branch'],
             'event' => $receivable['event'],
+            'balance' => max(0, $newBalance),
+            'simulated' => false,
         ],
     ]);
 } catch (RuntimeException $error) {

@@ -83,11 +83,13 @@ $addCollected = static function (int $branchId, float $amount) use (&$byBranch):
     if (isset($byBranch[$branchId])) $byBranch[$branchId]['collected'] += $amount;
 };
 
-$masterSql = 'SELECT r.branch_id, COUNT(*) AS invoice_count,
+$hasDemoPayments = has_payment_record_type_column();
+$demoBalanceSql = $hasDemoPayments ? "(SELECT COALESCE(SUM(pd.amount), 0) FROM payments pd WHERE pd.receivable_id = r.id AND pd.record_type = 'demo_simulation')" : '0';
+$masterSql = "SELECT r.branch_id, COUNT(*) AS invoice_count,
                      COALESCE(SUM(r.total_amount), 0) AS invoiced,
                      0 AS collected,
-                     COALESCE(SUM(r.balance), 0) AS outstanding
-              FROM receivables r WHERE YEAR(r.invoice_date) = :year';
+                     COALESCE(SUM(r.balance + $demoBalanceSql), 0) AS outstanding
+              FROM receivables r WHERE YEAR(r.invoice_date) = :year";
 $masterParams = ['year' => $year];
 if (!$isCentral) {
     $masterSql .= ' AND r.branch_id = :branch_id';
@@ -98,6 +100,7 @@ $masterStatement = $db->prepare($masterSql);
 $masterStatement->execute($masterParams);
 foreach ($masterStatement->fetchAll() as $row) $addTotals((int) $row['branch_id'], $row);
 $paymentSql = 'SELECT r.branch_id, COALESCE(SUM(p.amount), 0) AS collected FROM payments p JOIN receivables r ON r.id = p.receivable_id WHERE YEAR(p.payment_date) = :year';
+if ($hasDemoPayments) $paymentSql .= " AND p.record_type <> 'demo_simulation'";
 $paymentParams = ['year' => $year];
 if (!$isCentral) {
     $paymentSql .= ' AND r.branch_id = :branch_id';
@@ -126,9 +129,11 @@ $aggregateEventDatabase = static function (string $databaseName, int $branchId) 
             $config['db_pass'],
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
         );
-        $sql = 'SELECT COUNT(*) AS invoice_count, COALESCE(SUM(nilai_kontrak), 0) AS invoiced,
-                       COALESCE(SUM(total_dibayar), 0) AS collected, COALESCE(SUM(piutang), 0) AS outstanding
-                FROM vw_events_dashboard WHERE YEAR(COALESCE(tgl_event, tgl_jatuh_tempo)) = :year';
+        $sql = "SELECT COUNT(*) AS invoice_count, COALESCE(SUM(v.nilai_kontrak), 0) AS invoiced,
+                       COALESCE(SUM(v.total_dibayar - COALESCE(d.demo_amount, 0)), 0) AS collected,
+                       COALESCE(SUM(v.piutang + COALESCE(d.demo_amount, 0)), 0) AS outstanding
+                FROM vw_events_dashboard v LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM event_payments WHERE record_type = 'demo_simulation' GROUP BY event_id) d ON d.event_id = v.id
+                WHERE YEAR(COALESCE(v.tgl_event, v.tgl_jatuh_tempo)) = :year";
         $params = ['year' => $year];
         $statement = $eventDb->prepare($sql);
         $statement->execute($params);
@@ -144,9 +149,11 @@ if ($palembangId !== null && $canSeeBranch($palembangId)) {
         if (!$db->query("SHOW TABLES LIKE 'palembang_events'")->fetchColumn()) {
             $warnings[] = 'Palembang: tabel event belum tersedia.';
         } else {
-            $sql = 'SELECT COUNT(*) AS invoice_count, COALESCE(SUM(nilai_kontrak), 0) AS invoiced,
-                           COALESCE(SUM(total_dibayar), 0) AS collected, COALESCE(SUM(piutang), 0) AS outstanding
-                    FROM palembang_events WHERE YEAR(COALESCE(tgl_event, tgl_jatuh_tempo)) = :year';
+            $sql = "SELECT COUNT(*) AS invoice_count, COALESCE(SUM(e.nilai_kontrak), 0) AS invoiced,
+                           COALESCE(SUM(e.total_dibayar - COALESCE(d.demo_amount, 0)), 0) AS collected,
+                           COALESCE(SUM(e.piutang + COALESCE(d.demo_amount, 0)), 0) AS outstanding
+                    FROM palembang_events e LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM palembang_payments WHERE record_type = 'demo_simulation' GROUP BY event_id) d ON d.event_id = e.id
+                    WHERE YEAR(COALESCE(e.tgl_event, e.tgl_jatuh_tempo)) = :year";
             $params = ['year' => $year];
             $statement = $db->prepare($sql);
             $statement->execute($params);

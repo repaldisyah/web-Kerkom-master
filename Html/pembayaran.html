@@ -19,7 +19,7 @@
             window.history.replaceState({}, document.title, cleanUrl.href);
         }
     </script>
-    <link rel="icon" type="image/png" href="../assets/logo2.0.png">
+    <link rel="icon" type="image/png" href="../assets/logo3.0.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -42,7 +42,7 @@
             <div>
                 <p class="eyebrow">NUSA KARSA EVENT / KEUANGAN</p>
                 <h1>Pembayaran piutang</h1>
-                <p class="subtitle">Catat pembayaran pelanggan dengan kanal yang mereka pilih.</p>
+                <p id="paymentPageSubtitle" class="subtitle">Memuat alur pembayaran...</p>
             </div>
             <div class="topbar-actions">
                 <span id="sessionStatus" class="session-status" aria-live="polite">Memeriksa sesi...</span>
@@ -78,22 +78,22 @@
                 </section>
 
                 <section class="panel method-panel">
-                    <div class="panel-heading"><div><h3>Metode pembayaran</h3><p>Pilih metode yang digunakan untuk pembayaran yang sudah diterima.</p></div><i class="fa-solid fa-wallet"></i></div>
+                    <div class="panel-heading"><div><h3>Metode pembayaran</h3><p id="paymentMethodHint">Memuat keterangan metode...</p></div><i class="fa-solid fa-wallet"></i></div>
                     <div class="method-grid" role="radiogroup" aria-label="Metode pembayaran">
-                        <button class="method-card" data-method="QRIS" type="button"><span class="method-icon qris"><i class="fa-solid fa-qrcode"></i></span><span><strong>QRIS</strong><small>Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
-                        <button class="method-card" data-method="BRI" type="button"><span class="method-icon bri">BRI</span><span><strong>Bank BRI</strong><small>Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
-                        <button class="method-card" data-method="BCA" type="button"><span class="method-icon bca">BCA</span><span><strong>Bank BCA</strong><small>Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
-                        <button class="method-card" data-method="SEABANK" type="button"><span class="method-icon sea"><i class="fa-solid fa-water"></i></span><span><strong>SeaBank</strong><small>Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
-                        <button class="method-card" data-method="PAYPAL" type="button"><span class="method-icon paypal"><i class="fa-brands fa-paypal"></i></span><span><strong>PayPal</strong><small>Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="QRIS" type="button"><span class="method-icon qris"><i class="fa-solid fa-qrcode"></i></span><span><strong>QRIS</strong><small class="method-caption">Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="BRI" type="button"><span class="method-icon bri">BRI</span><span><strong>Bank BRI</strong><small class="method-caption">Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="BCA" type="button"><span class="method-icon bca">BCA</span><span><strong>Bank BCA</strong><small class="method-caption">Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="SEABANK" type="button"><span class="method-icon sea"><i class="fa-solid fa-water"></i></span><span><strong>SeaBank</strong><small class="method-caption">Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
+                        <button class="method-card" data-method="PAYPAL" type="button"><span class="method-icon paypal"><i class="fa-brands fa-paypal"></i></span><span><strong>PayPal</strong><small class="method-caption">Metode tercatat</small></span><i class="fa-solid fa-circle-check check"></i></button>
                     </div>
                     <div id="methodDetails" class="method-details" hidden></div>
                     <button id="submitPayment" class="submit-button" type="button" disabled><i class="fa-solid fa-lock"></i><span>Catat pembayaran</span></button>
-                    <p class="form-footnote"><i class="fa-solid fa-circle-info"></i> Form ini untuk pencatatan admin. Pastikan dana sudah diterima sebelum menyimpan.</p>
+                    <p id="paymentFootnote" class="form-footnote"><i class="fa-solid fa-circle-info"></i> Mode demo: tidak memproses dana. Transaksi simulasi mengurangi saldo operasional dan ditandai belum diverifikasi.</p>
                 </section>
             </div>
 
             <section id="receipt" class="receipt panel" hidden>
-                <div class="receipt-heading"><div><span class="section-kicker">STRUK DIGITAL</span><h2>Pembayaran berhasil</h2></div><i class="fa-solid fa-circle-check"></i></div>
+                <div class="receipt-brand"><img src="../assets/logo3.0.png" alt="Logo Nusa Karsa Event"><div><strong>NUSA KARSA EVENT</strong><span>Bukti transaksi pelanggan</span></div><b id="receiptDemoMark" class="receipt-demo-mark">SIMULASI</b></div><div class="receipt-heading"><div><span class="section-kicker">STRUK PEMBAYARAN</span><h2 id="receiptTitle">Pembayaran berhasil</h2></div><i class="fa-solid fa-circle-check"></i></div>
                 <div class="receipt-token"><span>Token transaksi</span><strong id="receiptToken">-</strong></div>
                 <div class="receipt-grid">
                     <div><span>Pelanggan</span><strong id="receiptCustomer">-</strong></div>
@@ -102,14 +102,14 @@
                     <div><span>Metode</span><strong id="receiptMethod">-</strong></div>
                     <div><span>Tanggal</span><strong id="receiptDate">-</strong></div>
                     <div><span>Catatan</span><strong id="receiptNote">-</strong></div>
-                    <div class="receipt-total"><span>Total dibayar</span><strong id="receiptAmount">-</strong></div>
+                    <div><span>Sisa piutang</span><strong id="receiptBalance">-</strong></div><div class="receipt-total"><span>Total dibayar</span><strong id="receiptAmount">-</strong></div>
                 </div>
-                <p class="receipt-validity"><i class="fa-solid fa-shield-halved"></i> Struk digital ini divalidasi dengan token transaksi di atas.</p>
+                <p id="receiptValidity" class="receipt-validity"><i class="fa-solid fa-circle-info"></i> Struk simulasi untuk keperluan demo. Tidak membuktikan adanya dana yang diterima.</p>
                 <div class="receipt-actions" aria-label="Aksi struk digital">
                     <button id="shareReceipt" class="share-button primary" type="button"><i class="fa-solid fa-share-nodes"></i> Bagikan</button>
                     <a id="whatsappReceipt" class="share-button whatsapp" href="#" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
                     <button id="copyReceiptToken" class="share-button" type="button"><i class="fa-regular fa-copy"></i> Salin token</button>
-                    <button id="printReceipt" class="share-button" type="button"><i class="fa-solid fa-print"></i> Cetak</button>
+                    <button id="printReceipt" class="share-button" type="button"><i class="fa-solid fa-print"></i> Cetak / Simpan PDF</button><button id="downloadReceipt" class="share-button" type="button"><i class="fa-solid fa-download"></i> Unduh struk</button>
                 </div>
             </section>
         </div>

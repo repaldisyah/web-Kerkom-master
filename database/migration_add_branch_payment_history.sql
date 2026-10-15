@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS events_bali.event_payments (
     payment_method VARCHAR(50) NOT NULL DEFAULT 'Manual',
     payment_token VARCHAR(40) NOT NULL UNIQUE,
     note VARCHAR(255) NULL,
-    record_type ENUM('payment', 'historical_balance') NOT NULL DEFAULT 'payment',
+    record_type ENUM('payment', 'historical_balance', 'demo_simulation') NOT NULL DEFAULT 'payment',
     historical_event_id VARCHAR(20) NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_bali_event_payment_amount CHECK (amount > 0),
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS events_bandung.event_payments (
     payment_method VARCHAR(50) NOT NULL DEFAULT 'Manual',
     payment_token VARCHAR(40) NOT NULL UNIQUE,
     note VARCHAR(255) NULL,
-    record_type ENUM('payment', 'historical_balance') NOT NULL DEFAULT 'payment',
+    record_type ENUM('payment', 'historical_balance', 'demo_simulation') NOT NULL DEFAULT 'payment',
     historical_event_id VARCHAR(20) NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_bandung_event_payment_amount CHECK (amount > 0),
@@ -59,7 +59,7 @@ WHERE e.total_dibayar > COALESCE(p.logged_amount, 0)
 ALTER TABLE nusa_karsa.palembang_payments
     MODIFY payment_date DATE NULL,
     MODIFY payment_method ENUM('QRIS', 'BRI', 'BCA', 'SEABANK', 'PAYPAL', 'HISTORIS') NOT NULL,
-    ADD COLUMN record_type ENUM('payment', 'historical_balance') NOT NULL DEFAULT 'payment' AFTER note,
+    ADD COLUMN record_type ENUM('payment', 'historical_balance', 'demo_simulation') NOT NULL DEFAULT 'payment' AFTER note,
     ADD COLUMN historical_event_id VARCHAR(20) NULL UNIQUE AFTER record_type;
 
 INSERT INTO nusa_karsa.palembang_payments

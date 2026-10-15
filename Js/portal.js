@@ -46,7 +46,7 @@ async function setScope(user) {
         document.querySelectorAll('.report-link').forEach(link => link.classList.add('hidden'));
         document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
             const path = new URL(link.href, window.location.href).pathname.toLowerCase();
-            if (/\/(cabang(?:palembang|bandung|bali)?|pelanggan|piutang|pembayaran|laporan|events-(?:bali|bandung))\.html$/.test(path)) {
+            if (/\/(cabang(?:palembang|bandung|bali)?|laporan|events-(?:bali|bandung))\.html$/.test(path)) {
                 link.classList.add('hidden');
             }
         });
@@ -115,7 +115,7 @@ function renderHistory(payments) {
         const note = [payment.note, progressNote].filter(Boolean).join(' · ');
         addRow([
             payment.payment_date || 'Tanggal tidak tercatat', payment.payment_token, payment.customer, payment.branch,
-            payment.event, payment.record_type === 'historical_balance' ? 'Saldo historis' : payment.payment_method, money(payment.amount), note || '-'
+            payment.event, payment.record_type === 'historical_balance' ? 'Saldo historis' : payment.record_type === 'demo_simulation' ? 'Simulasi (belum diverifikasi)' : payment.payment_method, money(payment.amount), note || '-'
         ]);
     });
 }

@@ -77,6 +77,7 @@ try {
     ]);
     $update = $db->prepare('UPDATE events SET total_dibayar = total_dibayar + :amount WHERE id = :id');
     $update->execute(['amount' => $amount, 'id' => $eventId]);
+    $newBalance = max(0, $balance - $amount);
     $db->commit();
     respond(['success' => true, 'message' => 'Pembayaran berhasil dicatat.', 'payment' => [
         'payment_token' => $token,
@@ -87,6 +88,8 @@ try {
         'customer' => $event['pelanggan'],
         'branch' => ucfirst($branch),
         'event' => $event['nama_event'],
+        'balance' => $newBalance,
+        'simulated' => false,
     ]]);
 } catch (RuntimeException $error) {
     if ($db->inTransaction()) $db->rollBack();

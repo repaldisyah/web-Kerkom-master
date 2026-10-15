@@ -33,7 +33,7 @@ if ($isCustomer) {
     $parameters = ['branch_id' => (int) $branchId];
 }
 
-$statement = $db->prepare("SELECT r.id, c.name AS customer, b.name AS branch, e.name AS event, r.due_date, r.total_amount, r.balance, r.status FROM receivables r JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id WHERE r.balance > 0$filter ORDER BY r.due_date ASC, r.id ASC");
+$statement = $db->prepare("SELECT r.id, 'master' AS source, c.name AS customer, b.name AS branch, e.name AS event, r.due_date, r.total_amount, r.balance, r.status FROM receivables r JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id WHERE r.balance > 0$filter ORDER BY r.due_date ASC, r.id ASC");
 $statement->execute($parameters);
 $receivables = $statement->fetchAll();
 
@@ -61,15 +61,15 @@ if ($isCustomer) {
                 $config['db_pass'],
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
             );
-            $eventQuery = $eventDb->prepare("SELECT id, :customer AS customer, :branch AS branch, nama_event AS event, tgl_jatuh_tempo AS due_date, nilai_kontrak AS total_amount, piutang AS balance, status_piutang AS status FROM vw_events_dashboard WHERE pelanggan = :customer_name AND piutang > 0");
-            $eventQuery->execute(['customer' => $customerName, 'branch' => ucfirst($branchKey), 'customer_name' => $customerName]);
+            $eventQuery = $eventDb->prepare("SELECT id, :source AS source, :customer AS customer, :branch AS branch, nama_event AS event, tgl_jatuh_tempo AS due_date, nilai_kontrak AS total_amount, piutang AS balance, status_piutang AS status FROM vw_events_dashboard WHERE pelanggan = :customer_name AND piutang > 0");
+            $eventQuery->execute(['source' => $branchKey, 'customer' => $customerName, 'branch' => ucfirst($branchKey), 'customer_name' => $customerName]);
             $receivables = array_merge($receivables, $eventQuery->fetchAll());
         } catch (PDOException) {
             respond(['success' => false, 'message' => 'Data tagihan cabang belum dapat dimuat.'], 503);
         }
     }
     if (($branchNames['palembang'] ?? null) === $customerBranchId) {
-        $eventQuery = $db->prepare("SELECT id, :customer AS customer, 'Palembang' AS branch, nama_event AS event, tgl_jatuh_tempo AS due_date, nilai_kontrak AS total_amount, piutang AS balance, CASE WHEN piutang <= 0 THEN 'Lunas' WHEN tgl_jatuh_tempo < CURDATE() THEN 'Menunggak' ELSE 'Belum Lunas' END AS status FROM palembang_events WHERE pelanggan = :customer_name AND piutang > 0");
+        $eventQuery = $db->prepare("SELECT id, 'palembang' AS source, :customer AS customer, 'Palembang' AS branch, nama_event AS event, tgl_jatuh_tempo AS due_date, nilai_kontrak AS total_amount, piutang AS balance, CASE WHEN piutang <= 0 THEN 'Lunas' WHEN tgl_jatuh_tempo < CURDATE() THEN 'Menunggak' ELSE 'Belum Lunas' END AS status FROM palembang_events WHERE pelanggan = :customer_name AND piutang > 0");
         $eventQuery->execute(['customer' => $customerName, 'customer_name' => $customerName]);
         $receivables = array_merge($receivables, $eventQuery->fetchAll());
     }

@@ -1,4 +1,4 @@
-﻿# Database dan akun
+# Database dan akun
 
 Dokumen ini menjelaskan database yang dipakai aplikasi, urutan setup lokal, akun bawaan dari skrip seed, dan cara memeriksa akun yang benar-benar tersimpan. Stack saat ini adalah PHP dengan PDO, MySQL, dan frontend HTML/CSS/JavaScript.
 
@@ -25,10 +25,10 @@ Jalankan Apache dan MySQL dari XAMPP. Sebelum impor atau migrasi, pastikan datab
 6. Jalankan migration_add_payment_method.sql dan migration_add_payment_token.sql bila kolom tersebut belum tersedia.
 7. Jalankan migration_add_palembang_events.sql satu kali untuk membuat tabel event dan pembayaran Palembang.
 8. Impor events_bali.sql ke database events_bali dan events_bandung.sql ke database events_bandung. Setelah impor Bandung, jalankan events_bandung_upsert.sql untuk memasukkan data jadwal pembayaran.
-9. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event tersedia, kemudian migration_add_deletion_requests.sql.
+9. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event tersedia, kemudian migration_add_demo_simulation_type.sql dan migration_add_deletion_requests.sql.
 10. Periksa ../api/config.php, pastikan nama database dan kredensial MySQL sesuai, lalu buka http://localhost/web-Kerkom-master/halaman.html melalui Apache.
 
-Seed akun membutuhkan kolom customer_id, cabang, dan profil pelanggan yang dirujuk. Akun pelanggan hanya menampilkan data yang tertaut pada customer_id. Tidak ada seed pembayaran sintetis; laporan mengambil angka dari transaksi dan saldo event yang tersimpan di database. Buat backup sebelum perubahan skema atau data.
+Seed akun membutuhkan kolom customer_id, cabang, dan profil pelanggan yang dirujuk. Akun pelanggan hanya menampilkan data yang tertaut pada customer_id. Pembayaran pelanggan di halaman demo bukan pembayaran gateway: kliknya menulis transaksi berlabel demo_simulation dan mengurangi saldo operasional pada database. Nilai tersebut tidak dianggap dana terverifikasi oleh laporan. Buat backup sebelum uji transaksi; pulihkan backup untuk mengembalikan saldo awal.
 
 ## Pembaruan database lama
 
@@ -37,12 +37,13 @@ Seed akun membutuhkan kolom customer_id, cabang, dan profil pelanggan yang diruj
 3. Jalankan hanya migrasi yang belum diterapkan. Untuk akun pelanggan, pastikan migration_add_customer_account.sql sudah diterapkan dan data cabang/profil pelanggan tersedia sebelum menjalankan seed akun. Jalankan migration_add_payment_method.sql dan migration_add_payment_token.sql bila kolom belum ada.
 4. Database events_bali lama memerlukan migration_add_event_calculations.sql, lalu migration_update_bali_events.sql sesuai kondisi skemanya. Jangan impor ulang events_bali.sql ke database yang telah menerima pembayaran.
 5. Database events_bandung lama yang belum memiliki kolom jadwal memerlukan migration_add_bandung_schedules.sql, lalu events_bandung_upsert.sql.
-6. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event siap; lanjutkan dengan migration_add_deletion_requests.sql.
-7. Setelah migrasi, cek login ketiga peran, pembatasan cabang, pencatatan pembayaran, saldo, dan riwayat sebelum sistem dipakai.
+6. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event siap; lanjutkan dengan migration_add_demo_simulation_type.sql dan migration_add_deletion_requests.sql.
+7. Jalankan migration_link_demo_customer_accounts_to_events.sql untuk memasangkan akun uji lama ke nama pelanggan event. Skrip hanya memperbarui profil dummy dan tidak mengubah transaksi atau saldo.
+8. Setelah migrasi, cek login ketiga peran, pembatasan cabang, pencatatan pembayaran, saldo, dan riwayat sebelum sistem dipakai.
 
 Cocokkan nama dan urutan migrasi dengan struktur aktual sebelum menjalankan SQL. Jika hasil atau kondisi skema berbeda dari panduan, hentikan migrasi dan buat backup sebelum melakukan perubahan manual.
 
-Riwayat event lama tanpa transaksi bertanggal akan menampilkan satu saldo historis per event, tanpa tanggal transaksi. Pembayaran yang dicatat setelah migrasi tersimpan sebagai transaksi individual. Jika database pernah menjalankan seed progres sintetis, jalankan migration_remove_demo_payment_progress.sql untuk membersihkan baris tersebut.
+Riwayat event lama tanpa transaksi bertanggal menampilkan satu snapshot saldo historis per event, tanpa tanggal transaksi; snapshot ini bukan rincian cicilan. Data event yang saat ini dipetakan ke akun demo masih berisi snapshot historical_balance, bukan transaksi pembayaran satu per satu. Pembayaran admin tersimpan sebagai transaksi payment. Klik pembayaran pelanggan pada mode demo mengurangi saldo operasional dan tersimpan sebagai demo_simulation; transaksi tersebut muncul di riwayat tetapi laporan tidak menghitungnya sebagai uang terverifikasi. Untuk memakai data awal lagi, pulihkan backup sebelum percobaan demo. Jika database pernah menjalankan seed progres sintetis, jalankan migration_remove_demo_payment_progress.sql untuk membersihkan baris tersebut.
 
 ## Peran dan cakupan akun
 
@@ -52,7 +53,7 @@ Tabel users menyimpan akun aplikasi. Nilai role menentukan pangkat akses; branch
 |---|---|---|
 | admin_pusat | admin_pusat | Admin pusat untuk memantau dan mengelola operasi lintas cabang, mengelola akun admin cabang, melihat laporan, serta meninjau permintaan penghapusan event. |
 | admin_cabang | nusa_karsa | Admin operasional yang dapat menambahkan event dan mencatat pembayaran di cabangnya, melihat data lingkup cabang, serta mengajukan permintaan penghapusan. Tidak dapat mengelola cabang lain atau menyetujui permintaan hapus. |
-| pelanggan | nusa_karsa | Pengguna portal pelanggan. Akun hanya terhubung ke satu customer_id untuk melihat tagihan dan riwayat pembayaran milik profil tersebut; halaman laporan hanya tersedia untuk admin. |
+| pelanggan | nusa_karsa | Pengguna portal pelanggan. Akun hanya terhubung ke satu customer_id untuk melihat tagihan dan riwayat milik profil tersebut. Dapat menjalankan simulasi pembayaran yang mengurangi saldo operasional dan tercatat sebagai demo_simulation; ini tidak membuktikan penerimaan dana. |
 
 Pada halaman login, pilih jenis akun Admin untuk admin_pusat dan admin_cabang. Pilih Pelanggan untuk role pelanggan.
 
@@ -69,29 +70,29 @@ Akun berikut dibuat atau diperbarui oleh migration_seed_admin_accounts.sql. Pass
 
 ## Akun pelanggan seed per cabang
 
-migration_seed_customer_accounts_by_branch.sql membuat sembilan akun contoh, masing-masing ditautkan ke profil perusahaan berikut. Semua memakai role pelanggan. Password seed tidak dicantumkan di dokumentasi; atur atau ganti kredensial secara lokal sebelum login.
+migration_seed_customer_accounts_by_branch.sql membuat sembilan akun contoh, masing-masing ditautkan ke nama pelanggan pada data event aktif berikut. Semua memakai role pelanggan. Password seed tidak dicantumkan di dokumentasi; atur atau ganti kredensial secara lokal sebelum login.
 
 | Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Kredensial |
 |---|---|---|---|---|---|
-| rani.siger | rani.siger@example.com | Rani Puspita | PT Siger Event Kreatif | Palembang | Atur secara lokal |
-| dimas.sriwijaya | dimas.sriwijaya@example.com | Dimas Pratama | CV Sriwijaya Cahaya | Palembang | Atur secara lokal |
-| nadia.musi | nadia.musi@example.com | Nadia Putri | PT Musi Gemilang Abadi | Palembang | Atur secara lokal |
-| made.dewata | made.dewata@example.com | Made Aditya | PT Dewata Kreasi Nusantara | Bali | Atur secara lokal |
-| ayu.purnama | ayu.purnama@example.com | Ayu Lestari | CV Purnama Bali Event | Bali | Atur secara lokal |
-| komang.aruna | komang.aruna@example.com | Komang Sari | PT Aruna Nusa Hospitality | Bali | Atur secara lokal |
-| fajar.parahyangan | fajar.parahyangan@example.com | Fajar Nugraha | PT Parahyangan Cipta Acara | Bandung | Atur secara lokal |
-| intan.lembur | intan.lembur@example.com | Intan Permata | CV Lembur Kreatif | Bandung | Atur secara lokal |
-| rizky.priangan | rizky.priangan@example.com | Rizky Maulana | PT Priangan Eventika | Bandung | Atur secara lokal |
+| rani.siger | rani.siger@example.com | Rani Puspita | Sponsor D | Palembang | Atur secara lokal |
+| dimas.sriwijaya | dimas.sriwijaya@example.com | Dimas Pratama | Sponsor A | Palembang | Atur secara lokal |
+| nadia.musi | nadia.musi@example.com | Nadia Putri | Sponsor B | Palembang | Atur secara lokal |
+| made.dewata | made.dewata@example.com | Made Aditya | Kementerian Pariwisata RI | Bali | Atur secara lokal |
+| ayu.purnama | ayu.purnama@example.com | Ayu Lestari | Keluarga Sarah Thompson | Bali | Atur secara lokal |
+| komang.aruna | komang.aruna@example.com | Komang Sari | PT Telkom Indonesia | Bali | Atur secara lokal |
+| fajar.parahyangan | fajar.parahyangan@example.com | Fajar Nugraha | Universitas Padjadjaran | Bandung | Atur secara lokal |
+| intan.lembur | intan.lembur@example.com | Intan Permata | Keluarga Sari Melati | Bandung | Atur secara lokal |
+| rizky.priangan | rizky.priangan@example.com | Rizky Maulana | PT PLN (Persero) Regional Jabar | Bandung | Atur secara lokal |
 
 ## Akun demo pelanggan
 
-migration_seed_demo_customers.sql membuat tiga akun presentasi tambahan. Akun ini menautkan pengguna ke data perusahaan contoh yang sudah ada, terpisah dari sembilan akun seed di atas. Kredensial seed ditetapkan oleh skrip SQL dan tidak dicantumkan di sini. Atur password secara lokal sebelum digunakan.
+migration_seed_demo_customers.sql membuat tiga akun presentasi tambahan. Akun ini menautkan pengguna ke nama pelanggan pada data event aktif, terpisah dari sembilan akun seed di atas. Kredensial seed ditetapkan oleh skrip SQL dan tidak dicantumkan di sini. Atur password secara lokal sebelum digunakan.
 
 | Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Kredensial |
 |---|---|---|---|---|---|
-| ilyas.palembang | ilyas.palembang@demo.nusakarsa.com | Ilyas | PT. Maju Bersama | Palembang | Atur secara lokal |
-| keyla.bandung | keyla.bandung@demo.nusakarsa.com | Keyla | PT. Sukses Jaya | Bandung | Atur secara lokal |
-| dhini.bali | dhini.bali@demo.nusakarsa.com | Dhini | CV. Kreatif Abadi | Bali | Atur secara lokal |
+| ilyas.palembang | ilyas.palembang@demo.nusakarsa.com | Ilyas | Sponsor F | Palembang | Atur secara lokal |
+| keyla.bandung | keyla.bandung@demo.nusakarsa.com | Keyla | PT Kalya Fashion Indonesia | Bandung | Atur secara lokal |
+| dhini.bali | dhini.bali@demo.nusakarsa.com | Dhini | PT Alaya Hospitality Group | Bali | Atur secara lokal |
 
 Akun di atas dibuat oleh seed. Akun di database aktif dapat berbeda jika password pernah diganti, akun baru dibuat, atau akun seed dihapus. Untuk login, email atau username dapat digunakan. Email demo hanya identitas login contoh dan bukan alamat mailbox. Jangan gunakan password seed pada data nyata atau layanan yang dapat diakses publik; ganti password sebelum pemakaian operasional.
 

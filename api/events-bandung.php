@@ -81,13 +81,14 @@ try {
         $events = $db->query('SELECT * FROM vw_events_dashboard ORDER BY tgl_event IS NULL, tgl_event, id')->fetchAll();
         $summary = $db->query("SELECT
             COALESCE(SUM(nilai_kontrak), 0) AS total_nilai_kontrak,
-            COALESCE(SUM(total_dibayar), 0) AS total_dibayar,
-            COALESCE(SUM(piutang), 0) AS total_piutang,
+            COALESCE(SUM(total_dibayar - COALESCE(d.demo_amount, 0)), 0) AS total_dibayar,
+            COALESCE(SUM(piutang + COALESCE(d.demo_amount, 0)), 0) AS total_piutang,
             COALESCE(SUM(margin), 0) AS total_margin,
             COALESCE(SUM(CASE WHEN status_piutang = 'Berjalan' THEN piutang ELSE 0 END), 0) AS piutang_berjalan,
             COALESCE(SUM(CASE WHEN status_piutang = 'Piutang Jatuh Tempo' THEN piutang ELSE 0 END), 0) AS piutang_jatuh_tempo,
             COALESCE(SUM(CASE WHEN status_piutang = 'Lunas' THEN 1 ELSE 0 END), 0) AS jumlah_lunas
-            FROM vw_events_dashboard")->fetch();
+            FROM vw_events_dashboard v
+            LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM event_payments WHERE record_type = 'demo_simulation' GROUP BY event_id) d ON d.event_id = v.id")->fetch();
         respond(['success' => true, 'branch' => 'Bandung', 'events' => $events, 'summary' => $summary]);
     }
 

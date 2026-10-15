@@ -9,6 +9,7 @@ const submitButton = document.getElementById("submitPayment");
 const alertBox = document.getElementById("alert");
 const receipt = document.getElementById("receipt");
 const printReceiptButton = document.getElementById("printReceipt");
+const downloadReceiptButton = document.getElementById("downloadReceipt");
 const sessionStatus = document.getElementById("sessionStatus");
 const shareReceiptButton = document.getElementById("shareReceipt");
 const copyReceiptTokenButton = document.getElementById("copyReceiptToken");
@@ -21,6 +22,7 @@ let requestedEventId = paymentParams.get("event_id");
 let receivables = [];
 let selectedMethod = "";
 let latestReceipt = null;
+let currentUserRole = "";
 
 const money = value => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value) || 0);
  const todayLocal = new Date();
@@ -85,7 +87,20 @@ async function ensureAuthenticated() {
         return false;
     }
 
+    currentUserRole = result.user.role || "";
     sessionStatus.textContent = `Masuk sebagai ${result.user.name}`;
+    const isCustomerDemo = currentUserRole === "pelanggan";
+    document.getElementById("paymentPageSubtitle").textContent = isCustomerDemo
+        ? "Simulasikan pembayaran, perbarui saldo demo, lalu cetak atau unduh struk."
+        : "Catat pembayaran yang telah diterima dan buat struk transaksi.";
+    document.getElementById("paymentMethodHint").textContent = isCustomerDemo
+        ? "Pilih metode untuk simulasi demo. Dana tidak diproses."
+        : "Pilih metode yang digunakan untuk pembayaran yang sudah diterima.";
+    document.querySelectorAll(".method-caption").forEach(label => {
+        label.textContent = isCustomerDemo ? "Metode simulasi" : "Metode tercatat";
+    });
+    const footnote = document.getElementById("paymentFootnote");
+    if (footnote && currentUserRole !== "pelanggan") footnote.textContent = "Form ini untuk pencatatan admin. Pastikan dana sudah diterima sebelum menyimpan.";
     return true;
 }
 
@@ -93,6 +108,8 @@ function updateSubmitState() {
     const receivable = selectedReceivable();
     const amount = Number(amountInput.value);
     submitButton.disabled = !receivable || !selectedMethod || !Number.isFinite(amount) || amount <= 0 || amount > Number(receivable.balance);
+    const buttonLabel = currentUserRole === "pelanggan" ? "Simulasikan pembayaran" : "Catat pembayaran";
+    if (!submitButton.disabled) submitButton.querySelector("span").textContent = buttonLabel;
 }
 
 function renderInvoice() {
@@ -120,6 +137,11 @@ function renderInvoice() {
 }
 
 function renderMethodDetails(method) {
+    if (currentUserRole === "pelanggan") {
+        methodDetails.textContent = method ? `${method} dipilih untuk simulasi demo. Tidak ada dana yang diproses.` : "";
+        methodDetails.hidden = !method;
+        return;
+    }
     const labels = { QRIS: 'QRIS', BRI: 'Bank BRI', BCA: 'Bank BCA', SEABANK: 'SeaBank', PAYPAL: 'PayPal' };
     if (method === 'QRIS') {
         methodDetails.innerHTML = '<div class="qris-payment-guide"><strong>Bayar melalui QRIS</strong><p>Scan kode ini menggunakan aplikasi pembayaran Anda. Catat pembayaran setelah dana diterima.</p><img src="../assets/QRIS.jpeg" alt="Kode QRIS pembayaran Nusa Karsa"></div>';
@@ -130,6 +152,10 @@ function renderMethodDetails(method) {
 }
 function renderReceipt(data) {
     latestReceipt = data;
+    const isSimulation = Boolean(data.simulated);
+    document.getElementById("receiptDemoMark").hidden = !isSimulation;
+    document.getElementById("receiptTitle").textContent = isSimulation ? "Simulasi pembayaran selesai" : "Pembayaran berhasil";
+    document.getElementById("receiptValidity").innerHTML = isSimulation ? "<i class=\"fa-solid fa-circle-info\"></i> Struk simulasi untuk keperluan demo. Tidak membuktikan adanya dana yang diterima." : "<i class=\"fa-solid fa-shield-halved\"></i> Transaksi telah dicatat oleh sistem.";
     document.getElementById("receiptToken").textContent = data.token;
     document.getElementById("receiptCustomer").textContent = data.customer;
     document.getElementById("receiptEvent").textContent = data.event;
@@ -138,6 +164,7 @@ function renderReceipt(data) {
     document.getElementById("receiptDate").textContent = data.payment_date;
     document.getElementById("receiptNote").textContent = data.note || "-";
     document.getElementById("receiptAmount").textContent = money(data.amount);
+    document.getElementById("receiptBalance").textContent = money(data.balance);
     whatsappReceiptLink.href = `https://wa.me/?text=${encodeURIComponent(receiptText(data))}`;
     receipt.hidden = false;
     receipt.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -146,16 +173,17 @@ function renderReceipt(data) {
 function receiptText(data = latestReceipt) {
     if (!data) return "";
     return [
-        "STRUK DIGITAL PEMBAYARAN - NUSA KARSA EVENT",
+        latestReceipt.simulated ? "STRUK SIMULASI - BUKAN BUKTI PEMBAYARAN" : "STRUK PEMBAYARAN - NUSA KARSA EVENT",
         `Token: ${data.token}`,
         `Pelanggan: ${data.customer}`,
         `Acara: ${data.event}`,
         `Cabang: ${data.branch}`,
         `Metode: ${data.payment_method}`,
         `Tanggal: ${data.payment_date}`,
-        `Total: ${money(data.amount)}`,
+        `Total dibayar: ${money(data.amount)}`,
+        `Sisa piutang: ${money(data.balance)}`,
         data.note ? `Catatan: ${data.note}` : "",
-        "Simpan token ini sebagai bukti pembayaran."
+        data.simulated ? "SIMULASI: struk ini bukan bukti pembayaran." : "Simpan token ini sebagai bukti pembayaran."
     ].filter(Boolean).join("\n");
 }
 
@@ -263,9 +291,25 @@ document.querySelectorAll(".method-card").forEach(button => {
 submitButton.addEventListener("click", async () => {
     const receivable = selectedReceivable();
     submitButton.disabled = true;
-    submitButton.querySelector("span").textContent = "Menyimpan pembayaran...";
+    submitButton.querySelector("span").textContent = currentUserRole === "pelanggan" ? "Menyiapkan struk demo..." : "Menyimpan pembayaran...";
     try {
-        const endpoint = isBranchEventPayment ? `../api/event-payments.php?branch=${encodeURIComponent(eventPaymentBranch)}` : isPalembangPayment ? "../api/palembang-events.php" : "../api/payments.php";
+        if (currentUserRole === "pelanggan") {
+            const response = await fetch("../api/customer-demo-payments.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ source: receivable.source, record_id: receivable.id, amount: Number(amountInput.value), payment_method: selectedMethod, note: noteInput.value.trim() })
+            });
+            const result = await readJson(response);
+            if (response.status === 401) { redirectToLogin(); return; }
+            if (!response.ok || !result.success) throw new Error(result.message || "Simulasi pembayaran gagal disimpan.");
+            showAlert("Simulasi tersimpan. Sisa piutang database berkurang; transaksi ini tetap ditandai belum diverifikasi.", true);
+            renderReceipt(result.receipt);
+            await loadReceivables();
+            renderReceivableOptions();
+            receivableSelect.value = receivables.some(item => String(item.id) === String(receivable.id) && item.source === receivable.source) ? String(receivable.id) : "";
+            renderInvoice();
+            return;
+        }        const endpoint = isBranchEventPayment ? `../api/event-payments.php?branch=${encodeURIComponent(eventPaymentBranch)}` : isPalembangPayment ? "../api/palembang-events.php" : "../api/payments.php";
         const body = isBranchEventPayment
             ? { event_id: receivable.id, amount: Number(amountInput.value), payment_date: paymentDateInput.value, payment_method: selectedMethod, note: noteInput.value.trim() }
             : isPalembangPayment
@@ -299,13 +343,25 @@ submitButton.addEventListener("click", async () => {
     } catch (error) {
         showAlert(error.message);
     } finally {
-        submitButton.querySelector("span").textContent = "Catat pembayaran";
+        submitButton.querySelector("span").textContent = currentUserRole === "pelanggan" ? "Simulasikan pembayaran" : "Catat pembayaran";
         updateSubmitState();
     }
 });
 
 printReceiptButton.addEventListener("click", () => window.print());
+async function downloadReceipt() {
+    if (!latestReceipt) return;
+    const data = latestReceipt;
+    let logo = "";
+    try { const response = await fetch("../assets/logo3.0.png"); const blob = await response.blob(); logo = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); } catch (error) {}
+    const rows = [["Pelanggan",data.customer],["Acara",data.event],["Cabang",data.branch],["Metode",data.payment_method],["Tanggal",data.payment_date],["Sisa piutang",money(data.balance)],["Catatan",data.note || "-"]].map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+    const html = `<!doctype html><html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Struk ${escapeHtml(data.token)}</title><style>body{font:14px Arial,sans-serif;background:#f3f5f7;color:#172b3b;padding:24px}.receipt{max-width:420px;margin:auto;background:white;padding:24px;border:1px solid #ddd;border-radius:12px}.brand{text-align:center;border-bottom:1px dashed #aaa;padding-bottom:16px}.brand img{width:76px;height:76px;object-fit:contain}.brand strong,.brand span{display:block}.stamp{color:#b42318;font-weight:bold;border:2px solid #b42318;padding:5px;display:inline-block;margin:10px}.token{background:#f3f8fa;padding:12px;text-align:center;font-weight:bold;letter-spacing:1px}section{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}section span{display:block;color:#687887;font-size:12px}section strong{display:block;margin-top:4px}.total{border-top:1px dashed #aaa;padding-top:14px;font-size:18px;font-weight:bold;text-align:right}.foot{text-align:center;color:#687887;font-size:12px;margin-top:18px}@media print{body{padding:0;background:white}.receipt{border:0}}</style><article class="receipt"><header class="brand">${logo ? `<img src="${logo}" alt="Nusa Karsa">` : ""}<strong>NUSA KARSA EVENT</strong><span>Bukti transaksi pelanggan</span>${data.simulated ? "<div class=\"stamp\">SIMULASI - BUKAN PEMBAYARAN ASLI</div>" : ""}</header><p class="token">${escapeHtml(data.token)}</p><section>${rows}</section><div class="total">TOTAL DIBAYAR<br>${escapeHtml(money(data.amount))}</div><p class="foot">${data.simulated ? "Struk simulasi demo. Tidak membuktikan dana diterima." : "Terima kasih atas pembayaran Anda."}</p></article></html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = `struk-${data.token}.html`; link.click(); URL.revokeObjectURL(url);
+}
+
 copyReceiptTokenButton.addEventListener("click", copyReceiptToken);
+downloadReceiptButton.addEventListener("click", downloadReceipt);
 shareReceiptButton.addEventListener("click", shareReceipt);
 
 (async function initializePaymentPage() {

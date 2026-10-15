@@ -31,7 +31,7 @@ if ($scope['role'] === 'admin_cabang') {
 }
 
 $paymentRows = [];
-$sql = 'SELECT p.id AS transaction_id, p.payment_date, p.amount, ' . (has_payment_method_column() ? 'p.payment_method' : "'Manual' AS payment_method") . ', c.name AS customer, b.name AS branch, e.name AS event, \'payment\' AS record_type FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id' . $where . ' ORDER BY p.payment_date DESC, p.id DESC LIMIT 100';
+$sql = 'SELECT p.id AS transaction_id, p.payment_date, p.amount, ' . (has_payment_method_column() ? 'p.payment_method' : "'Manual' AS payment_method") . ', c.name AS customer, b.name AS branch, e.name AS event, ' . (has_payment_record_type_column() ? 'p.record_type' : "'payment'") . ' AS record_type FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id' . $where . ' ORDER BY p.payment_date DESC, p.id DESC LIMIT 100';
 $statement = $db->prepare($sql);
 $statement->execute($params);
 $paymentRows = $statement->fetchAll();

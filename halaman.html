@@ -22,8 +22,8 @@
     </script>
 
         <!-- Logo kecil pada tab browser -->
-    <link rel="icon" type="image/png" href="assets/logo2.0.png">
-    <link rel="shortcut icon" href="assets/logo2.0.png">
+    <link rel="icon" type="image/png" href="assets/logo3.0.png">
+    <link rel="shortcut icon" href="assets/logo3.0.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -1302,7 +1302,7 @@
             <!-- ================= HERO ================= -->
             <section class="hero">
                 <div class="hero-text">
-                    <h2>Selamat datang, <span id="welcomeUserName">Admin Pusat!</span> ðŸ‘‹</h2>
+                <h2>Selamat datang, <span id="welcomeUserName">Admin Pusat!</span> &#x1F44B;</h2>
                     <p>
                         Pantau seluruh transaksi, piutang, dan pembayaran
                         Nusa Karsa Event dalam satu dashboard.
@@ -1671,7 +1671,7 @@
             const roleLabels = {
                 super_admin: "Admin Pusat",
                 admin_pusat: "Admin Pusat",
-                admin_cabang: branchName ? `Admin Cabang Â· ${branchName}` : "Admin Cabang",
+                admin_cabang: branchName ? `Admin Cabang · ${branchName}` : "Admin Cabang",
                 pelanggan: "Pelanggan"
             };
             authArea.querySelector(".admin-info span")?.replaceChildren(document.createTextNode(roleLabels[role] || "Pengguna"));
@@ -1886,12 +1886,12 @@
                 if (!response.ok || !data.success) throw new Error(data.message || "Riwayat pembayaran tidak dapat dimuat.");
                 paymentsList.innerHTML = (data.recent_payments || []).map(payment => `
                     <div class="activity-row">
-                        <div><strong>${escapeHtml(payment.customer)} Â· ${escapeHtml(payment.event)}</strong><small>${escapeHtml(payment.branch)} Â· ${escapeHtml(formatDate(payment.payment_date))} Â· ${escapeHtml(payment.payment_method || "Manual")}</small></div>
+                        <div><strong>${escapeHtml(payment.customer)} · ${escapeHtml(payment.event)}</strong><small>${escapeHtml(payment.branch)} · ${escapeHtml(formatDate(payment.payment_date))} · ${escapeHtml(payment.record_type === "demo_simulation" ? "SIMULASI - belum diverifikasi" : (payment.payment_method || "Manual"))}</small></div>
                         <span class="activity-amount">${formatCurrency(payment.amount)}</span>
                     </div>`).join("") || '<p class="activity-empty">Belum ada transaksi pembayaran tercatat.</p>';
                 customersList.innerHTML = (data.recent_customers || []).map(customer => `
                     <div class="activity-row">
-                        <div><strong>${escapeHtml(customer.customer)}</strong><small>${escapeHtml(customer.branch)} Â· ${customer.record_type === "historical_balance" ? "Saldo historis; tanggal transaksi tidak tersedia" : `Terakhir membayar ${escapeHtml(formatDate(customer.last_payment_date))}`}</small></div>
+                        <div><strong>${escapeHtml(customer.customer)}</strong><small>${escapeHtml(customer.branch)} · ${customer.record_type === "historical_balance" ? "Saldo historis; tanggal transaksi tidak tersedia" : customer.record_type === "demo_simulation" ? "Simulasi pembayaran; belum diverifikasi" : `Terakhir membayar ${escapeHtml(formatDate(customer.last_payment_date))}`}</small></div>
                         <span class="activity-amount">${formatCurrency(customer.last_payment_amount)}</span>
                     </div>`).join("") || '<p class="activity-empty">Belum ada pelanggan yang memiliki pembayaran tercatat.</p>';
             } catch (error) {

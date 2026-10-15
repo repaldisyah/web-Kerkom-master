@@ -19,7 +19,7 @@ if ($method === 'GET') {
         CASE WHEN piutang <= 0 THEN 'Lunas' WHEN tgl_jatuh_tempo < CURDATE() THEN 'Menunggak' ELSE 'Belum Lunas' END AS status_terkini,
         CASE WHEN piutang > 0 AND tgl_jatuh_tempo < CURDATE() THEN DATEDIFF(CURDATE(), tgl_jatuh_tempo) ELSE 0 END AS hari_terlambat
         FROM palembang_events ORDER BY tgl_jatuh_tempo, id")->fetchAll();
-    $summary = $db->query("SELECT COUNT(*) AS jumlah_event, COALESCE(SUM(nilai_kontrak),0) AS total_kontrak, COALESCE(SUM(total_dibayar),0) AS total_dibayar, COALESCE(SUM(piutang),0) AS total_piutang, SUM(CASE WHEN piutang > 0 AND tgl_jatuh_tempo < CURDATE() THEN 1 ELSE 0 END) AS jumlah_terlambat FROM palembang_events")->fetch();
+    $summary = $db->query("SELECT COUNT(*) AS jumlah_event, COALESCE(SUM(e.nilai_kontrak),0) AS total_kontrak, COALESCE(SUM(e.total_dibayar - COALESCE(d.demo_amount,0)),0) AS total_dibayar, COALESCE(SUM(e.piutang + COALESCE(d.demo_amount,0)),0) AS total_piutang, SUM(CASE WHEN e.piutang > 0 AND e.tgl_jatuh_tempo < CURDATE() THEN 1 ELSE 0 END) AS jumlah_terlambat FROM palembang_events e LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM palembang_payments WHERE record_type = 'demo_simulation' GROUP BY event_id) d ON d.event_id = e.id")->fetch();
     respond(['success' => true, 'events' => $events, 'summary' => $summary]);
 }
 
@@ -79,6 +79,8 @@ try {
         'customer' => $event['pelanggan'],
         'branch' => 'Palembang',
         'event' => $event['nama_event'],
+        'balance' => max(0, (float) $event['piutang'] - $amount),
+        'simulated' => false,
     ]]);
 } catch (RuntimeException $error) {
     if ($db->inTransaction()) $db->rollBack();

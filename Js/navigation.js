@@ -45,7 +45,7 @@
                 document.querySelector('.nav-menu')?.append(requestLink);
             }
             if (session.user.role === 'pelanggan') {
-                const restricted = /\/(cabang(?:palembang|bandung|bali)?|pelanggan|pembayaran|laporan|events-(?:bali|bandung))\.html$/i;
+                const restricted = /\/(cabang(?:palembang|bandung|bali)?|laporan|events-(?:bali|bandung))\.html$/i;
                 links.forEach(link => {
                     if (restricted.test(new URL(link.href, window.location.href).pathname)) link.hidden = true;
                     if (/\/history\.html$/i.test(new URL(link.href, window.location.href).pathname)) {

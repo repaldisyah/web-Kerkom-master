@@ -1,4 +1,4 @@
-﻿# PRD â€” Sistem Informasi Nusa Karsa Event
+﻿# PRD — Sistem Informasi Nusa Karsa Event
 
 ## 1. Tujuan
 

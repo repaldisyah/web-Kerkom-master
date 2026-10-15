@@ -28,7 +28,8 @@ if ($requestedBranch !== '') {
 $tokenColumn = has_payment_token_column() ? 'p.payment_token' : "CONCAT('PM-', p.id)";
 $methodColumn = has_payment_method_column() ? 'p.payment_method' : "'Manual'";
 $noteColumn = has_payment_note_column() ? 'p.note' : 'NULL';
-$sql = "SELECT p.id AS transaction_id, $tokenColumn AS payment_token, p.payment_date, p.amount, $methodColumn AS payment_method, $noteColumn AS note, c.name AS customer, b.name AS branch, e.name AS event, r.total_amount, r.balance, r.status, 'payment' AS record_type FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id";
+$recordTypeColumn = has_payment_record_type_column() ? 'p.record_type' : "'payment'";
+$sql = "SELECT p.id AS transaction_id, $tokenColumn AS payment_token, p.payment_date, p.amount, $methodColumn AS payment_method, $noteColumn AS note, $recordTypeColumn AS record_type, c.name AS customer, b.name AS branch, e.name AS event, r.total_amount, r.balance, r.status FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id";
 $params = [];
 if ($scope['role'] === 'admin_cabang') {
     if (!$scope['branch_id']) respond(['success' => false, 'message' => 'Akun belum memiliki cabang.'], 403);

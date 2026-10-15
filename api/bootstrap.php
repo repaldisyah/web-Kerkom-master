@@ -148,6 +148,14 @@ function has_customer_account_column(): bool
     return $exists;
 }
 
+function has_payment_record_type_column(): bool
+{
+    static $exists = null;
+    if (is_bool($exists)) return $exists;
+    $statement = database()->query("SHOW COLUMNS FROM payments LIKE 'record_type'");
+    $exists = (bool) $statement->fetch();
+    return $exists;
+}
 function has_payment_token_column(): bool
 {
     static $exists = null;

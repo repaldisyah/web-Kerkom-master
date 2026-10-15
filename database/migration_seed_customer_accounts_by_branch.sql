@@ -1,4 +1,4 @@
-﻿-- Seed 9 akun pelanggan demo: 3 perusahaan untuk setiap cabang.
+-- Seed 9 akun pelanggan demo yang dipetakan ke pelanggan event aktif per cabang.
 -- Jalankan setelah nusa_karsa.sql dan migration_add_customer_account.sql.
 -- Kredensial hanya untuk demo lokal; ganti sebelum penggunaan nyata/produksi.
 -- Pengulangan skrip tidak menggandakan data berdasarkan email/username.
@@ -19,15 +19,15 @@ CREATE TEMPORARY TABLE seed_customer_accounts (
 INSERT INTO seed_customer_accounts
 (branch_name, customer_name, customer_email, phone, address, contact_name, username, account_email)
 VALUES
-('Palembang', 'PT Siger Event Kreatif', 'siger.event@example.com', '0711-555-0101', 'Jl. Merdeka No. 18, Palembang', 'Rani Puspita', 'rani.siger', 'rani.siger@example.com'),
-('Palembang', 'CV Sriwijaya Cahaya', 'sriwijaya.cahaya@example.com', '0711-555-0102', 'Jl. Sudirman No. 42, Palembang', 'Dimas Pratama', 'dimas.sriwijaya', 'dimas.sriwijaya@example.com'),
-('Palembang', 'PT Musi Gemilang Abadi', 'musi.gemilang@example.com', '0711-555-0103', 'Jl. Kapten A. Rivai No. 7, Palembang', 'Nadia Putri', 'nadia.musi', 'nadia.musi@example.com'),
-('Bali', 'PT Dewata Kreasi Nusantara', 'dewata.kreasi@example.com', '0361-555-0201', 'Jl. Raya Kuta No. 21, Badung', 'Made Aditya', 'made.dewata', 'made.dewata@example.com'),
-('Bali', 'CV Purnama Bali Event', 'purnama.bali@example.com', '0361-555-0202', 'Jl. Raya Ubud No. 15, Gianyar', 'Ayu Lestari', 'ayu.purnama', 'ayu.purnama@example.com'),
-('Bali', 'PT Aruna Nusa Hospitality', 'aruna.nusa@example.com', '0361-555-0203', 'Jl. Bypass Ngurah Rai No. 88, Denpasar', 'Komang Sari', 'komang.aruna', 'komang.aruna@example.com'),
-('Bandung', 'PT Parahyangan Cipta Acara', 'parahyangan.cipta@example.com', '022-555-0301', 'Jl. Asia Afrika No. 36, Bandung', 'Fajar Nugraha', 'fajar.parahyangan', 'fajar.parahyangan@example.com'),
-('Bandung', 'CV Lembur Kreatif', 'lembur.kreatif@example.com', '022-555-0302', 'Jl. Dago No. 54, Bandung', 'Intan Permata', 'intan.lembur', 'intan.lembur@example.com'),
-('Bandung', 'PT Priangan Eventika', 'priangan.eventika@example.com', '022-555-0303', 'Jl. Buah Batu No. 109, Bandung', 'Rizky Maulana', 'rizky.priangan', 'rizky.priangan@example.com');
+('Palembang', 'Sponsor D', 'siger.event@example.com', '0711-555-0101', 'Jl. Merdeka No. 18, Palembang', 'Rani Puspita', 'rani.siger', 'rani.siger@example.com'),
+('Palembang', 'Sponsor A', 'sriwijaya.cahaya@example.com', '0711-555-0102', 'Jl. Sudirman No. 42, Palembang', 'Dimas Pratama', 'dimas.sriwijaya', 'dimas.sriwijaya@example.com'),
+('Palembang', 'Sponsor B', 'musi.gemilang@example.com', '0711-555-0103', 'Jl. Kapten A. Rivai No. 7, Palembang', 'Nadia Putri', 'nadia.musi', 'nadia.musi@example.com'),
+('Bali', 'Kementerian Pariwisata RI', 'dewata.kreasi@example.com', '0361-555-0201', 'Jl. Raya Kuta No. 21, Badung', 'Made Aditya', 'made.dewata', 'made.dewata@example.com'),
+('Bali', 'Keluarga Sarah Thompson', 'purnama.bali@example.com', '0361-555-0202', 'Jl. Raya Ubud No. 15, Gianyar', 'Ayu Lestari', 'ayu.purnama', 'ayu.purnama@example.com'),
+('Bali', 'PT Telkom Indonesia', 'aruna.nusa@example.com', '0361-555-0203', 'Jl. Bypass Ngurah Rai No. 88, Denpasar', 'Komang Sari', 'komang.aruna', 'komang.aruna@example.com'),
+('Bandung', 'Universitas Padjadjaran', 'parahyangan.cipta@example.com', '022-555-0301', 'Jl. Asia Afrika No. 36, Bandung', 'Fajar Nugraha', 'fajar.parahyangan', 'fajar.parahyangan@example.com'),
+('Bandung', 'Keluarga Sari Melati', 'lembur.kreatif@example.com', '022-555-0302', 'Jl. Dago No. 54, Bandung', 'Intan Permata', 'intan.lembur', 'intan.lembur@example.com'),
+('Bandung', 'PT PLN (Persero) Regional Jabar', 'priangan.eventika@example.com', '022-555-0303', 'Jl. Buah Batu No. 109, Bandung', 'Rizky Maulana', 'rizky.priangan', 'rizky.priangan@example.com');
 
 INSERT INTO customers (branch_id, name, email, phone, address)
 SELECT b.id, s.customer_name, s.customer_email, s.phone, s.address
