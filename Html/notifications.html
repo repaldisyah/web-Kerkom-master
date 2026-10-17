@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Notifikasi jatuh tempo | Nusa Karsa Event</title>
+    <link rel="icon" type="image/png" href="../assets/logo3.0.png">
+    <link rel="stylesheet" href="../Css/portal.css">
+    <link rel="stylesheet" href="../Css/navigation.css">
+    <link rel="stylesheet" href="../Css/notifications.css">
+</head>
+<body class="portal-body" data-page="notifications">
+    <main class="portal-shell">
+        <header class="portal-header">
+            <div><p class="eyebrow">NUSA KARSA EVENT / PENGINGAT</p><h1>Notifikasi jatuh tempo</h1><p class="subtitle">Pengingat otomatis untuk tagihan yang akan jatuh tempo atau sudah terlambat.</p></div>
+            <a class="back-link" href="../halaman.html">Dashboard</a>
+        </header>
+        <section class="portal-card">
+            <div class="notification-toolbar"><div><h2>Kotak notifikasi</h2><p id="notificationCount">Memuat notifikasi...</p></div><button id="markAllRead" type="button" class="notification-action">Tandai semua dibaca</button></div>
+            <p id="notificationStatus" class="status" role="status" aria-live="polite"></p>
+            <div id="notificationList" class="notification-list"></div>
+            <div id="notificationEmpty" class="empty hidden"><strong>Belum ada pengingat</strong><p>Pengingat akan muncul otomatis setelah scheduler memeriksa tagihan.</p></div>
+        </section>
+    </main>
+    <script src="../Js/navigation.js"></script>
+    <script src="../Js/notifications.js"></script>
+</body>
+</html>

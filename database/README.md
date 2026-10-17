@@ -1,4 +1,4 @@
-﻿# Database dan akun
+# Database dan akun
 
 Dokumen ini menjelaskan database yang dipakai aplikasi, urutan setup lokal, akun bawaan dari skrip seed, dan cara memeriksa akun yang benar-benar tersimpan. Stack saat ini adalah PHP dengan PDO, MySQL, dan frontend HTML/CSS/JavaScript.
 
@@ -26,7 +26,9 @@ Jalankan Apache dan MySQL dari XAMPP. Sebelum impor atau migrasi, pastikan datab
 7. Jalankan migration_add_palembang_events.sql satu kali untuk membuat tabel event dan pembayaran Palembang.
 8. Impor events_bali.sql ke database events_bali dan events_bandung.sql ke database events_bandung. Setelah impor Bandung, jalankan events_bandung_upsert.sql untuk memasukkan data jadwal pembayaran.
 9. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event tersedia, kemudian migration_add_demo_simulation_type.sql dan migration_add_deletion_requests.sql.
-10. Periksa ../api/config.php, pastikan nama database dan kredensial MySQL sesuai, lalu buka http://localhost/web-Kerkom-master/halaman.html melalui Apache.
+10. Jalankan migration_add_due_notifications.sql pada database nusa_karsa untuk menyiapkan kotak notifikasi.
+11. Periksa ../api/config.php, pastikan nama database dan kredensial MySQL sesuai, lalu buka http://localhost/web-Kerkom-master/halaman.html melalui Apache.
+12. Untuk pengingat otomatis, buka PowerShell di folder proyek dan jalankan .\install-due-reminders-task.ps1 satu kali. Skrip memasang Task Scheduler pada pukul 08.00 waktu Windows. Jika Windows menampilkan Access denied, jalankan PowerShell dengan hak Administrator; tugas berjalan sebagai akun Windows yang menjalankan skrip. PHP XAMPP harus berada di C:\xampp\php\php.exe; jika berbeda, berikan parameter -PhpPath. Pastikan komputer dan MySQL menyala agar jadwal dapat berjalan.
 
 Seed akun membutuhkan kolom customer_id, cabang, dan profil pelanggan yang dirujuk. Akun pelanggan hanya menampilkan data yang tertaut pada customer_id. Pembayaran pelanggan di halaman demo bukan pembayaran gateway: kliknya menulis transaksi berlabel demo_simulation dan mengurangi saldo operasional pada database. Nilai tersebut tidak dianggap dana terverifikasi oleh laporan. Buat backup sebelum uji transaksi; pulihkan backup untuk mengembalikan saldo awal.
 
@@ -40,6 +42,7 @@ Seed akun membutuhkan kolom customer_id, cabang, dan profil pelanggan yang diruj
 6. Jalankan migration_add_branch_payment_history.sql setelah seluruh database event siap; lanjutkan dengan migration_add_demo_simulation_type.sql dan migration_add_deletion_requests.sql.
 7. Jalankan migration_link_demo_customer_accounts_to_events.sql untuk memasangkan akun uji lama ke nama pelanggan event. Skrip hanya memperbarui profil dummy dan tidak mengubah transaksi atau saldo.
 8. Setelah migrasi, cek login ketiga peran, pembatasan cabang, pencatatan pembayaran, saldo, dan riwayat sebelum sistem dipakai.
+9. Jalankan migration_add_due_notifications.sql jika belum diterapkan, lalu pasang scheduler dengan .\install-due-reminders-task.ps1.
 
 Cocokkan nama dan urutan migrasi dengan struktur aktual sebelum menjalankan SQL. Jika hasil atau kondisi skema berbeda dari panduan, hentikan migrasi dan buat backup sebelum melakukan perubahan manual.
 
@@ -59,50 +62,48 @@ Pada halaman login, pilih jenis akun Admin untuk admin_pusat dan admin_cabang. P
 
 ## Akun admin bawaan
 
-Akun berikut dibuat atau diperbarui oleh migration_seed_admin_accounts.sql. Password akun admin tidak dicantumkan di dokumentasi; atur kredensialnya secara lokal dan ganti sebelum aplikasi digunakan dengan data nyata.
+Akun berikut dibuat atau diperbarui oleh migration_seed_admin_accounts.sql. Password demo pada tabel ini berlaku untuk seed lokal; ganti sebelum aplikasi digunakan dengan data nyata.
 
-| Nama akun | Username | Email login | Role | Cakupan |
-|---|---|---|---|---|
-| Admin Pusat | admin | admin@nusakarsa.com | admin_pusat | Semua cabang |
-| Admin Cabang Palembang | admin_palembang | admin.palembang@nusakarsa.com | admin_cabang | Palembang |
-| Admin Cabang Bali | admin_bali | admin.bali@nusakarsa.com | admin_cabang | Bali |
-| Admin Cabang Bandung | admin_bandung | admin.bandung@nusakarsa.com | admin_cabang | Bandung |
+| Nama akun | Username | Email login | Role | Cakupan | Password demo |
+|---|---|---|---|---|---|
+| Admin Pusat | admin | admin@nusakarsa.com | admin_pusat | Semua cabang | `SbGsbmFUh8#Y#8kU6sRN` |
+| Admin Cabang Palembang | admin_palembang | admin.palembang@nusakarsa.com | admin_cabang | Palembang | `LYHLUQTJuj@QL9asqBN6` |
+| Admin Cabang Bali | admin_bali | admin.bali@nusakarsa.com | admin_cabang | Bali | `PYH@DYyMKBzmZ4XSn6Du` |
+| Admin Cabang Bandung | admin_bandung | admin.bandung@nusakarsa.com | admin_cabang | Bandung | `r4emMrG6WFTUcZxT!5KR` |
 
 ## Akun pelanggan seed per cabang
 
-migration_seed_customer_accounts_by_branch.sql membuat sembilan akun contoh, masing-masing ditautkan ke nama pelanggan pada data event aktif berikut. Semua memakai role pelanggan. Password seed tidak dicantumkan di dokumentasi; atur atau ganti kredensial secara lokal sebelum login.
+migration_seed_customer_accounts_by_branch.sql membuat sembilan akun contoh, masing-masing ditautkan ke nama pelanggan pada data event aktif berikut. Semua memakai role pelanggan.
 
-| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Kredensial |
+| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Password demo |
 |---|---|---|---|---|---|
-| rani.siger | rani.siger@example.com | Rani Puspita | Sponsor D | Palembang | Atur secara lokal |
-| dimas.sriwijaya | dimas.sriwijaya@example.com | Dimas Pratama | Sponsor A | Palembang | Atur secara lokal |
-| nadia.musi | nadia.musi@example.com | Nadia Putri | Sponsor B | Palembang | Atur secara lokal |
-| made.dewata | made.dewata@example.com | Made Aditya | Kementerian Pariwisata RI | Bali | Atur secara lokal |
-| ayu.purnama | ayu.purnama@example.com | Ayu Lestari | Keluarga Sarah Thompson | Bali | Atur secara lokal |
-| komang.aruna | komang.aruna@example.com | Komang Sari | PT Telkom Indonesia | Bali | Atur secara lokal |
-| fajar.parahyangan | fajar.parahyangan@example.com | Fajar Nugraha | Universitas Padjadjaran | Bandung | Atur secara lokal |
-| intan.lembur | intan.lembur@example.com | Intan Permata | Keluarga Sari Melati | Bandung | Atur secara lokal |
-| rizky.priangan | rizky.priangan@example.com | Rizky Maulana | PT PLN (Persero) Regional Jabar | Bandung | Atur secara lokal |
+| rani.siger | rani.siger@example.com | Rani Puspita | Sponsor D | Palembang | `Tw4Qb7egRDg_zSaH8Lin` |
+| dimas.sriwijaya | dimas.sriwijaya@example.com | Dimas Pratama | Sponsor A | Palembang | `rQp7M9hb#UdRJHNTKFE5` |
+| nadia.musi | nadia.musi@example.com | Nadia Putri | Sponsor B | Palembang | `Fh3hDKv967wJX@exXZf@` |
+| made.dewata | made.dewata@example.com | Made Aditya | Kementerian Pariwisata RI | Bali | `NjdcT5H!BDU#y9t9A8Lj` |
+| ayu.purnama | ayu.purnama@example.com | Ayu Lestari | Keluarga Sarah Thompson | Bali | `6oT8#J8@fhikQ_PoELFW` |
+| komang.aruna | komang.aruna@example.com | Komang Sari | PT Telkom Indonesia | Bali | `JoBDBhN8KQuqa2J@wJv7` |
+| fajar.parahyangan | fajar.parahyangan@example.com | Fajar Nugraha | Universitas Padjadjaran | Bandung | `J-!@m7Bjupwd@w!i8YBU` |
+| intan.lembur | intan.lembur@example.com | Intan Permata | Keluarga Sari Melati | Bandung | `y8Md9eQ36LszCk#CJ2Wp` |
+| rizky.priangan | rizky.priangan@example.com | Rizky Maulana | PT PLN (Persero) Regional Jabar | Bandung | `N8ixjpkqnUiyBKpq_u-E` |
 
 ## Akun demo pelanggan
 
-migration_seed_demo_customers.sql membuat tiga akun presentasi tambahan. Akun ini menautkan pengguna ke nama pelanggan pada data event aktif, terpisah dari sembilan akun seed di atas. Kredensial seed ditetapkan oleh skrip SQL dan tidak dicantumkan di sini. Atur password secara lokal sebelum digunakan.
+migration_seed_demo_customers.sql membuat tiga akun presentasi tambahan. Akun ini menautkan pengguna ke nama pelanggan pada data event aktif, terpisah dari sembilan akun seed di atas.
 
-| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Kredensial |
+| Username | Email login | Nama pemegang akun | Profil pelanggan | Cabang | Password demo |
 |---|---|---|---|---|---|
-| ilyas.palembang | ilyas.palembang@demo.nusakarsa.com | Ilyas | Sponsor F | Palembang | Atur secara lokal |
-| keyla.bandung | keyla.bandung@demo.nusakarsa.com | Keyla | PT Kalya Fashion Indonesia | Bandung | Atur secara lokal |
-| dhini.bali | dhini.bali@demo.nusakarsa.com | Dhini | PT Alaya Hospitality Group | Bali | Atur secara lokal |
+| ilyas.palembang | ilyas.palembang@demo.nusakarsa.com | Ilyas | Sponsor F | Palembang | `Tiqs2uHe4gwk@C2mzwsZ` |
+| keyla.bandung | keyla.bandung@demo.nusakarsa.com | Keyla | PT Kalya Fashion Indonesia | Bandung | `y6FHtfmrWSN76wWx8_MF` |
+| dhini.bali | dhini.bali@demo.nusakarsa.com | Dhini | PT Alaya Hospitality Group | Bali | `Wah2LiT3VKCh4Eh3Y869` |
 
-Akun di atas dibuat oleh seed. Akun di database aktif dapat berbeda jika password pernah diganti, akun baru dibuat, atau akun seed dihapus. Untuk login, email atau username dapat digunakan. Email demo hanya identitas login contoh dan bukan alamat mailbox. Jangan gunakan password seed pada data nyata atau layanan yang dapat diakses publik; ganti password sebelum pemakaian operasional.
+Password di tabel adalah kredensial demo yang ditetapkan oleh skrip seed; skrip menyimpan hash bcrypt, bukan password teks biasa. Menjalankan ulang seed akun akan mengatur ulang password akun seed ke nilai yang tercantum. Akun yang password-nya diganti setelah seed tidak lagi memakai password di README. Untuk login, email atau username dapat digunakan. Email demo hanya identitas login contoh dan bukan alamat mailbox. Kredensial ini hanya untuk demo lokal; jangan gunakan pada data nyata, server publik, atau produksi. Ganti seluruh password sebelum pemakaian operasional.
 
 ## Password akun dan pemulihan akses
 
-Password akun tidak dapat ditampilkan dari database. Aplikasi menyimpan nilai `password_hash`, bukan password asli; hash tidak bisa dibalik menjadi password yang digunakan saat login. Karena itu, README ini sengaja tidak mencantumkan password akun, termasuk password seed. Jika password admin pusat ditolak saat ganti password, pastikan password saat ini yang dimasukkan sama dengan password yang berhasil dipakai untuk login ke akun admin pusat.
+Password di atas adalah password demo baru yang dipasangkan dengan hash di skrip seed; password lama dari database tidak dapat dipulihkan dari hash. Perubahan seed tidak otomatis mengubah isi database yang sedang berjalan. Jalankan kembali seed akun yang sesuai hanya di lingkungan demo lokal untuk menerapkan password yang tercantum; tindakan ini akan mengatur ulang password akun seed tersebut. Jangan jalankan seed akun pada database operasional.
 
-Pada 17 Oktober 2026, password setiap akun yang tercatat di `admin_pusat.users` dan `nusa_karsa.users` pada database lokal aktif telah diatur ulang ke nilai acak yang unik. Daftar password baru diserahkan secara terpisah kepada pengelola dan disimpan sementara di komputer lokal; jangan menyalinnya ke README, repositori GitHub, atau tiket yang dapat dibagikan. Minta setiap pemilik akun mengganti password setelah menerima akses.
-
-Jika password benar-benar hilang, lakukan reset secara lokal dan hanya untuk akun yang Anda kelola:
+Untuk akun non-demo atau password yang telah diubah, lakukan reset secara lokal dan hanya untuk akun yang Anda kelola:
 
 1. Buat hash password baru dengan `password_hash($password, PASSWORD_DEFAULT)` menggunakan PHP lokal. Jangan masukkan password atau hash ke percakapan, README, atau file yang akan dibagikan.
 2. Di phpMyAdmin, perbarui hanya baris akun yang dipilih. Akun `admin_pusat` berada di database `admin_pusat`; akun `admin_cabang` dan `pelanggan` berada di `nusa_karsa`:
@@ -114,7 +115,7 @@ Jika password benar-benar hilang, lakukan reset secara lokal dan hanya untuk aku
    Untuk akun cabang atau pelanggan, gunakan `nusa_karsa.users` sebagai pengganti `admin_pusat.users`.
 3. Pastikan hanya satu akun yang cocok sebelum menjalankan perubahan, lalu uji login dengan password baru. Hapus skrip sementara yang digunakan untuk membuat hash.
 
-Jangan mengatur satu password yang sama untuk semua akun. Seed berikutnya dapat mengubah atau membuat ulang akun contoh; jangan jalankan ulang seed untuk memulihkan password akun operasional.
+Jangan memakai kredensial demo ini untuk akun operasional. Seed admin memperbarui hash akun admin saat dijalankan; seed sembilan pelanggan mengatur ulang hash untuk username dan email seed yang cocok; seed tiga akun demo mengatur ulang hash saat username cocok.
 
 ## Melihat semua akun yang tersimpan
 
@@ -156,6 +157,9 @@ Jangan impor ulang file seed event setelah pembayaran operasional dicatat karena
 - POST api/logout.php mengakhiri sesi.
 - GET api/session.php membaca status sesi.
 - GET/POST api/change-password.php menyediakan token formulir dan mengganti password akun yang sedang login setelah verifikasi password saat ini; password baru minimal 12 karakter.
+- api/due-reminders-worker.php berjalan lewat PHP CLI, memeriksa pengingat H-7, H-3, H-1, hari-H, dan tiap tujuh hari saat lewat jatuh tempo. Notifikasi dibuat untuk admin pusat, admin cabang terkait, dan akun pelanggan yang cocok dengan profil pelanggan. Kunci unik mencegah notifikasi yang sama terkirim dua kali.
+- api/notifications.php hanya menampilkan notifikasi untuk role dan ID pengguna pada sesi aktif. Pengingat muncul di halaman Notifikasi dan dapat ditandai telah dibaca.
+- Scheduler bawaan membuat notifikasi dalam aplikasi; pengiriman WhatsApp/email belum aktif karena proyek belum memiliki konfigurasi layanan atau kredensial kanal tersebut. Pengingat hanya berjalan saat Task Scheduler, PHP, dan MySQL tersedia.
 - GET api/dashboard.php menyediakan ringkasan dashboard dan memerlukan sesi.
 - GET api/branches.php menyediakan data cabang sesuai lingkup akun.
 - GET api/customers.php menyediakan data pelanggan sesuai hak akses.
@@ -168,7 +172,7 @@ Endpoint tulis memerlukan sesi dan hak akses yang sesuai. Gunakan halaman aplika
 
 - Ekspor database yang terkait sebelum migrasi atau pembaruan seed.
 - Simpan backup terenkripsi di lokasi terpisah dan uji proses pemulihan secara berkala.
-- Jangan menyalin password atau hash password ke README, issue, atau repositori publik.
+- Password pada tabel di atas sengaja disediakan hanya untuk demo lokal; jangan tambahkan password akun operasional atau hash password ke dokumentasi.
 - Jangan membagikan api/config.php jika berisi kredensial lokal. Batasi hak akses akun MySQL untuk kebutuhan aplikasi.
 - Jangan menjalankan migrasi berulang tanpa memastikan skrip tersebut aman diulang.
 
@@ -178,3 +182,8 @@ Dashboard dapat menghitung tagihan yang mendekati jatuh tempo atau tertunggak, t
 
 Jika database lama memiliki baris progres pembayaran sintetis, tinjau dahulu baris demo yang ada dan backup database sebelum menjalankan migration_remove_demo_payment_progress.sql. Migrasi ini ditujukan untuk membersihkan progres demo lama; jangan jalankan tanpa memastikan data yang akan dihapus. Data transaksi operasional tetap dikelola dari tabel pembayaran.
 
+## Pembatalan pembayaran
+
+Setelah migrasi riwayat pembayaran, tipe simulasi, dan notifikasi tersedia, jalankan `migration_payment_cancellations.sql` satu kali pada MySQL. Migrasi menambahkan waktu, pelaku, dan alasan pembatalan pada tabel transaksi utama, Palembang, Bali, dan Bandung. Pembatalan tidak menghapus transaksi. API membalik saldo secara transaksional dan membuat notifikasi pada kotak admin cabang dalam transaksi MySQL yang sama.
+
+Pelanggan hanya dapat membatalkan simulasi miliknya dalam 24 jam sejak dicatat; admin cabang dapat membatalkan transaksi cabangnya selama 30 hari; admin pusat dapat membatalkan catatan transaksi yang masih tersedia. Saldo historis tidak dapat dibatalkan. Riwayat dan ekspor menandai status pembatalan serta memisahkan total aktif dan total batal. Pastikan seluruh database memakai InnoDB dan akun MySQL aplikasi mempunyai akses lintas database agar pembatalan event Bali/Bandung dan notifikasinya atomik.

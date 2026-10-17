@@ -1,4 +1,4 @@
-﻿# Nusa Karsa Event
+# Nusa Karsa Event
 
 Aplikasi web internal untuk pencatatan event, pembayaran, dan pemantauan piutang Nusa Karsa Event. Aplikasi ini menggunakan halaman HTML, CSS, dan JavaScript dengan endpoint PHP yang terhubung ke MySQL.
 
@@ -11,9 +11,12 @@ Fitur yang tersedia pada kode saat ini:
 - Dashboard ringkasan aktivitas dan piutang.
 - Pembatasan data admin cabang berdasarkan cabangnya.
 - Pencatatan dan riwayat pembayaran.
+- Laporan ringkas bulanan dan riwayat pembayaran per bulan, dapat diekspor admin sebagai PDF, Excel (.xlsx), dan Word (.docx) sesuai cakupan akses cabang.
 - Halaman data pelanggan, laporan tahunan, dan pengelolaan akun admin cabang.
 - Data event Palembang, Bali, dan Bandung dengan kalkulasi kontrak, pembayaran, sisa piutang, dan status.
 - Permintaan penghapusan event dari admin cabang untuk ditinjau admin pusat.
+- Pengingat jatuh tempo otomatis melalui notifikasi dalam aplikasi. Worker CLI memeriksa tagihan setiap hari dan scheduler Windows dijalankan dengan skrip pemasang.
+- Struk pembayaran dapat dicetak/disimpan sebagai PDF atau diunduh sebagai gambar JPG/JPEG.
 - Portal pelanggan untuk melihat informasi akun dan tagihannya; mode simulasi pelanggan mengurangi saldo operasional dan mencatat transaksi sebagai demo_simulation, bukan sebagai dana terverifikasi.
 
 Dashboard dapat menampilkan kondisi jatuh tempo, tetapi aplikasi belum mengirim pengingat otomatis. Alur pemulihan password dan ekspor laporan penuh juga belum tersedia. Jangan menganggap fitur tersebut siap digunakan.
@@ -91,3 +94,5 @@ Sebagian halaman menggabungkan data dari lebih dari satu database. Karena itu, p
 - [Audit dan pekerjaan lanjutan](AUDIT-PENYEMPURNAAN.md)
 
 
+
+Pembatalan pembayaran mempertahankan baris transaksi sebagai audit, membalik saldo secara otomatis, dan memberi notifikasi kepada admin cabang terkait. Jalankan `database/migration_payment_cancellations.sql` setelah migrasi riwayat pembayaran dan notifikasi. Aturan akses: pelanggan 24 jam untuk simulasi miliknya, admin cabang 30 hari untuk cabangnya, admin pusat selama transaksi tersimpan.

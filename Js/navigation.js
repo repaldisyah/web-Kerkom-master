@@ -12,6 +12,7 @@
         ['piutang.html', 'Piutang', 'fa-file-invoice-dollar'],
         ['pelanggan.html', 'Pelanggan', 'fa-users'],
         ['history.html', 'Riwayat', 'fa-clock-rotate-left'],
+        ['notifications.html', 'Notifikasi', 'fa-bell'],
         ['pembayaran.html', 'Pembayaran', 'fa-credit-card'],
         ['laporan.html', 'Laporan', 'fa-chart-column']
     ];
@@ -19,7 +20,7 @@
     const hrefFor = file => file === 'halaman.html' ? (fromHtmlDirectory ? '../halaman.html' : file) : (fromHtmlDirectory ? file : `Html/${file}`);
     const branchFromPath = currentFile.toLowerCase() === 'cabangbandung.html' ? 'bandung' : currentFile.toLowerCase() === 'cabangbali.html' ? 'bali' : currentFile.toLowerCase() === 'cabangpalembang.html' ? 'palembang' : new URLSearchParams(window.location.search).get('branch') || document.body.dataset.branch;
     const branchMarkup = branchLinks.map(([file, label, icon, branch]) => `<a href="${hrefFor(file.split('?')[0])}${file.includes('?') ? '?branch=palembang' : ''}" class="nav-item nav-branch nav-branch-${branch}${branchFromPath === branch ? ' active' : ''}"><i class="fa-solid ${icon}"></i><span>${label}</span></a>`).join('');
-    const navMarkup = `${items.map(([file, label, icon]) => `<a href="${hrefFor(file)}" class="nav-item${file === currentFile && file !== 'cabang.html' ? ' active' : ''}"><i class="fa-solid ${icon}"></i><span>${label}</span></a>`).join('')}<div class="nav-section-label">Cabang langsung</div>${branchMarkup}`;
+    const navMarkup = `${items.map(([file, label, icon]) => `<a href="${hrefFor(file)}" class="nav-item${file === currentFile && file !== 'cabang.html' ? ' active' : ''}"><i class="fa-solid ${icon}"></i><span>${label}</span>${file === 'notifications.html' ? '<small id="notificationBadge" hidden></small>' : ''}</a>`).join('')}<div class="nav-section-label">Cabang langsung</div>${branchMarkup}`;
 
     if (branchFromPath) document.body.dataset.branch = branchFromPath;
 
@@ -30,6 +31,22 @@
             if (!sessionResponse.ok || !session.authenticated) return;
 
             const links = [...document.querySelectorAll('.nav-menu .nav-item')];
+            const notificationBadge = document.getElementById('notificationBadge');
+            if (notificationBadge) {
+                notificationBadge.closest('.nav-item')?.style.setProperty('position', 'relative');
+                notificationBadge.style.cssText = 'position:absolute;top:4px;right:6px;min-width:20px;padding:2px 6px;border-radius:99px;background:#ef6b45;color:#fff;text-align:center;font-size:.68rem;font-weight:800';
+                const updateNotificationBadge = async () => {
+                    try {
+                        const notificationResponse = await fetch(fromHtmlDirectory ? '../api/notifications.php' : 'api/notifications.php', { cache: 'no-store' });
+                        const notificationData = await notificationResponse.json();
+                        const unread = Number(notificationData.unread_count) || 0;
+                        notificationBadge.textContent = unread > 99 ? '99+' : String(unread);
+                        notificationBadge.hidden = !unread;
+                    } catch (error) { notificationBadge.hidden = true; }
+                };
+                await updateNotificationBadge();
+                window.setInterval(updateNotificationBadge, 5 * 60 * 1000);
+            }
             if (['admin_cabang', 'pelanggan'].includes(session.user.role)) {
                 const passwordLink = document.createElement('a');
                 passwordLink.className = 'nav-item';

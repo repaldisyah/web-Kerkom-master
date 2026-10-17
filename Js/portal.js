@@ -3,6 +3,10 @@ const statusBox = document.getElementById('status');
 const tableBody = document.getElementById('tableBody');
 const emptyState = document.getElementById('emptyState');
 let activeRole = null;
+let currentUser = null;
+let lastReport = null;
+let lastPayments = [];
+let lastHistoryWarnings = [];
 const money = value => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
 
 function setStatus(message, error = false) {
@@ -14,6 +18,11 @@ function redirectToLogin() {
     const login = new URL('login.html', window.location.href);
     login.searchParams.set('next', window.location.href);
     window.location.replace(login.href);
+}
+
+function localMonth() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
 async function jsonFetch(url) {
@@ -43,6 +52,7 @@ async function setScope(user) {
     const badge = document.getElementById('scopeBadge');
     if (badge) badge.textContent = labels[role] || role;
     if (role === 'pelanggan') {
+        document.querySelectorAll('.export-controls').forEach(control => control.classList.add('hidden'));
         document.querySelectorAll('.report-link').forEach(link => link.classList.add('hidden'));
         document.querySelectorAll('.nav-menu .nav-item').forEach(link => {
             const path = new URL(link.href, window.location.href).pathname.toLowerCase();
@@ -117,24 +127,62 @@ function renderHistory(payments) {
             payment.payment_date || 'Tanggal tidak tercatat', payment.payment_token, payment.customer, payment.branch,
             payment.event, payment.record_type === 'historical_balance' ? 'Saldo historis' : payment.record_type === 'demo_simulation' ? 'Simulasi (belum diverifikasi)' : payment.payment_method, money(payment.amount), note || '-'
         ]);
+        if (page === 'history') {
+            const cell = document.createElement('td');
+            if (payment.cancelled_at) {
+                cell.textContent = `DIBATALKAN · ${payment.cancelled_at} · ${payment.cancelled_by_role || 'akun'} #${payment.cancelled_by || '?'}${payment.cancellation_reason ? ` · ${payment.cancellation_reason}` : ''}`;
+                cell.className = 'cancelled-payment';
+            } else if (payment.can_cancel) {
+                const button = document.createElement('button');
+                button.type = 'button'; button.textContent = 'Batalkan'; button.className = 'cancel-payment-button';
+                button.addEventListener('click', () => cancelPayment(payment, button));
+                cell.append(button);
+            } else cell.textContent = 'Aktif';
+            tableBody.lastElementChild.append(cell);
+        }
     });
 }
 
+async function cancelPayment(payment, button) {
+    const reason = window.prompt(`Alasan pembatalan transaksi ${payment.payment_token}:`);
+    if (reason === null) return;
+    if (!reason.trim()) { setStatus('Alasan pembatalan wajib diisi.', true); return; }
+    if (!window.confirm(`Batalkan Rp ${new Intl.NumberFormat('id-ID').format(Number(payment.amount) || 0)}? Saldo tagihan akan disesuaikan dan tindakan tercatat.`)) return;
+    button.disabled = true;
+    try {
+        const response = await fetch('../api/payment-cancellations.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: payment.source, transaction_id: payment.transaction_id, reason: reason.trim() }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Pembatalan gagal.');
+        setStatus(data.message);
+        await loadHistory();
+    } catch (error) { setStatus(error.message, true); button.disabled = false; }
+}
+
 async function loadHistory() {
+    lastPayments = [];
+    lastHistoryWarnings = [];
     tableBody.replaceChildren();
     setStatus('Memuat riwayat pembayaran...');
     try {
         const branch = document.getElementById('historyBranchFilter')?.value || '';
-        const suffix = activeRole && ['admin_pusat', 'super_admin'].includes(activeRole) && branch ? `?branch=${encodeURIComponent(branch)}` : '';
+        const month = document.getElementById('historyMonth')?.value || '';
+        if (!month) throw new Error('Pilih bulan transaksi untuk memuat riwayat.');
+        const params = new URLSearchParams();
+        if (activeRole && ['admin_pusat', 'super_admin'].includes(activeRole) && branch) params.set('branch', branch);
+        const suffix = params.size ? `?${params}` : '';
         const data = await jsonFetch(`../api/payment-history.php${suffix}`);
-        renderHistory(data.payments || []);
-        showEmpty((data.payments || []).length === 0);
+        const payments = (data.payments || []).filter(payment => !month || String(payment.payment_date || '').slice(0, 7) === month);
+        lastPayments = payments;
+        lastHistoryWarnings = data.warnings || [];
+        renderHistory(payments);
+        showEmpty(payments.length === 0);
         const warningText = (data.warnings || []).join(' ');
-        setStatus(`${data.payments.length} transaksi dimuat.${warningText ? ` ${warningText}` : ''}`, Boolean(warningText));
+        setStatus(`${payments.length} transaksi ${month ? `pada ${month}` : ''} dimuat.${warningText ? ` ${warningText}` : ''}`, Boolean(warningText));
     } catch (error) { setStatus(error.message, true); }
 }
 
 function renderReport(report) {
+    lastReport = report;
     const summary = report.summary || {};
     const summaryGrid = document.getElementById('summaryGrid');
     const values = [['Invoice', summary.invoice_count || 0], ['Nilai invoice', money(summary.invoiced)], ['Dana masuk', money(summary.collected)], ['Piutang tersisa', money(summary.outstanding)]];
@@ -146,32 +194,24 @@ function renderReport(report) {
         card.append(title, number); summaryGrid.append(card);
     });
     report.by_branch.forEach(branch => addRow([branch.branch, branch.invoice_count, money(branch.invoiced), money(branch.collected), money(branch.outstanding)]));
-    document.getElementById('yearLabel').textContent = report.year;
+    document.getElementById('periodHeading').textContent = `Rekap ${new Date(`${report.period || `${report.year}-01`}-01T00:00:00`).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
     const hasReportData = ['invoice_count', 'invoiced', 'collected', 'outstanding'].some(key => Number(summary[key]) !== 0);
     showEmpty(!hasReportData);
 }
 
-async function loadReport(useLatestYear = false) {
-    const yearSelect = document.getElementById('yearSelect');
+async function loadReport() {
+    lastReport = null;
     tableBody.replaceChildren();
     document.getElementById('summaryGrid').replaceChildren();
     setStatus('Memuat laporan...');
     try {
-        const reportUrl = useLatestYear ? '../api/reports.php' : `../api/reports.php?year=${encodeURIComponent(yearSelect.value)}`;
+        const month = document.getElementById('reportMonth').value;
+        if (!month) throw new Error('Pilih bulan laporan.');
+        const reportUrl = `../api/reports.php?month=${encodeURIComponent(month)}`;
         const report = await jsonFetch(reportUrl);
-        if (useLatestYear) {
-            const reportYear = String(report.year);
-            if (![...yearSelect.options].some(option => option.value === reportYear)) {
-                const option = document.createElement('option');
-                option.value = reportYear;
-                option.textContent = reportYear;
-                yearSelect.prepend(option);
-            }
-            yearSelect.value = reportYear;
-        }
         renderReport(report);
         const warningText = (report.warnings || []).join(' ');
-        setStatus(`Laporan ${report.year} berhasil dimuat.${warningText ? ` ${warningText}` : ''}`, Boolean(warningText));
+        setStatus(`Laporan ${report.period} berhasil dimuat.${warningText ? ` ${warningText}` : ''}`, Boolean(warningText));
     } catch (error) { setStatus(error.message, true); }
 }
 
@@ -179,23 +219,22 @@ async function initialize() {
     try {
         const session = await jsonFetch('../api/session.php');
         if (!session.authenticated) return redirectToLogin();
+        currentUser = session.user;
         await setScope(session.user);
         if (page === 'report') {
             if (session.user.role === 'pelanggan') {
                 window.location.replace('../halaman.html');
                 return;
             }
-            const yearSelect = document.getElementById('yearSelect');
-            const currentYear = new Date().getFullYear();
-            for (let year = currentYear; year >= 2020; year -= 1) {
-                const option = document.createElement('option'); option.value = year; option.textContent = year; yearSelect.append(option);
-            }
-            yearSelect.addEventListener('change', () => loadReport());
-            await loadReport(true);
+            document.getElementById('reportMonth').value = localMonth();
+            document.getElementById('reportMonth').addEventListener('change', loadReport);
+            await loadReport();
             return;
         }
         if (page === 'history') {
             document.getElementById('historyBranchFilter')?.addEventListener('change', loadHistory);
+            document.getElementById('historyMonth').value = localMonth();
+            document.getElementById('historyMonth').addEventListener('change', loadHistory);
             await loadHistory();
             return;
         }
@@ -209,3 +248,36 @@ async function initialize() {
 }
 
 initialize();
+
+document.querySelectorAll('[data-export]').forEach(button => button.addEventListener('click', () => {
+    const format = button.dataset.export;
+    let payload;
+    if (page === 'report' && lastReport) {
+        const scopeLabel = currentUser?.role === 'admin_cabang'
+            ? `Admin cabang · ${lastReport.by_branch.map(branch => branch.branch).join(', ') || 'cabang akun'}`
+            : 'Admin pusat · semua cabang';
+        const period = `${lastReport.period} · ${scopeLabel} · dibuat ${new Date().toLocaleString('id-ID')}`;
+        const summary = lastReport.summary;
+        const warningNote = (lastReport.warnings || []).length ? ` Peringatan kelengkapan data: ${lastReport.warnings.join(' ')}` : '';
+        payload = { filename: 'laporan-bulanan', title: 'Laporan Bulanan Nusa Karsa Event', period, description: `Jumlah dan nilai invoice/event mengikuti tanggal invoice atau tanggal event. Dana masuk mengikuti tanggal transaksi pembayaran. Piutang adalah saldo invoice/event pada bulan laporan.${warningNote}`, headers: ['Cabang', 'Jumlah invoice/event', 'Nilai invoice/kontrak (IDR)', 'Dana masuk (IDR)', 'Piutang tersisa (IDR)'], rows: [
+            ['TOTAL', summary.invoice_count, summary.invoiced, summary.collected, summary.outstanding],
+            ...lastReport.by_branch.map(item => [item.branch, item.invoice_count, item.invoiced, item.collected, item.outstanding])
+        ] };
+    } else if (page === 'history') {
+        const month = document.getElementById('historyMonth').value;
+        const selectedBranch = currentUser?.role === 'admin_cabang'
+            ? (document.getElementById('scopeBadge')?.textContent || 'Cabang akun')
+            : (document.getElementById('historyBranchFilter')?.selectedOptions[0]?.textContent || 'Semua cabang');
+        const roleLabel = currentUser?.role === 'admin_cabang' ? 'Admin cabang' : 'Admin pusat';
+        const rows = lastPayments.map(item => [item.payment_date || '-', item.payment_token || '-', item.customer || '-', item.branch || '-', item.event || '-', item.record_type === 'historical_balance' ? 'Saldo historis' : item.record_type === 'demo_simulation' ? 'Simulasi (belum diverifikasi)' : item.payment_method || '-', Number(item.amount) || 0, item.note || '-', item.cancelled_at ? `DIBATALKAN (${item.cancelled_at}) oleh ${item.cancelled_by_role || 'akun'} #${item.cancelled_by || '?'} - ${item.cancellation_reason || ''}` : 'Aktif']);
+        const activePayments = lastPayments.filter(item => !item.cancelled_at);
+        rows.push(['TOTAL AKTIF', '', '', '', '', '', activePayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0), `${activePayments.length} transaksi`, 'Tidak termasuk pembatalan']);
+        const cancelledPayments = lastPayments.filter(item => item.cancelled_at);
+        rows.push(['TOTAL DIBATALKAN', '', '', '', '', '', cancelledPayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0), `${cancelledPayments.length} transaksi`, 'Nilai dibalik dari saldo tagihan']);
+        const warningNote = lastHistoryWarnings.length ? ` Peringatan kelengkapan data: ${lastHistoryWarnings.join(' ')}` : '';
+        payload = { filename: 'riwayat-pembayaran', title: 'Riwayat Pembayaran Nusa Karsa Event', period: `${month} · ${roleLabel} · ${selectedBranch} · dibuat ${new Date().toLocaleString('id-ID')}`, description: `Simulasi pelanggan ditandai sebagai belum diverifikasi dan bukan dana masuk terkonfirmasi.${warningNote}`, headers: ['Tanggal', 'Token', 'Pelanggan', 'Cabang', 'Event', 'Metode/jenis', 'Nominal (IDR)', 'Catatan', 'Status pembatalan'], rows };
+    }
+    if (!payload) { setStatus('Data belum siap untuk diekspor.', true); return; }
+    try { window.NusaExports.exportFile(payload, format); }
+    catch (error) { setStatus(`Ekspor gagal: ${error.message}`, true); }
+}));

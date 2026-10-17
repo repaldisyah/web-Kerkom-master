@@ -15,8 +15,14 @@ $requestedYear = filter_input(INPUT_GET, 'year', FILTER_VALIDATE_INT);
 if ($requestedYear === false || ($requestedYear !== null && ($requestedYear < 2020 || $requestedYear > 2100))) {
     respond(['success' => false, 'message' => 'Tahun tidak valid.'], 422);
 }
+$requestedMonth = isset($_GET['month']) ? trim((string) $_GET['month']) : null;
+if ($requestedMonth !== null && !preg_match('/^(20[2-9][0-9]|2100)-(0[1-9]|1[0-2])$/', $requestedMonth)) {
+    respond(['success' => false, 'message' => 'Bulan harus berformat YYYY-MM dan berada pada rentang 2020–2100.'], 422);
+}
+$periodYear = $requestedMonth !== null ? (int) substr($requestedMonth, 0, 4) : $requestedYear;
+$periodMonth = $requestedMonth !== null ? (int) substr($requestedMonth, 5, 2) : null;
 $db = database();
-$year = $requestedYear;
+$year = $periodYear;
 if ($year === null) {
     $availableYears = [];
     $masterYear = $db->query('SELECT MAX(YEAR(invoice_date)) FROM receivables')->fetchColumn();
@@ -84,13 +90,14 @@ $addCollected = static function (int $branchId, float $amount) use (&$byBranch):
 };
 
 $hasDemoPayments = has_payment_record_type_column();
-$demoBalanceSql = $hasDemoPayments ? "(SELECT COALESCE(SUM(pd.amount), 0) FROM payments pd WHERE pd.receivable_id = r.id AND pd.record_type = 'demo_simulation')" : '0';
+$demoBalanceSql = $hasDemoPayments ? "(SELECT COALESCE(SUM(pd.amount), 0) FROM payments pd WHERE pd.receivable_id = r.id AND pd.record_type = 'demo_simulation' AND pd.cancelled_at IS NULL)" : '0';
 $masterSql = "SELECT r.branch_id, COUNT(*) AS invoice_count,
                      COALESCE(SUM(r.total_amount), 0) AS invoiced,
                      0 AS collected,
                      COALESCE(SUM(r.balance + $demoBalanceSql), 0) AS outstanding
-              FROM receivables r WHERE YEAR(r.invoice_date) = :year";
+              FROM receivables r WHERE YEAR(r.invoice_date) = :year" . ($periodMonth !== null ? ' AND MONTH(r.invoice_date) = :month' : '');
 $masterParams = ['year' => $year];
+if ($periodMonth !== null) $masterParams['month'] = $periodMonth;
 if (!$isCentral) {
     $masterSql .= ' AND r.branch_id = :branch_id';
     $masterParams['branch_id'] = (int) $scope['branch_id'];
@@ -99,9 +106,10 @@ $masterSql .= ' GROUP BY r.branch_id';
 $masterStatement = $db->prepare($masterSql);
 $masterStatement->execute($masterParams);
 foreach ($masterStatement->fetchAll() as $row) $addTotals((int) $row['branch_id'], $row);
-$paymentSql = 'SELECT r.branch_id, COALESCE(SUM(p.amount), 0) AS collected FROM payments p JOIN receivables r ON r.id = p.receivable_id WHERE YEAR(p.payment_date) = :year';
+$paymentSql = 'SELECT r.branch_id, COALESCE(SUM(p.amount), 0) AS collected FROM payments p JOIN receivables r ON r.id = p.receivable_id WHERE p.cancelled_at IS NULL AND YEAR(p.payment_date) = :year' . ($periodMonth !== null ? ' AND MONTH(p.payment_date) = :month' : '');
 if ($hasDemoPayments) $paymentSql .= " AND p.record_type <> 'demo_simulation'";
 $paymentParams = ['year' => $year];
+if ($periodMonth !== null) $paymentParams['month'] = $periodMonth;
 if (!$isCentral) {
     $paymentSql .= ' AND r.branch_id = :branch_id';
     $paymentParams['branch_id'] = (int) $scope['branch_id'];
@@ -121,7 +129,7 @@ $canSeeBranch = static function (int $branchId) use ($isCentral, $scope): bool {
     if ($isCentral) return true;
     return $scope['role'] === 'admin_cabang' && (int) $scope['branch_id'] === $branchId;
 };
-$aggregateEventDatabase = static function (string $databaseName, int $branchId) use ($config, $year, $addTotals, &$warnings): void {
+$aggregateEventDatabase = static function (string $databaseName, int $branchId) use ($config, $year, $periodMonth, $addTotals, &$warnings): void {
     try {
         $eventDb = new PDO(
             sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $config['db_host'], $config['db_port'], $databaseName),
@@ -132,9 +140,10 @@ $aggregateEventDatabase = static function (string $databaseName, int $branchId) 
         $sql = "SELECT COUNT(*) AS invoice_count, COALESCE(SUM(v.nilai_kontrak), 0) AS invoiced,
                        COALESCE(SUM(v.total_dibayar - COALESCE(d.demo_amount, 0)), 0) AS collected,
                        COALESCE(SUM(v.piutang + COALESCE(d.demo_amount, 0)), 0) AS outstanding
-                FROM vw_events_dashboard v LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM event_payments WHERE record_type = 'demo_simulation' GROUP BY event_id) d ON d.event_id = v.id
-                WHERE YEAR(COALESCE(v.tgl_event, v.tgl_jatuh_tempo)) = :year";
+                FROM vw_events_dashboard v LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM event_payments WHERE record_type = 'demo_simulation' AND cancelled_at IS NULL GROUP BY event_id) d ON d.event_id = v.id
+                WHERE YEAR(COALESCE(v.tgl_event, v.tgl_jatuh_tempo)) = :year" . ($periodMonth !== null ? ' AND MONTH(COALESCE(v.tgl_event, v.tgl_jatuh_tempo)) = :month' : '');
         $params = ['year' => $year];
+        if ($periodMonth !== null) $params['month'] = $periodMonth;
         $statement = $eventDb->prepare($sql);
         $statement->execute($params);
         $addTotals($branchId, $statement->fetch() ?: []);
@@ -152,9 +161,10 @@ if ($palembangId !== null && $canSeeBranch($palembangId)) {
             $sql = "SELECT COUNT(*) AS invoice_count, COALESCE(SUM(e.nilai_kontrak), 0) AS invoiced,
                            COALESCE(SUM(e.total_dibayar - COALESCE(d.demo_amount, 0)), 0) AS collected,
                            COALESCE(SUM(e.piutang + COALESCE(d.demo_amount, 0)), 0) AS outstanding
-                    FROM palembang_events e LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM palembang_payments WHERE record_type = 'demo_simulation' GROUP BY event_id) d ON d.event_id = e.id
-                    WHERE YEAR(COALESCE(e.tgl_event, e.tgl_jatuh_tempo)) = :year";
+                    FROM palembang_events e LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM palembang_payments WHERE record_type = 'demo_simulation' AND cancelled_at IS NULL GROUP BY event_id) d ON d.event_id = e.id
+                    WHERE YEAR(COALESCE(e.tgl_event, e.tgl_jatuh_tempo)) = :year" . ($periodMonth !== null ? ' AND MONTH(COALESCE(e.tgl_event, e.tgl_jatuh_tempo)) = :month' : '');
             $params = ['year' => $year];
+            if ($periodMonth !== null) $params['month'] = $periodMonth;
             $statement = $db->prepare($sql);
             $statement->execute($params);
             $addTotals($palembangId, $statement->fetch() ?: []);
@@ -177,6 +187,8 @@ foreach ($byBranch as $row) {
 respond([
     'success' => true,
     'year' => $year,
+    'month' => $periodMonth,
+    'period' => $requestedMonth,
     'summary' => $summary,
     'by_branch' => array_values($byBranch),
     'scope' => $isCentral ? 'all' : 'branch',

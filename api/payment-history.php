@@ -29,7 +29,7 @@ $tokenColumn = has_payment_token_column() ? 'p.payment_token' : "CONCAT('PM-', p
 $methodColumn = has_payment_method_column() ? 'p.payment_method' : "'Manual'";
 $noteColumn = has_payment_note_column() ? 'p.note' : 'NULL';
 $recordTypeColumn = has_payment_record_type_column() ? 'p.record_type' : "'payment'";
-$sql = "SELECT p.id AS transaction_id, $tokenColumn AS payment_token, p.payment_date, p.amount, $methodColumn AS payment_method, $noteColumn AS note, $recordTypeColumn AS record_type, c.name AS customer, b.name AS branch, e.name AS event, r.total_amount, r.balance, r.status FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id";
+$sql = "SELECT p.id AS transaction_id, 'master' AS source, p.created_at, p.cancelled_at, p.cancelled_by, p.cancelled_by_role, p.cancellation_reason, $tokenColumn AS payment_token, p.payment_date, p.amount, $methodColumn AS payment_method, $noteColumn AS note, $recordTypeColumn AS record_type, c.name AS customer, b.name AS branch, e.name AS event, r.total_amount, r.balance, r.status, r.branch_id AS source_branch_id, r.customer_id AS source_customer_id FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id";
 $params = [];
 if ($scope['role'] === 'admin_cabang') {
     if (!$scope['branch_id']) respond(['success' => false, 'message' => 'Akun belum memiliki cabang.'], 403);
@@ -46,6 +46,8 @@ if ($scope['role'] === 'admin_cabang') {
 $statement = $db->prepare($sql);
 $statement->execute($params);
 $payments = $statement->fetchAll();
+
+
 
 $branchRows = $db->query('SELECT id, name FROM branches')->fetchAll();
 $branchNames = [];
@@ -80,7 +82,7 @@ $eventDatabases = [
                 $join = $hasSnapshot ? 'LEFT JOIN palembang_events e ON e.id = p.event_id' : 'JOIN palembang_events e ON e.id = p.event_id';
                 $snapshotColumns = $hasSnapshot ? 'COALESCE(p.customer_name, e.pelanggan)' : 'e.pelanggan';
                 $snapshotEvent = $hasSnapshot ? 'COALESCE(p.event_name, e.nama_event)' : 'e.nama_event';
-                $sql = "SELECT p.id AS transaction_id, p.payment_token, p.payment_date, p.amount, p.payment_method, p.note, $snapshotColumns AS customer, 'Palembang' AS branch, $snapshotEvent AS event, $recordTypeColumn AS record_type FROM palembang_payments p $join";
+                $sql = "SELECT p.id AS transaction_id, 'palembang' AS source, p.created_at, p.cancelled_at, p.cancelled_by, p.cancelled_by_role, p.cancellation_reason, p.payment_token, p.payment_date, p.amount, p.payment_method, p.note, $snapshotColumns AS customer, 'Palembang' AS branch, $snapshotEvent AS event, $recordTypeColumn AS record_type FROM palembang_payments p $join";
                 $params = [];
                 if ($scope['role'] === 'pelanggan') {
                     $sql .= " WHERE $snapshotColumns = :customer_name";
@@ -112,7 +114,7 @@ $eventDatabases = [
                 $warnings[] = ucfirst($branch) . ': jalankan migrasi riwayat pembayaran.';
                 continue;
             }
-            $sql = "SELECT id AS transaction_id, payment_token, payment_date, amount, payment_method, note, customer_name AS customer, event_name AS event, record_type FROM event_payments";
+            $sql = "SELECT id AS transaction_id, '$branch' AS source, created_at, cancelled_at, cancelled_by, cancelled_by_role, cancellation_reason, payment_token, payment_date, amount, payment_method, note, customer_name AS customer, event_name AS event, record_type FROM event_payments";
             $params = [];
             if ($scope['role'] === 'pelanggan') {
                 $sql .= ' WHERE customer_name = :customer_name';
@@ -122,12 +124,19 @@ $eventDatabases = [
             $query->execute($params);
             foreach ($query->fetchAll() as $payment) {
                 $payment['branch'] = ucfirst($branch);
+                $payment['source'] = $branch;
                 $payments[] = $payment;
             }
         } catch (PDOException) {
             $warnings[] = ucfirst($branch) . ': database riwayat belum dapat diakses.';
         }
     }
+foreach ($payments as &$payment) {
+    $created = strtotime((string)($payment['created_at'] ?? $payment['payment_date'] ?? ''));
+    $age = $created ? time() - $created : PHP_INT_MAX;
+    $payment['can_cancel'] = empty($payment['cancelled_at']) && ($scope['role'] === 'admin_pusat' || $scope['role'] === 'super_admin' || ($scope['role'] === 'admin_cabang' && $age >= 0 && $age <= 30*86400) || ($scope['role'] === 'pelanggan' && ($payment['record_type'] ?? '') === 'demo_simulation' && $age >= 0 && $age <= 86400));
+}
+unset($payment);
 usort($payments, static function (array $a, array $b): int {
     $aDate = (string) ($a['payment_date'] ?? '');
     $bDate = (string) ($b['payment_date'] ?? '');

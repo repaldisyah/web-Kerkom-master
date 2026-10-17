@@ -1,0 +1,8 @@
+.export-controls{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.export-buttons{display:flex;gap:7px}
+.export-buttons button{border:1px solid #dfe8ef;border-radius:9px;padding:9px 13px;background:#17324d;color:#fff;font:600 .82rem Poppins,Arial,sans-serif;cursor:pointer}
+.export-buttons button:hover{background:#1f8195}
+.export-buttons button:focus-visible{outline:3px solid #38b8c9;outline-offset:2px}
+.field-label{display:inline-flex;align-items:center;gap:8px;margin:7px 9px 0 0;color:#668096;font-size:.82rem;font-weight:600}
+@media(max-width:720px){.export-controls{justify-content:flex-start;margin-top:12px}.export-buttons{margin-top:8px}}
+@media print{.export-controls,.portal-nav,.back-link,.status{display:none!important}.portal-body .portal-shell{margin:0;padding:0}.portal-card{box-shadow:none;border:0}.table-wrap{overflow:visible}.data-table{min-width:0;font-size:8pt}.data-table th,.data-table td{padding:5px}}

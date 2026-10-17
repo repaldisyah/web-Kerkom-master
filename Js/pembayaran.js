@@ -352,16 +352,90 @@ printReceiptButton.addEventListener("click", () => window.print());
 async function downloadReceipt() {
     if (!latestReceipt) return;
     const data = latestReceipt;
-    let logo = "";
-    try { const response = await fetch("../assets/logo3.0.png"); const blob = await response.blob(); logo = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); } catch (error) {}
-    const rows = [["Pelanggan",data.customer],["Acara",data.event],["Cabang",data.branch],["Metode",data.payment_method],["Tanggal",data.payment_date],["Sisa piutang",money(data.balance)],["Catatan",data.note || "-"]].map(([label,value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
-    const html = `<!doctype html><html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Struk ${escapeHtml(data.token)}</title><style>body{font:14px Arial,sans-serif;background:#f3f5f7;color:#172b3b;padding:24px}.receipt{max-width:420px;margin:auto;background:white;padding:24px;border:1px solid #ddd;border-radius:12px}.brand{text-align:center;border-bottom:1px dashed #aaa;padding-bottom:16px}.brand img{width:76px;height:76px;object-fit:contain}.brand strong,.brand span{display:block}.stamp{color:#b42318;font-weight:bold;border:2px solid #b42318;padding:5px;display:inline-block;margin:10px}.token{background:#f3f8fa;padding:12px;text-align:center;font-weight:bold;letter-spacing:1px}section{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}section span{display:block;color:#687887;font-size:12px}section strong{display:block;margin-top:4px}.total{border-top:1px dashed #aaa;padding-top:14px;font-size:18px;font-weight:bold;text-align:right}.foot{text-align:center;color:#687887;font-size:12px;margin-top:18px}@media print{body{padding:0;background:white}.receipt{border:0}}</style><article class="receipt"><header class="brand">${logo ? `<img src="${logo}" alt="Nusa Karsa">` : ""}<strong>NUSA KARSA EVENT</strong><span>Bukti transaksi pelanggan</span>${data.simulated ? "<div class=\"stamp\">SIMULASI - BUKAN PEMBAYARAN ASLI</div>" : ""}</header><p class="token">${escapeHtml(data.token)}</p><section>${rows}</section><div class="total">TOTAL DIBAYAR<br>${escapeHtml(money(data.amount))}</div><p class="foot">${data.simulated ? "Struk simulasi demo. Tidak membuktikan dana diterima." : "Terima kasih atas pembayaran Anda."}</p></article></html>`;
-    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = `struk-${data.token}.html`; link.click(); URL.revokeObjectURL(url);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 1600;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { showAlert('Browser ini tidak mendukung pembuatan gambar struk.'); return; }
+    const roundedRect = (x, y, width, height, radius, color, stroke) => {
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, width, height, radius);
+        else ctx.rect(x, y, width, height);
+        ctx.fillStyle = color; ctx.fill();
+        if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+    };
+    const wrap = (text, maxWidth, font) => {
+        ctx.font = font;
+        const words = String(text || '-').split(/\s+/);
+        const lines = []; let line = '';
+        for (const word of words) {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && ctx.measureText(candidate).width > maxWidth) { lines.push(line); line = word; }
+            else line = candidate;
+        }
+        if (line) lines.push(line);
+        return lines;
+    };
+    ctx.fillStyle = '#edf2f5'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    roundedRect(54, 54, 1092, 1492, 28, '#ffffff', '#dce5eb');
+    ctx.fillStyle = '#28b8c9'; ctx.fillRect(54, 54, 1092, 12);
+    let logo = null;
+    let logoUrl = null;
+    try {
+        const response = await fetch('../assets/logo3.0.png', { cache: 'force-cache' });
+        if (response.ok) {
+            const blob = await response.blob();
+            logoUrl = URL.createObjectURL(blob);
+            logo = new Image(); logo.src = logoUrl;
+            await logo.decode();
+        }
+    } catch (error) { logo = null; }
+    finally { if (logoUrl) URL.revokeObjectURL(logoUrl); }
+    if (logo) ctx.drawImage(logo, 104, 106, 126, 126);
+    ctx.textAlign = 'left'; ctx.fillStyle = '#17324d'; ctx.font = '700 33px Arial'; ctx.fillText('NUSA KARSA EVENT', 254, 150);
+    ctx.fillStyle = '#668096'; ctx.font = '22px Arial'; ctx.fillText('BUKTI TRANSAKSI PELANGGAN', 254, 190);
+    if (data.simulated) {
+        ctx.save(); ctx.translate(1004, 144); ctx.rotate(-0.09);
+        ctx.strokeStyle = '#b42318'; ctx.lineWidth = 5; ctx.strokeRect(-112, -32, 224, 64);
+        ctx.fillStyle = '#b42318'; ctx.textAlign = 'center'; ctx.font = '700 22px Arial'; ctx.fillText('SIMULASI', 0, 8); ctx.restore();
+    }
+    ctx.strokeStyle = '#dce5eb'; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(104, 260); ctx.lineTo(1096, 260); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#668096'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.fillText('TOKEN TRANSAKSI', 600, 315);
+    roundedRect(104, 340, 992, 86, 14, '#eef8f8');
+    ctx.fillStyle = '#17324d'; ctx.font = '700 32px Arial'; ctx.fillText(String(data.token || '-'), 600, 394);
+    const fields = [['Pelanggan', data.customer], ['Acara', data.event], ['Cabang', data.branch], ['Metode', data.payment_method], ['Tanggal', data.payment_date], ['Sisa piutang', money(data.balance)], ['Catatan', data.note || '-']];
+    let y = 482;
+    for (let i = 0; i < fields.length; i += 2) {
+        const pair = fields.slice(i, i + 2);
+        const lineArrays = pair.map(([, value]) => wrap(value, 452, '600 23px Arial'));
+        const rowHeight = Math.max(110, ...lineArrays.map(lines => 68 + lines.length * 31));
+        pair.forEach(([label], j) => {
+            const x = 104 + j * 510;
+            ctx.textAlign = 'left'; ctx.fillStyle = '#668096'; ctx.font = '20px Arial'; ctx.fillText(label.toUpperCase(), x, y);
+            ctx.fillStyle = '#17324d'; ctx.font = '600 23px Arial';
+            lineArrays[j].forEach((line, index) => ctx.fillText(line, x, y + 38 + index * 31));
+        });
+        y += rowHeight;
+    }
+    y += 18;
+    ctx.strokeStyle = '#dce5eb'; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(104, y); ctx.lineTo(1096, y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.textAlign = 'left'; ctx.fillStyle = '#668096'; ctx.font = '700 20px Arial'; ctx.fillText('TOTAL DIBAYAR', 104, y + 55);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#e89140'; ctx.font = '700 36px Arial'; ctx.fillText(money(data.amount), 1096, y + 58);
+    const warning = data.simulated ? 'SIMULASI DEMO — struk ini tidak membuktikan dana telah diterima.' : 'Transaksi telah dicatat oleh sistem. Simpan token ini sebagai referensi.';
+    const warningLines = wrap(warning, 990, '22px Arial');
+    ctx.textAlign = 'center'; ctx.fillStyle = data.simulated ? '#b42318' : '#668096'; ctx.font = '22px Arial';
+    warningLines.forEach((line, index) => ctx.fillText(line, 600, y + 128 + index * 30));
+    ctx.fillStyle = '#9aabb7'; ctx.font = '18px Arial'; ctx.fillText('Nusa Karsa Event · Struk digital', 600, 1488);
+    const jpeg = await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Gambar JPEG tidak dapat dibuat.')), 'image/jpeg', 0.94));
+    const url = URL.createObjectURL(jpeg);
+    const link = document.createElement('a');
+    const safeToken = String(data.token || 'transaksi').replace(/[^a-z0-9_-]/gi, '-');
+    link.href = url; link.download = `struk-${safeToken}.jpg`; document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 copyReceiptTokenButton.addEventListener("click", copyReceiptToken);
-downloadReceiptButton.addEventListener("click", downloadReceipt);
+downloadReceiptButton.addEventListener("click", () => downloadReceipt().catch(error => showAlert(error.message || 'Struk JPG gagal dibuat.')));
 shareReceiptButton.addEventListener("click", shareReceipt);
 
 (async function initializePaymentPage() {

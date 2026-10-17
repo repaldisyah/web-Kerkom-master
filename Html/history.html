@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="../Css/portal.css">
     <link rel="stylesheet" href="../Css/navigation.css">
+    <link rel="stylesheet" href="../Css/exports.css">
 </head>
 <body class="portal-body" data-page="history">
     <main class="portal-shell">
@@ -18,23 +19,26 @@
             <a class="back-link" href="../halaman.html"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
         </header>
         <nav class="portal-nav" aria-label="Navigasi">
-            <a class="nav-link" href="cabang.html">Cabang</a><a class="nav-link" href="pelanggan.html">Pelanggan</a><a class="nav-link active" href="history.html">Riwayat pembayaran</a><a class="nav-link report-link" href="laporan.html">Laporan tahunan</a><a class="nav-link" href="pembayaran.html">Pembayaran</a>
+            <a class="nav-link" href="cabang.html">Cabang</a><a class="nav-link" href="pelanggan.html">Pelanggan</a><a class="nav-link active" href="history.html">Riwayat pembayaran</a><a class="nav-link report-link" href="laporan.html">Laporan bulanan</a><a class="nav-link" href="pembayaran.html">Pembayaran</a>
         </nav>
         <section class="portal-card">
             <div class="toolbar">
-                <div><h2>Riwayat transaksi lengkap</h2><p>Riwayat mencakup semua cabang sesuai hak akses akun.</p>
+                <div><h2>Riwayat transaksi bulanan</h2><p>Riwayat mencakup transaksi sesuai bulan dan hak akses akun.</p>
+                    <label class="field-label" for="historyMonth">Bulan transaksi</label>
+                    <input id="historyMonth" class="year-select" type="month" aria-label="Pilih bulan transaksi">
                     <label id="historyBranchFilterWrap" class="field-label" hidden>Filter cabang
                         <select id="historyBranchFilter" class="select-control"><option value="">Semua cabang</option><option value="palembang">Palembang</option><option value="bali">Bali</option><option value="bandung">Bandung</option></select>
                     </label>
                 </div>
-                <span id="scopeBadge" class="scope-badge">Memuat</span>
+                <div class="export-controls"><span id="scopeBadge" class="scope-badge">Memuat</span><div class="export-buttons" aria-label="Ekspor riwayat"><button type="button" data-export="pdf">PDF</button><button type="button" data-export="xlsx">Excel</button><button type="button" data-export="docx">Word</button></div></div>
             </div>
             <p id="status" class="status" role="status">Memeriksa sesi...</p>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>Tanggal</th><th>Token</th><th>Pelanggan</th><th>Cabang</th><th>Event</th><th>Metode / Jenis catatan</th><th>Nominal</th><th>Catatan</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>Tanggal</th><th>Token</th><th>Pelanggan</th><th>Cabang</th><th>Event</th><th>Metode / Jenis catatan</th><th>Nominal</th><th>Catatan</th><th>Status / aksi</th></tr></thead><tbody id="tableBody"></tbody></table></div>
             <div id="emptyState" class="empty hidden"><i class="fa-regular fa-credit-card"></i><strong>Belum ada pembayaran</strong><p>Riwayat bertambah setelah pembayaran dicatat.</p></div>
         </section>
     </main>
     <script src="../Js/navigation.js"></script>
+    <script src="../Js/exports.js"></script>
     <script src="../Js/portal.js"></script>
 </body>
 </html>
