@@ -1,4 +1,4 @@
-# Database dan akun
+﻿# Database dan akun
 
 Dokumen ini menjelaskan database yang dipakai aplikasi, urutan setup lokal, akun bawaan dari skrip seed, dan cara memeriksa akun yang benar-benar tersimpan. Stack saat ini adalah PHP dengan PDO, MySQL, dan frontend HTML/CSS/JavaScript.
 
@@ -96,6 +96,26 @@ migration_seed_demo_customers.sql membuat tiga akun presentasi tambahan. Akun in
 
 Akun di atas dibuat oleh seed. Akun di database aktif dapat berbeda jika password pernah diganti, akun baru dibuat, atau akun seed dihapus. Untuk login, email atau username dapat digunakan. Email demo hanya identitas login contoh dan bukan alamat mailbox. Jangan gunakan password seed pada data nyata atau layanan yang dapat diakses publik; ganti password sebelum pemakaian operasional.
 
+## Password akun dan pemulihan akses
+
+Password akun tidak dapat ditampilkan dari database. Aplikasi menyimpan nilai `password_hash`, bukan password asli; hash tidak bisa dibalik menjadi password yang digunakan saat login. Karena itu, README ini sengaja tidak mencantumkan password akun, termasuk password seed. Jika password admin pusat ditolak saat ganti password, pastikan password saat ini yang dimasukkan sama dengan password yang berhasil dipakai untuk login ke akun admin pusat.
+
+Pada 17 Oktober 2026, password setiap akun yang tercatat di `admin_pusat.users` dan `nusa_karsa.users` pada database lokal aktif telah diatur ulang ke nilai acak yang unik. Daftar password baru diserahkan secara terpisah kepada pengelola dan disimpan sementara di komputer lokal; jangan menyalinnya ke README, repositori GitHub, atau tiket yang dapat dibagikan. Minta setiap pemilik akun mengganti password setelah menerima akses.
+
+Jika password benar-benar hilang, lakukan reset secara lokal dan hanya untuk akun yang Anda kelola:
+
+1. Buat hash password baru dengan `password_hash($password, PASSWORD_DEFAULT)` menggunakan PHP lokal. Jangan masukkan password atau hash ke percakapan, README, atau file yang akan dibagikan.
+2. Di phpMyAdmin, perbarui hanya baris akun yang dipilih. Akun `admin_pusat` berada di database `admin_pusat`; akun `admin_cabang` dan `pelanggan` berada di `nusa_karsa`:
+
+       UPDATE admin_pusat.users
+       SET password_hash = '<hash-baru>'
+       WHERE username = '<username-akun>';
+
+   Untuk akun cabang atau pelanggan, gunakan `nusa_karsa.users` sebagai pengganti `admin_pusat.users`.
+3. Pastikan hanya satu akun yang cocok sebelum menjalankan perubahan, lalu uji login dengan password baru. Hapus skrip sementara yang digunakan untuk membuat hash.
+
+Jangan mengatur satu password yang sama untuk semua akun. Seed berikutnya dapat mengubah atau membuat ulang akun contoh; jangan jalankan ulang seed untuk memulihkan password akun operasional.
+
 ## Melihat semua akun yang tersimpan
 
 Jalankan kueri berikut dari phpMyAdmin untuk memeriksa akun aktual. Kueri tidak mengambil password_hash.
@@ -135,6 +155,7 @@ Jangan impor ulang file seed event setelah pembayaran operasional dicatat karena
 - POST api/login.php membuat sesi pengguna.
 - POST api/logout.php mengakhiri sesi.
 - GET api/session.php membaca status sesi.
+- GET/POST api/change-password.php menyediakan token formulir dan mengganti password akun yang sedang login setelah verifikasi password saat ini; password baru minimal 12 karakter.
 - GET api/dashboard.php menyediakan ringkasan dashboard dan memerlukan sesi.
 - GET api/branches.php menyediakan data cabang sesuai lingkup akun.
 - GET api/customers.php menyediakan data pelanggan sesuai hak akses.
@@ -155,4 +176,5 @@ Endpoint tulis memerlukan sesi dan hak akses yang sesuai. Gunakan halaman aplika
 
 Dashboard dapat menghitung tagihan yang mendekati jatuh tempo atau tertunggak, tetapi belum ada worker terjadwal yang mengirim pengingat otomatis. README ini juga tidak mengasumsikan adanya pemulihan password, pengiriman email/WhatsApp, atau ekspor laporan penuh.
 
-Jika database pernah menjalankan migration_seed_customer_payment_progress.sql, jalankan migration_remove_demo_payment_progress.sql untuk menghapus event pembayaran sintetis dari laporan dan riwayat. Data transaksi operasional tetap dikelola dari tabel pembayaran.
+Jika database lama memiliki baris progres pembayaran sintetis, tinjau dahulu baris demo yang ada dan backup database sebelum menjalankan migration_remove_demo_payment_progress.sql. Migrasi ini ditujukan untuk membersihkan progres demo lama; jangan jalankan tanpa memastikan data yang akan dihapus. Data transaksi operasional tetap dikelola dari tabel pembayaran.
+

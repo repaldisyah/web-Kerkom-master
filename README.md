@@ -7,13 +7,14 @@ Aplikasi web internal untuk pencatatan event, pembayaran, dan pemantauan piutang
 Fitur yang tersedia pada kode saat ini:
 
 - Login admin pusat, admin cabang, dan pelanggan menggunakan sesi.
+- Ganti password mandiri untuk admin cabang dan pelanggan; admin pusat memiliki pintasan tersembunyi di dashboard.
 - Dashboard ringkasan aktivitas dan piutang.
 - Pembatasan data admin cabang berdasarkan cabangnya.
 - Pencatatan dan riwayat pembayaran.
 - Halaman data pelanggan, laporan tahunan, dan pengelolaan akun admin cabang.
 - Data event Palembang, Bali, dan Bandung dengan kalkulasi kontrak, pembayaran, sisa piutang, dan status.
 - Permintaan penghapusan event dari admin cabang untuk ditinjau admin pusat.
-- Portal pelanggan untuk melihat informasi akun dan tagihannya.
+- Portal pelanggan untuk melihat informasi akun dan tagihannya; mode simulasi pelanggan mengurangi saldo operasional dan mencatat transaksi sebagai demo_simulation, bukan sebagai dana terverifikasi.
 
 Dashboard dapat menampilkan kondisi jatuh tempo, tetapi aplikasi belum mengirim pengingat otomatis. Alur pemulihan password dan ekspor laporan penuh juga belum tersedia. Jangan menganggap fitur tersebut siap digunakan.
 
@@ -88,4 +89,5 @@ Sebagian halaman menggabungkan data dari lebih dari satu database. Karena itu, p
 
 - [Panduan database, migrasi, dan akun](database/README.md)
 - [Audit dan pekerjaan lanjutan](AUDIT-PENYEMPURNAAN.md)
+
 

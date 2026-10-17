@@ -30,6 +30,13 @@
             if (!sessionResponse.ok || !session.authenticated) return;
 
             const links = [...document.querySelectorAll('.nav-menu .nav-item')];
+            if (['admin_cabang', 'pelanggan'].includes(session.user.role)) {
+                const passwordLink = document.createElement('a');
+                passwordLink.className = 'nav-item';
+                passwordLink.href = hrefFor('ganti-password.html');
+                passwordLink.innerHTML = '<i class="fa-solid fa-key"></i><span>Ganti password</span>';
+                document.querySelector('.nav-menu')?.append(passwordLink);
+            }
             if (['admin_pusat', 'super_admin'].includes(session.user.role)) {
                 const accountLink = document.createElement('a');
                 accountLink.className = 'nav-item';
