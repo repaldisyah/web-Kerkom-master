@@ -1,47 +1,52 @@
-﻿# Audit dan Rencana Penyempurnaan
+# Audit dan Rencana Penyempurnaan
 
-Dokumen ini mencatat kondisi yang ditemukan saat membaca repositori dan urutan perubahan yang disarankan. Kode aktual menjadi sumber kebenaran; dokumen rancangan lama tidak boleh dianggap sebagai fitur yang sudah berjalan.
+Dokumen ini mencocokkan panduan dengan implementasi yang ditemukan. Keberadaan kode belum membuktikan keberhasilan operasional; butir runtime tetap perlu diverifikasi.
 
-## Stack dan modul yang ada
+## Koreksi status dokumentasi
 
-- Frontend: HTML, CSS, dan JavaScript vanilla (`halaman.html`, `Html/`, `Css/`, `Js/`).
-- Backend: endpoint PHP 8+ dengan PDO (`api/`).
-- Data: MySQL melalui XAMPP. Data operasional utama berada di `nusa_karsa`; akun pusat, event Bali, dan event Bandung memakai database terpisah.
-- Fitur yang terlihat dari implementasi: autentikasi sesi; dashboard; pembatasan peran/cabang; pencatatan event dan pembayaran; riwayat transaksi; laporan; akun pelanggan; dan antrean permintaan hapus event.
+- Worker jatuh tempo, migrasi/halaman notifikasi, ekspor laporan, dan pembatalan transaksi memiliki implementasi.
+- Pengingat hanya membuat notifikasi in-app; email/WhatsApp tidak tersedia.
+- Perubahan password tersedia. Tautan lupa password membuka alur simulasi terpisah; pengiriman kode lewat email/SMS belum tersedia.
+- Panduan database lama memuat password demo dan harus tetap bebas dari password/hash.
 
-## Temuan yang perlu ditangani
+## Temuan
 
-### Prioritas 1 — dokumentasi dan setup
+### Pemeriksaan akses data (pemeriksaan kode)
 
-1. `prd (1).md` masih menyebut Next.js, Spring Boot, Vercel, dan scheduler Spring; teknologi itu tidak dipakai kode saat ini. Ganti dengan PRD kondisi aktual dan pisahkan kebutuhan yang belum ada sebagai backlog.
-2. Satukan panduan setup database. Proyek memerlukan beberapa database dan migrasi berurutan; buat urutan yang jelas untuk instalasi baru dan pembaruan database lama, termasuk backup sebelum migrasi.
-3. Hilangkan password awal dan password demo dari dokumentasi yang bisa dibagikan. Ganti dengan prosedur pembuatan kredensial lokal, perubahan password, dan peringatan agar file konfigurasi lokal tidak dipublikasikan.
-4. Tambahkan prosedur backup/restore, pengelolaan akun admin, dan panduan pemecahan masalah koneksi database.
+1. Endpoint utama memakai sesi dan role; API event/pembayaran cabang juga memeriksa cabang, dan endpoint pelanggan umumnya memakai `customer_id` untuk data utama.
+2. Ditemukan dan diperbaiki: `api/branches.php` sebelumnya mengembalikan ringkasan semua cabang kepada admin cabang. Kini hasil admin cabang dibatasi ke `branch_id` miliknya.
+3. Batasan data lama: tabel event dan pembayarannya di Bali, Bandung, dan Palembang menyimpan nama pelanggan, bukan `customer_id`. Cakupan akun pelanggan pada data tersebut bergantung pada nama dan cabang; dua pelanggan dengan nama sama dalam cabang yang sama belum dapat dibedakan secara pasti.
+4. Pemeriksaan ini berbasis pembacaan kode. Uji runtime lintas akun/cabang dan database belum dijalankan.
 
-### Prioritas 2 — keamanan dan integritas operasional
+Untuk proyek uji coba, cakupan akses tersebut menjadi fokus. Rate limit, CSRF menyeluruh, pemulihan password, backup/restore, dan kesiapan produksi dapat tetap menjadi backlog jika proyek nanti dipakai aktif.
 
-1. Tinjau ulang setiap endpoint tulis agar semua mutasi membutuhkan sesi operasional dan otorisasi cakupan cabang.
-2. Terapkan perlindungan CSRF untuk endpoint berbasis cookie sesi, lalu integrasikan tokennya pada seluruh form/fetch yang melakukan perubahan.
-3. Tambahkan pembatasan percobaan login, kebijakan ganti password, dan mekanisme pemulihan akun yang aman.
-4. Periksa konsistensi akun pelanggan, visibilitas tagihan, serta data yang dikembalikan endpoint pelanggan. Pastikan hanya data milik pelanggan yang terautentikasi yang keluar.
-5. Tetapkan kebijakan audit untuk pembayaran dan penghapusan. Transaksi keuangan sebaiknya dikoreksi dengan pembalikan/koreksi yang tercatat, bukan dihapus tanpa jejak.
+### Struk pembayaran
 
-### Prioritas 3 — kelengkapan fitur
+- Setelah pembayaran/simulasi berhasil, halaman pembayaran menyediakan cetak atau simpan PDF, unduh JPG/JPEG, dan unduh DOCX.
+- Struk simulasi diberi label bahwa data tersebut bukan bukti dana diterima.
+- DOCX dibuat di browser; PDF dihasilkan melalui dialog cetak browser.
 
-1. Pengingat otomatis jatuh tempo belum tampak memiliki scheduler/worker, tabel notifikasi operasional, maupun pengaturan aturan pengingat. Dashboard saat ini menghitung kondisi jatuh tempo; ini berbeda dari pengiriman notifikasi otomatis.
-2. Fitur reset/ganti password belum tampak tersedia; tautan “Lupa password?” pada login perlu diarahkan ke alur yang benar atau diberi status nonaktif yang jelas.
-3. Kelola data pelanggan, ekspor laporan, bukti pembayaran, dan manajemen aturan pengingat perlu disepakati cakupannya lalu dilengkapi bila memang dibutuhkan.
-4. File kosong `Css/cabangBandung.css`, `Js/cabangBandung.js`, dan `Css/ringkasan-piutang.css` tidak direferensikan halaman yang diperiksa. Pastikan tidak ada integrasi eksternal yang bergantung padanya sebelum menghapus atau mengisinya.
+### Fitur demo lanjutan
 
-## Urutan pelaksanaan
+- Pratinjau contoh struk disediakan sebagai `assets/contoh-struk-pembayaran.svg`.
+- Pemulihan password memakai halaman terpisah dan kode simulasi sesi yang berlaku 10 menit dengan maksimal lima percobaan. Kode ditampilkan kepada pengguna karena tidak ada kanal email/SMS; ini tidak memverifikasi identitas untuk penggunaan nyata.
+- `api/customer-summary.php` membatasi ringkasan berdasarkan role: admin cabang mendapat daftar pelanggan cabangnya, admin pusat mendapat ringkasan tahunan semua cabang, dan pelanggan mendapat ringkasan akun sendiri.
+- Tahun ringkasan memakai tanggal event dan mulai 2022. Data lama cabang yang hanya menyimpan nama pelanggan tetap memiliki keterbatasan identifikasi jika nama pelanggan sama.
 
-1. Rapikan PRD, README, dan panduan database agar cocok dengan kode.
-2. Buat checklist instalasi baru dan migrasi lama, termasuk backup/restore.
-3. Audit endpoint mutasi dan cakupan role/cabang.
-4. Rancang serta implementasikan perlindungan CSRF dan ganti password end-to-end.
-5. Tambahkan pengingat terjadwal setelah menentukan kanal (in-app saja atau email/WhatsApp), aturan duplikasi, zona waktu, dan database sumber.
-6. Jalankan pemeriksaan sintaks PHP/SQL dan uji alur peran pada instalasi lokal.
+### Pemeliharaan frontend
 
-## Catatan ruang lingkup
+1. Dashboard sebelumnya menanam sekitar 1.160 baris CSS dan 600 baris JavaScript di `halaman.html`; pindahkan ke `Css/dashboard.css` dan `Js/dashboard.js`.
+2. Hindari atribut gaya inline pada halaman Palembang; gunakan kelas CSS.
+3. `Css/cabangBandung.css`, `Js/cabangBandung.js`, dan `Css/ringkasan-piutang.css` kosong dan tidak direferensikan halaman yang diperiksa. Bandung memakai `events-bandung.css` dan `events-bandung.js`; file kosong dapat dihapus.
+4. `Js/script.js` dan `Js/cabangBali.js` tidak direferensikan oleh halaman proyek yang ditinjau. Periksa integrasi eksternal sebelum membersihkan file legacy.
 
-Implementasi pengingat eksternal, email/WhatsApp, deploy produksi, dan alur lupa password berbasis email memerlukan konfigurasi layanan/kanal. Jangan mengklaim fitur-fitur tersebut selesai sebelum integrasi dan uji operasional tersedia.
+## Backlog tambahan
+
+Pemulihan password melalui kanal email/SMS nyata, rate limit login, kanal notifikasi eksternal, bukti unggahan (jika diperlukan), deployment, monitoring, retensi, dan prosedur backup/restore.
+
+## Urutan tindak lanjut
+
+1. Jaga dokumentasi sesuai kode dan jangan publikasikan kredensial.
+2. Pisahkan struktur, gaya, dan perilaku dashboard; hapus hanya file kosong yang dipastikan tidak dipakai.
+3. Jika diperlukan, tambahkan `customer_id` pada skema event lama agar pelanggan bernama sama tetap terpisah.
+4. Untuk penggunaan aktif, rencanakan perlindungan mutasi, pemisahan data demo/operasional, pemulihan akun, dan prosedur backup.

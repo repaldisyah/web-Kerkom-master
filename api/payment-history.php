@@ -8,6 +8,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
 }
 
 $scope = current_scope();
+$requestedMonth = isset($_GET['month']) ? trim((string) $_GET['month']) : '';
+if ($requestedMonth !== '' && !preg_match('/^(202[2-9]|20[3-9][0-9]|2100)-(0[1-9]|1[0-2])$/', $requestedMonth)) {
+    respond(['success' => false, 'message' => 'Bulan harus berada pada rentang Januari 2022 hingga Desember 2100.'], 422);
+}
 $db = database();
 $isCentral = in_array($scope['role'], ['admin_pusat', 'super_admin'], true);
 $requestedBranch = strtolower(trim((string) ($_GET['branch'] ?? '')));
@@ -131,6 +135,10 @@ $eventDatabases = [
             $warnings[] = ucfirst($branch) . ': database riwayat belum dapat diakses.';
         }
     }
+if ($requestedMonth !== '') {
+    $payments = array_values(array_filter($payments, static fn (array $payment): bool => str_starts_with((string) ($payment['payment_date'] ?? ''), $requestedMonth)));
+}
+
 foreach ($payments as &$payment) {
     $created = strtotime((string)($payment['created_at'] ?? $payment['payment_date'] ?? ''));
     $age = $created ? time() - $created : PHP_INT_MAX;

@@ -169,6 +169,7 @@ async function loadHistory() {
         if (!month) throw new Error('Pilih bulan transaksi untuk memuat riwayat.');
         const params = new URLSearchParams();
         if (activeRole && ['admin_pusat', 'super_admin'].includes(activeRole) && branch) params.set('branch', branch);
+        if (month) params.set('month', month);
         const suffix = params.size ? `?${params}` : '';
         const data = await jsonFetch(`../api/payment-history.php${suffix}`);
         const payments = (data.payments || []).filter(payment => !month || String(payment.payment_date || '').slice(0, 7) === month);

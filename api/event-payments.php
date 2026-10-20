@@ -79,6 +79,8 @@ try {
     $update->execute(['amount' => $amount, 'id' => $eventId]);
     $newBalance = max(0, $balance - $amount);
     $db->commit();
+    require_once __DIR__ . '/payment-notifications.php';
+    notify_payment_received((int) $branchConfig['branch_id'], $branch, $token, (string) $event['pelanggan'], (string) $event['nama_event'], $amount);
     respond(['success' => true, 'message' => 'Pembayaran berhasil dicatat.', 'payment' => [
         'payment_token' => $token,
         'payment_date' => $paymentDate,

@@ -24,3 +24,4 @@
 .palembang-error { padding:14px 16px; border:1px solid #f2c6c6; border-radius:12px; color:#8f2d2d; background:#fff4f4; }
 @media(max-width:850px){.palembang-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.palembang-table-head{align-items:flex-start;flex-direction:column}.palembang-table-head input{width:100%}}
 @media(max-width:430px){.palembang-summary{grid-template-columns:1fr}}
+.palembang-table-controls { display:flex; gap:10px; flex-wrap:wrap; }

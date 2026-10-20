@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1160" viewBox="0 0 900 1160" role="img" aria-labelledby="title desc">
+  <title id="title">Contoh struk pembayaran Nusa Karsa Event</title>
+  <desc id="desc">Pratinjau bukti transaksi demo, dengan token, informasi pelanggan, acara, cabang, metode, dan total pembayaran.</desc>
+  <rect width="900" height="1160" fill="#edf2f5"/>
+  <rect x="58" y="48" width="784" height="1064" rx="28" fill="#fff" stroke="#dce5eb" stroke-width="2"/>
+  <rect x="58" y="48" width="784" height="12" rx="6" fill="#28b8c9"/>
+  <circle cx="134" cy="130" r="42" fill="#eaf7f8"/><path d="M115 132h38m-19-19v38" stroke="#28aebc" stroke-width="8" stroke-linecap="round"/>
+  <text x="194" y="122" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#17324d">NUSA KARSA EVENT</text>
+  <text x="194" y="155" font-family="Arial,sans-serif" font-size="17" fill="#668096">BUKTI TRANSAKSI PELANGGAN</text>
+  <rect x="675" y="101" width="120" height="42" rx="5" fill="#fff" stroke="#b42318" stroke-width="3" transform="rotate(-6 735 122)"/>
+  <text x="735" y="128" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#b42318" transform="rotate(-6 735 122)">SIMULASI</text>
+  <path d="M105 205h690" stroke="#dce5eb" stroke-width="2" stroke-dasharray="8 8"/>
+  <text x="450" y="252" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" fill="#668096">TOKEN TRANSAKSI</text>
+  <rect x="105" y="270" width="690" height="68" rx="12" fill="#eef8f8"/>
+  <text x="450" y="313" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" font-weight="700" letter-spacing="2" fill="#17324d">DEMO-7F2A91C4</text>
+  <g font-family="Arial,sans-serif">
+    <text x="105" y="394" font-size="14" fill="#668096">PELANGGAN</text><text x="105" y="425" font-size="20" font-weight="700" fill="#17324d">Contoh Pelanggan</text>
+    <text x="465" y="394" font-size="14" fill="#668096">ACARA</text><text x="465" y="425" font-size="20" font-weight="700" fill="#17324d">Pernikahan Keluarga</text>
+    <text x="105" y="492" font-size="14" fill="#668096">CABANG</text><text x="105" y="523" font-size="20" font-weight="700" fill="#17324d">Bandung</text>
+    <text x="465" y="492" font-size="14" fill="#668096">METODE</text><text x="465" y="523" font-size="20" font-weight="700" fill="#17324d">QRIS</text>
+    <text x="105" y="590" font-size="14" fill="#668096">TANGGAL</text><text x="105" y="621" font-size="20" font-weight="700" fill="#17324d">19 Oktober 2026</text>
+    <text x="465" y="590" font-size="14" fill="#668096">SISA PIUTANG</text><text x="465" y="621" font-size="20" font-weight="700" fill="#17324d">Rp 2.500.000</text>
+    <text x="105" y="688" font-size="14" fill="#668096">CATATAN</text><text x="105" y="719" font-size="20" font-weight="700" fill="#17324d">Pembayaran termin</text>
+  </g>
+  <path d="M105 775h690" stroke="#dce5eb" stroke-width="2" stroke-dasharray="8 8"/>
+  <text x="105" y="832" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#668096">TOTAL DIBAYAR</text>
+  <text x="795" y="837" text-anchor="end" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#e89140">Rp 1.000.000</text>
+  <text x="450" y="920" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#b42318">SIMULASI DEMO</text>
+  <text x="450" y="950" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#668096">Struk ini tidak membuktikan dana telah diterima.</text>
+  <text x="450" y="1060" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="#9aabb7">Contoh tampilan struk · Data ilustrasi</text>
+</svg>

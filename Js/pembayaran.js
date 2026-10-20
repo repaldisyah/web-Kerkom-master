@@ -10,6 +10,7 @@ const alertBox = document.getElementById("alert");
 const receipt = document.getElementById("receipt");
 const printReceiptButton = document.getElementById("printReceipt");
 const downloadReceiptButton = document.getElementById("downloadReceipt");
+const downloadReceiptDocxButton = document.getElementById("downloadReceiptDocx");
 const sessionStatus = document.getElementById("sessionStatus");
 const shareReceiptButton = document.getElementById("shareReceipt");
 const copyReceiptTokenButton = document.getElementById("copyReceiptToken");
@@ -349,6 +350,23 @@ submitButton.addEventListener("click", async () => {
 });
 
 printReceiptButton.addEventListener("click", () => window.print());
+downloadReceiptDocxButton.addEventListener("click", () => {
+    if (!latestReceipt || !window.NusaExports) return;
+    const data = latestReceipt;
+    const simulatedLabel = data.simulated ? "SIMULASI — bukan bukti pembayaran" : "Transaksi tercatat oleh sistem";
+    window.NusaExports.exportFile({
+        filename: `struk-${data.token || "transaksi"}`,
+        title: data.simulated ? "STRUK SIMULASI PEMBAYARAN" : "STRUK PEMBAYARAN",
+        period: `Nusa Karsa Event · Token ${data.token || "-"}`,
+        description: simulatedLabel,
+        headers: ["Informasi", "Detail"],
+        rows: [
+            ["Pelanggan", data.customer], ["Acara", data.event], ["Cabang", data.branch],
+            ["Metode", data.payment_method], ["Tanggal", data.payment_date],
+            ["Total dibayar", money(data.amount)], ["Sisa piutang", money(data.balance)], ["Catatan", data.note || "-"]
+        ]
+    }, "docx");
+});
 async function downloadReceipt() {
     if (!latestReceipt) return;
     const data = latestReceipt;

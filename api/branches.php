@@ -34,6 +34,11 @@ if ($scope['role'] === 'admin_cabang' && !$scope['branch_id']) {
 
 $sql = 'SELECT b.id, b.name, b.city, (SELECT COUNT(*) FROM customers c WHERE c.branch_id = b.id) AS customer_count, (SELECT COUNT(*) FROM events e WHERE e.branch_id = b.id) AS event_count, (SELECT COALESCE(SUM(r.balance), 0) FROM receivables r WHERE r.branch_id = b.id) AS receivables FROM branches b';
 $params = [];
+if ($scope['role'] === 'admin_cabang') {
+    // Akun cabang hanya menerima ringkasan cabangnya sendiri.
+    $sql .= ' WHERE b.id = :branch_id';
+    $params['branch_id'] = (int) $scope['branch_id'];
+}
 $sql .= ' ORDER BY b.name';
 $statement = $db->prepare($sql);
 $statement->execute($params);

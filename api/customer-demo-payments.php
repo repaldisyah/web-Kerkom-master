@@ -80,6 +80,16 @@ try {
         $receipt = ['token' => $token, 'payment_date' => date('Y-m-d H:i:s'), 'amount' => $amount, 'payment_method' => $method, 'note' => $note, 'customer' => $invoice['customer'], 'branch' => ucfirst($source), 'event' => $invoice['event'], 'balance' => $balance, 'simulated' => true];
     }
     $db->commit();
+    require_once __DIR__ . '/payment-notifications.php';
+    $notificationBranch = 0;
+    if ($source === 'master' || $source === 'palembang') {
+        $branchLookup = $mainDb->prepare('SELECT branch_id FROM customers WHERE id = :id LIMIT 1');
+        $branchLookup->execute(['id' => $scope['customer_id']]);
+        $notificationBranch = (int) $branchLookup->fetchColumn();
+    } else {
+        $notificationBranch = (int) ($config[$source === 'bali' ? 'events_bali_branch_id' : 'events_bandung_branch_id'] ?? 0);
+    }
+    notify_payment_received($notificationBranch, $source, $token, $customerName, (string) $receipt['event'], $amount, true);
     respond(['success' => true, 'message' => 'Simulasi tersimpan dan saldo piutang diperbarui.', 'receipt' => $receipt]);
 } catch (RuntimeException $error) {
     if ($db->inTransaction()) $db->rollBack();

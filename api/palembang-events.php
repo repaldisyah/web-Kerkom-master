@@ -70,6 +70,8 @@ try {
     $update = $db->prepare('UPDATE palembang_events SET total_dibayar = LEAST(nilai_kontrak, total_dibayar + :paid), piutang = GREATEST(0, piutang - :balance), pelunasan = pelunasan + :settlement WHERE id = :id');
     $update->execute(['paid' => $amount, 'balance' => $amount, 'settlement' => $amount, 'id' => $eventId]);
     $db->commit();
+    require_once __DIR__ . '/payment-notifications.php';
+    notify_payment_received((int) $palembangBranchId, 'palembang', $token, (string) $event['pelanggan'], (string) $event['nama_event'], $amount);
     respond(['success' => true, 'message' => 'Pembayaran piutang Palembang berhasil dicatat.', 'receipt' => [
         'token' => $token,
         'payment_date' => date('Y-m-d'),

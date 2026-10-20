@@ -12,12 +12,12 @@ $isCentral = in_array($scope['role'], ['admin_pusat', 'super_admin'], true);
 $isCustomer = $scope['role'] === 'pelanggan';
 if ($isCustomer) respond(['success' => false, 'message' => 'Laporan hanya tersedia untuk admin.'], 403);
 $requestedYear = filter_input(INPUT_GET, 'year', FILTER_VALIDATE_INT);
-if ($requestedYear === false || ($requestedYear !== null && ($requestedYear < 2020 || $requestedYear > 2100))) {
+if ($requestedYear === false || ($requestedYear !== null && ($requestedYear < 2022 || $requestedYear > 2100))) {
     respond(['success' => false, 'message' => 'Tahun tidak valid.'], 422);
 }
 $requestedMonth = isset($_GET['month']) ? trim((string) $_GET['month']) : null;
-if ($requestedMonth !== null && !preg_match('/^(20[2-9][0-9]|2100)-(0[1-9]|1[0-2])$/', $requestedMonth)) {
-    respond(['success' => false, 'message' => 'Bulan harus berformat YYYY-MM dan berada pada rentang 2020–2100.'], 422);
+if ($requestedMonth !== null && !preg_match('/^(202[2-9]|20[3-9][0-9]|2100)-(0[1-9]|1[0-2])$/', $requestedMonth)) {
+    respond(['success' => false, 'message' => 'Bulan harus berformat YYYY-MM dan berada pada rentang 2022-2100.'], 422);
 }
 $periodYear = $requestedMonth !== null ? (int) substr($requestedMonth, 0, 4) : $requestedYear;
 $periodMonth = $requestedMonth !== null ? (int) substr($requestedMonth, 5, 2) : null;

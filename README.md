@@ -1,98 +1,50 @@
 # Nusa Karsa Event
 
-Aplikasi web internal untuk pencatatan event, pembayaran, dan pemantauan piutang Nusa Karsa Event. Aplikasi ini menggunakan halaman HTML, CSS, dan JavaScript dengan endpoint PHP yang terhubung ke MySQL.
+Aplikasi web internal untuk mencatat event, pembayaran, dan piutang. Frontend menggunakan HTML, CSS, dan JavaScript vanilla; backend berupa endpoint PHP/PDO dengan sesi; data disimpan di MySQL.
 
-## Status fitur
+## Fitur yang tersedia
 
-Fitur yang tersedia pada kode saat ini:
+- Login admin pusat, admin cabang, dan pelanggan; ganti password mandiri serta alur lupa password simulasi dua langkah.
+- Dashboard aktivitas/piutang; data event Palembang, Bali, dan Bandung.
+- Pencatatan pembayaran, riwayat, pembatalan dengan alasan dan pembalikan saldo, serta struk cetak/PDF, DOCX, dan JPG/JPEG.
+- Laporan tahunan dan riwayat bulanan dengan ekspor PDF, XLSX, dan DOCX sesuai cakupan akses.
+- Portal pelanggan, pengelolaan akun admin cabang, permintaan penghapusan event, dan notifikasi dalam aplikasi.
+- Worker PHP CLI membuat notifikasi jatuh tempo in-app; skrip PowerShell memasang Task Scheduler harian. Tidak ada pengiriman email/WhatsApp.
 
-- Login admin pusat, admin cabang, dan pelanggan menggunakan sesi.
-- Ganti password mandiri untuk admin cabang dan pelanggan; admin pusat memiliki pintasan tersembunyi di dashboard.
-- Dashboard ringkasan aktivitas dan piutang.
-- Pembatasan data admin cabang berdasarkan cabangnya.
-- Pencatatan dan riwayat pembayaran.
-- Laporan ringkas bulanan dan riwayat pembayaran per bulan, dapat diekspor admin sebagai PDF, Excel (.xlsx), dan Word (.docx) sesuai cakupan akses cabang.
-- Halaman data pelanggan, laporan tahunan, dan pengelolaan akun admin cabang.
-- Data event Palembang, Bali, dan Bandung dengan kalkulasi kontrak, pembayaran, sisa piutang, dan status.
-- Permintaan penghapusan event dari admin cabang untuk ditinjau admin pusat.
-- Pengingat jatuh tempo otomatis melalui notifikasi dalam aplikasi. Worker CLI memeriksa tagihan setiap hari dan scheduler Windows dijalankan dengan skrip pemasang.
-- Struk pembayaran dapat dicetak/disimpan sebagai PDF atau diunduh sebagai gambar JPG/JPEG.
-- Portal pelanggan untuk melihat informasi akun dan tagihannya; mode simulasi pelanggan mengurangi saldo operasional dan mencatat transaksi sebagai demo_simulation, bukan sebagai dana terverifikasi.
+Pembayaran portal pelanggan adalah simulasi demo, bukan pembayaran gateway. Simulasi mengurangi saldo operasional dan tercatat sebagai `demo_simulation`; jangan jalankan pada data operasional. Tautan â€œLupa password?â€ belum memiliki alur pemulihan.
 
-Dashboard dapat menampilkan kondisi jatuh tempo, tetapi aplikasi belum mengirim pengingat otomatis. Alur pemulihan password dan ekspor laporan penuh juga belum tersedia. Jangan menganggap fitur tersebut siap digunakan.
+## Struktur dan teknologi
 
-## Teknologi
+- `halaman.html`, `Html/`: dashboard dan halaman aplikasi.
+- `Css/`, `Js/`: tampilan dan interaksi; dashboard utama menggunakan `Css/dashboard.css` dan `Js/dashboard.js`.
+- `api/`: autentikasi, endpoint, worker, dan konfigurasi.
+- `database/`: skema, seed, migrasi, dan panduan setup.
+- `assets/`: gambar dan logo.
+- `assets/contoh-struk-pembayaran.svg`: pratinjau visual struk simulasi.
 
-- Frontend: HTML, CSS, dan JavaScript vanilla.
-- Backend: PHP 8+ dengan PDO.
-- Database: MySQL melalui XAMPP.
-- Antarmuka: halaman HTML di folder Html, stylesheet di Css, dan JavaScript di Js.
+## Menjalankan lokal
 
-## Menjalankan aplikasi lokal
+1. Jalankan Apache dan MySQL melalui XAMPP.
+2. Siapkan database sesuai [panduan database](database/README.md). Jangan gunakan langkah instalasi baru pada database berisi transaksi.
+3. Sesuaikan `api/config.php` secara lokal dengan `api/config.example.php`. Jangan bagikan konfigurasi lokal.
+4. Buka `http://localhost/web-Kerkom-master/halaman.html` melalui Apache; jangan buka berkas HTML langsung.
+5. Untuk pengingat, pasang `install-due-reminders-task.ps1` setelah migrasi notifikasi. Worker memerlukan Windows, PHP, dan MySQL berjalan.
 
-1. Pasang dan jalankan Apache serta MySQL melalui XAMPP.
-2. Siapkan database dan jalankan impor serta migrasi sesuai urutan pada [database/README.md](database/README.md). Panduan tersebut menjelaskan database yang digunakan, akun bawaan, dan pemetaan hak akses.
-3. Periksa api/config.php. Sesuaikan host, port, nama database, dan akun MySQL lokal. Jika membuat konfigurasi baru, gunakan api/config.example.php sebagai acuan. Jangan memasukkan kredensial pribadi ke dokumentasi atau repositori yang dibagikan.
-4. Letakkan proyek di bawah document root Apache, misalnya C:/xampp/htdocs/web-Kerkom-master.
-5. Buka http://localhost/web-Kerkom-master/halaman.html. Jika belum memiliki sesi, aplikasi mengarahkan pengguna ke halaman login.
+Aplikasi menggunakan database `nusa_karsa`, `admin_pusat`, `events_bali`, dan `events_bandung`. Rincian setup, role, seed, dan migrasi ada di [database/README.md](database/README.md).
 
-Jalankan halaman melalui Apache, bukan dengan membuka file HTML langsung, karena halaman menggunakan endpoint PHP dan sesi server.
+## Catatan operasional
 
-## Peran akun
+- Ganti kredensial seed sebelum penggunaan nyata; jangan jalankan ulang seed pada database operasional tanpa memahami dampaknya.
+- Backup semua database terkait sebelum migrasi. Tidak semua migrasi aman dijalankan berulang.
+- CSRF ditemukan pada perubahan password, belum diintegrasikan pada seluruh endpoint mutasi. Audit cakupan otorisasi server masih perlu dilakukan.
+- Rate limit login, pemulihan melalui kanal email/SMS nyata, deployment produksi, monitoring, dan backup teruji belum tersedia.
 
-Aplikasi mengenal tiga nilai role:
+## Fitur demo tambahan
 
-| Role | Kegunaan |
-|---|---|
-| admin_pusat | Mengelola operasi lintas cabang, akun admin cabang, laporan, dan peninjauan permintaan penghapusan. |
-| admin_cabang | Menambahkan event dan mencatat pembayaran dalam lingkup cabangnya, serta mengajukan permintaan penghapusan event. |
-| pelanggan | Melihat data pelanggan dan tagihan yang terhubung ke akun tersebut. |
+- Lupa password memakai halaman terpisah dan verifikasi dua langkah. Kode verifikasi ditampilkan di halaman karena proyek tidak terhubung ke layanan email/SMS; gunakan hanya untuk demo lokal.
+- Ringkasan pelanggan mengikuti role: admin cabang melihat pelanggan cabangnya, admin pusat melihat rekap semua cabang per tahun, dan pelanggan melihat ringkasan akun sendiri.
+- Struk pembayaran dapat dicetak/disimpan sebagai PDF, diunduh sebagai DOCX atau JPG/JPEG. Contoh visual struk tersedia di `assets/contoh-struk-pembayaran.svg`.
+- Event cabang lama mengaitkan pelanggan melalui nama; nama yang sama di cabang yang sama belum dapat dipisahkan secara pasti tanpa `customer_id` pada tabel event.
 
-Daftar nama akun seed, email login, cabang, cara membuat akun, dan kueri untuk memeriksa akun di database aktif tersedia di [database/README.md](database/README.md). README ini tidak menyimpan password.
-
-## Penyimpanan data
-
-Aplikasi memakai beberapa database lokal:
-
-- nusa_karsa: data operasional utama, termasuk pengguna cabang dan pelanggan serta data Palembang.
-- admin_pusat: akun admin pusat.
-- events_bali dan events_bandung: data event dan pembayaran untuk cabang terkait.
-
-Sebagian halaman menggabungkan data dari lebih dari satu database. Karena itu, pastikan konfigurasi pada api/config.php sesuai dengan nama database dan cabang yang telah disiapkan. Urutan migrasi yang aman dan catatan database lama dijelaskan di [database/README.md](database/README.md).
-
-## Struktur proyek
-
-| Lokasi | Isi |
-|---|---|
-| halaman.html | Dashboard utama. |
-| loading.html | Halaman pemuatan. |
-| Html/ | Halaman login, cabang, pembayaran, laporan, riwayat, pelanggan, dan permintaan hapus. |
-| Css/ | Tampilan halaman dan komponen bersama. |
-| Js/ | Navigasi, interaksi halaman, pemuatan data, dan pengiriman permintaan API. |
-| api/ | Endpoint PHP, autentikasi sesi, konfigurasi, serta koneksi database. |
-| database/ | Skema, seed, migrasi, dan panduan setup database. |
-| assets/ | Logo dan aset gambar yang digunakan antarmuka. |
-
-## Batasan dan catatan operasional
-
-- Password disimpan sebagai hash di database. Jangan menaruh password maupun hash di README, issue, atau dokumentasi publik.
-- Seed akun ditujukan untuk pengembangan lokal. Ganti kredensial sebelum memasukkan data operasional nyata.
-- Jangan menjalankan ulang seed data terhadap database yang telah menerima pembayaran operasional tanpa memahami dampaknya; beberapa seed memperbarui atau membuat ulang data contoh.
-- Backup database sebelum menjalankan migrasi pada database lama. Tidak semua migrasi aman untuk dijalankan berulang kali.
-- Perhitungan dan saldo event bergantung pada view serta skema masing-masing database event. Ikuti petunjuk versi lama/baru di README database.
-
-## Pemecahan masalah
-
-- Jika halaman tidak dapat memuat data, pastikan Apache dan MySQL aktif, konfigurasi database benar, dan URL dibuka melalui localhost.
-- Jika login gagal, periksa apakah migrasi akun yang relevan sudah dijalankan dan pilih jenis akun yang sesuai pada halaman login.
-- Jika halaman cabang tidak menampilkan data, pastikan database cabang tersebut sudah diimpor dan nama database pada api/config.php sesuai.
-- Jika kolom atau tabel tidak ditemukan, cocokkan struktur database dengan urutan migrasi di database/README.md sebelum mengubah data secara manual.
-
-## Dokumentasi terkait
-
-- [Panduan database, migrasi, dan akun](database/README.md)
-- [Audit dan pekerjaan lanjutan](AUDIT-PENYEMPURNAAN.md)
-
-
-
-Pembatalan pembayaran mempertahankan baris transaksi sebagai audit, membalik saldo secara otomatis, dan memberi notifikasi kepada admin cabang terkait. Jalankan `database/migration_payment_cancellations.sql` setelah migrasi riwayat pembayaran dan notifikasi. Aturan akses: pelanggan 24 jam untuk simulasi miliknya, admin cabang 30 hari untuk cabangnya, admin pusat selama transaksi tersimpan.
+Lihat [PRD](prd%20(1).md) dan [audit](AUDIT-PENYEMPURNAAN.md) untuk batas fitur dan tindak lanjut.
+Aktifkan notifikasi perangkat dari halaman Notifikasi. Bunyi mengikuti izin browser dan setelan suara OS. Akses ponsel memerlukan HTTPS.

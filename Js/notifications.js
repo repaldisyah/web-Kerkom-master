@@ -43,10 +43,10 @@ function render(items, unreadCount) {
         const content = document.createElement('div');
         const heading = document.createElement('h3'); heading.textContent = escapeText(item.title);
         const message = document.createElement('p'); message.textContent = escapeText(item.message);
-        const meta = document.createElement('span'); meta.className = 'notification-meta'; meta.textContent = `${formatDate(item.created_at)} · Jatuh tempo ${formatDate(item.due_date)}`;
+        const meta = document.createElement('span'); meta.className = 'notification-meta'; const metaLabel = item.source_type === 'payment_received' ? 'Transaksi pembayaran' : item.source_type === 'payment_cancel' ? 'Pembatalan transaksi' : 'Jatuh tempo ' + formatDate(item.due_date); meta.textContent = formatDate(item.created_at) + ' | ' + metaLabel;
         content.append(heading, message, meta);
         const actions = document.createElement('div'); actions.className = 'notification-links';
-        const link = document.createElement('a'); link.href = item.target_url || 'piutang.html'; link.textContent = 'Lihat tagihan';
+        const link = document.createElement('a'); link.href = item.target_url || 'piutang.html'; link.textContent = item.source_type === 'payment_received' || item.source_type === 'payment_cancel' ? 'Lihat transaksi' : 'Lihat tagihan';
         actions.append(link);
         if (!item.read_at) {
             const read = document.createElement('button'); read.type = 'button'; read.textContent = 'Tandai dibaca';
@@ -69,6 +69,15 @@ async function loadNotifications() {
     } catch (error) { setNotificationStatus(error.message, true); }
 }
 
+document.getElementById('enableDeviceNotifications').addEventListener('click', async event => {
+    const button = event.currentTarget; button.disabled = true;
+    try {
+        const message = await window.NusaNotificationAlerts.enable();
+        setNotificationStatus(message); button.textContent = 'Notif dering aktif';
+    } catch (error) { setNotificationStatus(error.message, true); }
+    finally { button.disabled = false; }
+});
+
 document.getElementById('markAllRead').addEventListener('click', async () => {
     try {
         await request(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mark_all: true }) });
@@ -77,4 +86,4 @@ document.getElementById('markAllRead').addEventListener('click', async () => {
 });
 
 loadNotifications();
-window.setInterval(() => { if (!document.hidden) loadNotifications(); }, 5 * 60 * 1000);
+window.setInterval(() => { if (!document.hidden) loadNotifications(); }, 30 * 1000);

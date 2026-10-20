@@ -24,6 +24,76 @@
 
     if (branchFromPath) document.body.dataset.branch = branchFromPath;
 
+    let lastNotificationId = 0;
+    let soundContext = null;
+    const notificationEndpoint = fromHtmlDirectory ? '../api/notifications.php' : 'api/notifications.php';
+    const workerUrl = fromHtmlDirectory ? '../service-worker.js' : 'service-worker.js';
+
+    async function setupDeviceNotifications() {
+        if (!('serviceWorker' in navigator)) return null;
+        try { await navigator.serviceWorker.register(workerUrl);
+            return await navigator.serviceWorker.ready; }
+        catch (error) { console.warn('Notifikasi perangkat tidak dapat diaktifkan.', error); return null; }
+    }
+
+    function ringNotification() {
+        if (localStorage.getItem('nusaNotificationSound') !== 'on') return;
+        try {
+            soundContext ||= new (window.AudioContext || window.webkitAudioContext)();
+            if (soundContext.state === 'suspended') soundContext.resume();
+            const now = soundContext.currentTime;
+            [0, 0.22].forEach(offset => {
+                const oscillator = soundContext.createOscillator();
+                const gain = soundContext.createGain();
+                oscillator.type = 'sine'; oscillator.frequency.value = 880;
+                gain.gain.setValueAtTime(0.0001, now + offset);
+                gain.gain.exponentialRampToValueAtTime(0.12, now + offset + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.14);
+                oscillator.connect(gain); gain.connect(soundContext.destination);
+                oscillator.start(now + offset); oscillator.stop(now + offset + 0.15);
+            });
+        } catch (error) { console.debug('Suara notifikasi diblokir browser.', error); }
+    }
+
+    window.NusaNotificationAlerts = {
+        async enable() {
+            if (!('Notification' in window)) throw new Error('Browser ini tidak mendukung notifikasi perangkat.');
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') throw new Error('Izin notifikasi belum diberikan. Ubah izin situs pada pengaturan browser.');
+            const registration = await setupDeviceNotifications();
+            if (!registration) throw new Error('Service worker tidak dapat dijalankan. Gunakan localhost atau HTTPS.');
+            soundContext ||= new (window.AudioContext || window.webkitAudioContext)();
+            await soundContext.resume();
+            localStorage.setItem('nusaNotificationSound', 'on');
+            ringNotification();
+            return 'Notifikasi perangkat dan bunyi aktif selama aplikasi terbuka.';
+        },
+        disableSound() { localStorage.setItem('nusaNotificationSound', 'off'); }
+    };
+
+    async function pollNewNotifications() {
+        try {
+            const response = await fetch(notificationEndpoint, { cache: 'no-store', credentials: 'same-origin' });
+            if (!response.ok) return;
+            const data = await response.json();
+            const items = data.notifications || [];
+            if (!lastNotificationId) {
+                lastNotificationId = Math.max(0, ...items.map(item => Number(item.id) || 0));
+                return;
+            }
+            const fresh = items.filter(item => Number(item.id) > lastNotificationId).sort((a,b) => Number(a.id)-Number(b.id));
+            if (!fresh.length) return;
+            lastNotificationId = Math.max(lastNotificationId, ...fresh.map(item => Number(item.id) || 0));
+            const registration = await setupDeviceNotifications();
+            for (const item of fresh) {
+                if (registration && 'Notification' in window && Notification.permission === 'granted') {
+                    registration.active?.postMessage({ type: 'nusa-notification', id: item.id, title: item.title, body: item.message, url: item.target_url || 'Html/notifications.html' });
+                }
+                if (!document.hidden) ringNotification();
+            }
+        } catch (error) { /* Polling is best-effort; the inbox remains available. */ }
+    }
+
     async function applyRoleNavigation() {
         try {
             const sessionResponse = await fetch(fromHtmlDirectory ? '../api/session.php' : 'api/session.php', { cache: 'no-store' });
@@ -45,7 +115,9 @@
                     } catch (error) { notificationBadge.hidden = true; }
                 };
                 await updateNotificationBadge();
-                window.setInterval(updateNotificationBadge, 5 * 60 * 1000);
+                window.setInterval(updateNotificationBadge, 30 * 1000);
+                await pollNewNotifications();
+                window.setInterval(pollNewNotifications, 20 * 1000);
             }
             if (['admin_cabang', 'pelanggan'].includes(session.user.role)) {
                 const passwordLink = document.createElement('a');
