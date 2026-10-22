@@ -10,6 +10,7 @@ const partyFilter = document.querySelector('#partyFilter');
 const calculator = document.querySelector('#calculator');
 const formTitle = document.querySelector('#formTitle');
 const submitButton = document.querySelector('#submitButton');
+const customerSelect = form.elements.customer_id;
 let events = [];
 let editId = null;
 let canManageEvents = false;
@@ -19,6 +20,13 @@ let canRequestDeletion = false;
 const money = value => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const values = () => Object.fromEntries(new FormData(form));
+const customerCode = id => id ? `NKC-${String(id).padStart(6, '0')}` : '';
+async function loadCustomerOptions() {
+    const response = await fetch('../api/customers.php', { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.message || 'Daftar pelanggan gagal dimuat.');
+    customerSelect.innerHTML = '<option value="">Pilih kode pelanggan</option>' + (result.customers || []).map(customer => `<option value="${escapeHtml(customer.customer_code)}">${escapeHtml(customer.customer_code)} · ${escapeHtml(customer.name)}</option>`).join('');
+}
 const calculate = data => {
     const contract = Number(data.hpp_rab || 0) + Number(data.margin || 0);
     const dp = contract * ({ Besar: 0.4, Sedang: 0.3, Kecil: 0.5 }[data.skala] || 0.5);
@@ -60,7 +68,7 @@ function renderSummary(summary) {
 function visibleEvents() {
     const keyword = search.value.trim().toLocaleLowerCase('id-ID');
     return events.filter(event =>
-        (String(event.id) + ' ' + String(event.nama_event) + ' ' + String(event.jenis_acara) + ' ' + String(event.pelanggan)).toLocaleLowerCase('id-ID').includes(keyword)
+        (String(event.id) + ' ' + String(event.nama_event) + ' ' + String(event.jenis_acara) + ' ' + String(event.customer_code || '') + ' ' + String(event.pelanggan)).toLocaleLowerCase('id-ID').includes(keyword)
         && (!statusFilter.value || event.status_piutang === statusFilter.value)
         && (!scaleFilter.value || event.skala === scaleFilter.value)
         && (!partyFilter.value || event.jenis_pihak === partyFilter.value)
@@ -84,7 +92,7 @@ function renderRows() {
     rows.innerHTML = visible.map(event => '<tr>'
         + '<td><b>' + escapeHtml(event.id) + '</b><br><span class="event-id">' + escapeHtml(event.nama_event) + '</span></td>'
         + '<td>' + escapeHtml(event.skala) + '</td><td>' + escapeHtml(event.jenis_acara) + '</td>'
-        + '<td>' + displayDate(event.tgl_event) + '</td><td>' + escapeHtml(event.lokasi || '-') + '</td><td>' + escapeHtml(event.pelanggan || '-') + '</td>'
+        + '<td>' + displayDate(event.tgl_event) + '</td><td>' + escapeHtml(event.lokasi || '-') + '</td><td>' + escapeHtml(event.pelanggan || '-') + (event.customer_code ? '<br><span class="event-id">' + escapeHtml(event.customer_code) + '</span>' : '<br><span class="event-id">Belum tertaut</span>') + '</td>'
         + '<td>' + escapeHtml(event.jenis_pihak) + '</td><td>' + money(event.hpp_rab) + '</td><td>' + money(event.margin) + '</td>'
         + '<td>' + money(event.nilai_kontrak) + '</td><td>' + money(event.dp) + '</td><td>' + money(event.termin_2) + '</td><td>' + money(event.pelunasan) + '</td>'
         + '<td>' + money(event.total_dibayar) + '</td><td><strong>' + money(event.piutang) + '</strong></td><td>' + displayDate(event.tgl_jatuh_tempo) + '</td>'
@@ -142,6 +150,7 @@ function edit(id) {
     const event = events.find(item => item.id === id);
     if (!event) return;
     Object.entries(event).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
+    customerSelect.value = event.customer_code || customerCode(event.customer_id);
     form.elements.id.disabled = true;
     editId = id;
     formTitle.textContent = 'Ubah ' + id;
@@ -197,6 +206,6 @@ rows.addEventListener('click', async event => {
 document.querySelector('#resetButton').addEventListener('click', resetForm);
 (async () => {
     try {
-        if (await loadAccess()) { resetForm(); await load(); }
+        if (await loadAccess()) { await loadCustomerOptions(); resetForm(); await load(); }
     } catch (error) { showNotice(error.message, true); }
 })();

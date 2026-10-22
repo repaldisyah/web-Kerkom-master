@@ -70,23 +70,24 @@ $chooseReminder = static function (string $dueDate) use ($runDate): ?array {
     return null;
 };
 
-$customerRecipients = static function (int $branchId, string $customerName) use ($db): array {
-    $query = $db->prepare('SELECT u.id FROM users u JOIN customers c ON c.id = u.customer_id WHERE u.role = \'pelanggan\' AND c.branch_id = :branch_id AND LOWER(TRIM(c.name)) = LOWER(TRIM(:name))');
-    $query->execute(['branch_id' => $branchId, 'name' => $customerName]);
+$customerRecipients = static function (int $customerId) use ($db): array {
+    if ($customerId < 1) return [];
+    $query = $db->prepare("SELECT id FROM users WHERE role = 'pelanggan' AND customer_id = :customer_id");
+    $query->execute(['customer_id' => $customerId]);
     $out = [];
     foreach ($query->fetchAll() as $user) $out[] = ['id' => (int) $user['id'], 'role' => 'pelanggan'];
     return $out;
 };
 
 $queue = static function (string $source, string $sourceId, string $event, string $customer, string $branch,
-    string $dueDate, float $balance, int $branchId, array $extraRecipients = []) use (
+    string $dueDate, float $balance, int $branchId, int $customerId = 0, array $extraRecipients = []) use (
         $db, $centralRecipients, $branchAdmins, $customerRecipients, $chooseReminder, $runDate, &$created, &$candidates
     ): void {
     if ($balance <= 0) return;
     $reminder = $chooseReminder($dueDate);
     if (!$reminder) return;
     $candidates++;
-    $recipients = array_merge($centralRecipients, $branchAdmins[$branchId] ?? [], $extraRecipients, $customerRecipients($branchId, $customer));
+    $recipients = array_merge($centralRecipients, $branchAdmins[$branchId] ?? [], $extraRecipients, $customerRecipients($customerId));
     $unique = [];
     foreach ($recipients as $recipient) $unique[$recipient['role'] . ':' . $recipient['id']] = $recipient;
     $title = $reminder['days'] < 0 ? 'Tagihan melewati jatuh tempo' : 'Pengingat jatuh tempo';
@@ -112,7 +113,7 @@ try {
         $customerUsers = $db->prepare("SELECT id FROM users WHERE role = 'pelanggan' AND customer_id = :customer_id");
         $customerUsers->execute(['customer_id' => $row['customer_id']]);
         $recipients = array_map(static fn ($user): array => ['id' => (int) $user['id'], 'role' => 'pelanggan'], $customerUsers->fetchAll());
-        $queue('receivable', (string) $row['id'], (string) $row['event'], (string) $row['customer'], (string) $row['branch'], (string) $row['due_date'], (float) $row['balance'], (int) $row['branch_id'], $recipients);
+        $queue('receivable', (string) $row['id'], (string) $row['event'], (string) $row['customer'], (string) $row['branch'], (string) $row['due_date'], (float) $row['balance'], (int) $row['branch_id'], (int) $row['customer_id'], $recipients);
     }
 } catch (Throwable $error) {
     $warnings[] = "Piutang utama tidak dapat dipindai: {$error->getMessage()}";
@@ -124,8 +125,8 @@ foreach ($branchRows as $row) $branchIds[strtolower(trim((string) $row['name']))
 $palembangId = $branchIds['palembang'] ?? null;
 if ($palembangId !== null) {
     try {
-        foreach ($db->query('SELECT id, nama_event AS event, pelanggan AS customer, tgl_jatuh_tempo AS due_date, piutang AS balance FROM palembang_events WHERE piutang > 0 AND tgl_jatuh_tempo IS NOT NULL') as $row) {
-            $queue('palembang', (string) $row['id'], (string) $row['event'], (string) $row['customer'], 'Palembang', (string) $row['due_date'], (float) $row['balance'], $palembangId);
+        foreach ($db->query('SELECT id, customer_id, nama_event AS event, pelanggan AS customer, tgl_jatuh_tempo AS due_date, piutang AS balance FROM palembang_events WHERE piutang > 0 AND tgl_jatuh_tempo IS NOT NULL') as $row) {
+            $queue('palembang', (string) $row['id'], (string) $row['event'], (string) $row['customer'], 'Palembang', (string) $row['due_date'], (float) $row['balance'], $palembangId, (int) ($row['customer_id'] ?? 0));
         }
     } catch (Throwable $error) {
         $warnings[] = "Event Palembang tidak dapat dipindai: {$error->getMessage()}";
@@ -139,9 +140,9 @@ $eventSources = [
 foreach ($eventSources as $branch => $sourceConfig) {
     try {
         $eventDb = new PDO($dsn($sourceConfig['database']), $config['db_user'], $config['db_pass'], $pdoOptions);
-        $statement = $eventDb->query("SELECT id, nama_event AS event, pelanggan AS customer, tgl_jatuh_tempo AS due_date, piutang AS balance FROM events WHERE piutang > 0 AND tgl_jatuh_tempo IS NOT NULL AND status_data = 'Final'");
+        $statement = $eventDb->query("SELECT id, customer_id, nama_event AS event, pelanggan AS customer, tgl_jatuh_tempo AS due_date, piutang AS balance FROM events WHERE piutang > 0 AND tgl_jatuh_tempo IS NOT NULL AND status_data = 'Final'");
         foreach ($statement->fetchAll() as $row) {
-            $queue($branch, (string) $row['id'], (string) $row['event'], (string) $row['customer'], ucfirst($branch), (string) $row['due_date'], (float) $row['balance'], $sourceConfig['branch_id']);
+            $queue($branch, (string) $row['id'], (string) $row['event'], (string) $row['customer'], ucfirst($branch), (string) $row['due_date'], (float) $row['balance'], $sourceConfig['branch_id'], (int) ($row['customer_id'] ?? 0));
         }
     } catch (Throwable $error) {
         $warnings[] = ucfirst($branch) . " tidak dapat dipindai: {$error->getMessage()}";

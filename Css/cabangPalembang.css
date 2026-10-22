@@ -17,11 +17,15 @@
 .palembang-status.paid { color:#14724c; background:#e7f7ef; }
 .palembang-status.overdue { color:#a93535; background:#fff0f0; }
 .palembang-status.open { color:#8b6500; background:#fff7dc; }
-.palembang-pay { display:inline-flex; align-items:center; gap:7px; padding:8px 11px; border:0; border-radius:9px; color:#fff; background:#147d91; font:inherit; font-size:.72rem; font-weight:700; text-decoration:none; }
-.palembang-pay:hover { background:#0e6274; }
+.palembang-pay { display:inline-flex; align-items:center; gap:7px; padding:8px 11px; border:0; border-radius:9px; color:#fff; background:var(--action, #684895); font:inherit; font-size:.72rem; font-weight:700; text-decoration:none; }
+.palembang-pay:hover { background:var(--action-hover, #50337e); }
 .palembang-pay.disabled { color:#66758a; background:#edf1f5; pointer-events:none; }
 .palembang-note { margin:12px 0 20px; color:var(--muted); font-size:.77rem; }
 .palembang-error { padding:14px 16px; border:1px solid #f2c6c6; border-radius:12px; color:#8f2d2d; background:#fff4f4; }
 @media(max-width:850px){.palembang-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.palembang-table-head{align-items:flex-start;flex-direction:column}.palembang-table-head input{width:100%}}
 @media(max-width:430px){.palembang-summary{grid-template-columns:1fr}}
-.palembang-table-controls { display:flex; gap:10px; flex-wrap:wrap; }
+.palembang-table-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.customer-link-control { display:flex; flex-wrap:wrap; gap:6px; margin:5px 0; }
+.customer-link-control select,.customer-link-control button { max-width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--text); font:inherit; font-size:.68rem; }
+.customer-link-control button { color:#fff; border-color:var(--action); background:var(--action); font-weight:700; cursor:pointer; }
+@media(max-width:700px){.palembang-table-controls,.palembang-table-controls input,.palembang-table-controls select{width:100%}.palembang-table-controls input{max-width:none}}

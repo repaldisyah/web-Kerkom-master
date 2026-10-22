@@ -72,7 +72,8 @@ $appendRecord = static function (int $recordBranchId, array $record) use (&$reco
     }
 
     $branchTotals[$recordBranchId] += $balance;
-    if ($customer !== '') $branchCustomers[$recordBranchId][$customer] = true;
+    $customerId = (int) ($record['customer_id'] ?? 0);
+    if ($customerId > 0) $branchCustomers[$recordBranchId][$customerId] = true;
     if ($balance <= 0) return;
 
     $records[] = [
@@ -89,7 +90,7 @@ $appendRecord = static function (int $recordBranchId, array $record) use (&$reco
 };
 
 // Tagihan umum yang tersimpan pada database utama.
-$masterSql = 'SELECT r.id, r.branch_id, c.name AS customer, e.name AS event, r.invoice_date,
+$masterSql = 'SELECT r.id, r.branch_id, r.customer_id, c.name AS customer, e.name AS event, r.invoice_date,
                      r.total_amount, r.balance, r.due_date
               FROM receivables r
               JOIN customers c ON c.id = r.customer_id
@@ -135,13 +136,13 @@ foreach ([
     if ($isCustomer && $customerBranchId !== $eventBranchId) continue;
     if (!$isCustomer && !$isSuperAdmin && (int) $branchId !== $eventBranchId) continue;
     $eventDb = $loadEventDatabase($databaseName);
-    $eventSql = 'SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
+    $eventSql = 'SELECT id, customer_id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
                         nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
                  FROM vw_events_dashboard';
     $eventParams = [];
     if ($isCustomer) {
-        $eventSql .= ' WHERE pelanggan = :customer_name';
-        $eventParams['customer_name'] = $customerName;
+        $eventSql .= ' WHERE customer_id = :customer_id';
+        $eventParams['customer_id'] = $scope['customer_id'];
     }
     $eventQuery = $eventDb->prepare($eventSql);
     $eventQuery->execute($eventParams);
@@ -151,13 +152,13 @@ foreach ([
 $palembangBranchId = $branchIdByName['palembang'] ?? null;
 $canSeePalembang = $isCustomer ? $customerBranchId === $palembangBranchId : ($isSuperAdmin || (int) $branchId === $palembangBranchId);
 if ($palembangBranchId !== null && $canSeePalembang) {
-    $eventSql = 'SELECT id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
+    $eventSql = 'SELECT id, customer_id, nama_event AS event, pelanggan AS customer, tgl_event AS invoice_date,
                         nilai_kontrak AS total_amount, piutang AS balance, tgl_jatuh_tempo AS due_date
                  FROM palembang_events';
     $eventParams = [];
     if ($isCustomer) {
-        $eventSql .= ' WHERE pelanggan = :customer_name';
-        $eventParams['customer_name'] = $customerName;
+        $eventSql .= ' WHERE customer_id = :customer_id';
+        $eventParams['customer_id'] = $scope['customer_id'];
     }
     $eventQuery = $db->prepare($eventSql);
     $eventQuery->execute($eventParams);

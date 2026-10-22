@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-function notify_payment_received(int $branchId, string $source, string $sourceId, string $customerName, string $eventName, float $amount, bool $simulated = false): void
+function notify_payment_received(int $branchId, string $source, string $sourceId, string $customerName, string $eventName, float $amount, bool $simulated = false, int $customerId = 0): void
 {
     try {
         $db = database();
@@ -17,9 +17,11 @@ function notify_payment_received(int $branchId, string $source, string $sourceId
         $statement = $db->prepare("SELECT id FROM users WHERE role='admin_cabang' AND branch_id=:branch_id");
         $statement->execute(['branch_id' => $branchId]);
         foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $id) $recipients['admin_cabang:' . $id] = ['id' => (int) $id, 'role' => 'admin_cabang'];
-        $statement = $db->prepare("SELECT u.id FROM users u JOIN customers c ON c.id=u.customer_id WHERE u.role='pelanggan' AND c.branch_id=:branch_id AND LOWER(TRIM(c.name))=LOWER(TRIM(:name))");
-        $statement->execute(['branch_id' => $branchId, 'name' => $customerName]);
-        foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $id) $recipients['pelanggan:' . $id] = ['id' => (int) $id, 'role' => 'pelanggan'];
+        if ($customerId > 0) {
+            $statement = $db->prepare("SELECT id FROM users WHERE role='pelanggan' AND customer_id=:customer_id");
+            $statement->execute(['customer_id' => $customerId]);
+            foreach ($statement->fetchAll(PDO::FETCH_COLUMN) as $id) $recipients['pelanggan:' . $id] = ['id' => (int) $id, 'role' => 'pelanggan'];
+        }
         if (!$recipients) return;
         $title = $simulated ? 'Simulasi pembayaran pelanggan' : 'Pembayaran baru diterima';
         $prefix = $simulated ? 'SIMULASI - belum diverifikasi. ' : '';

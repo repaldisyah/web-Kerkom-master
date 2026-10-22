@@ -38,7 +38,7 @@ function bandung_date(mixed $value): ?string
 
 function bandung_payload(array $data, bool $create): array
 {
-    $fields = ['nama_event', 'skala', 'jenis_acara', 'tgl_event', 'lokasi', 'pelanggan', 'jenis_pihak', 'hpp_rab', 'margin', 'tgl_jatuh_tempo', 'status_data'];
+    $fields = ['nama_event', 'skala', 'jenis_acara', 'tgl_event', 'lokasi', 'jenis_pihak', 'hpp_rab', 'margin', 'tgl_jatuh_tempo', 'status_data'];
     $payload = [];
     foreach ($fields as $field) if ($create || array_key_exists($field, $data)) $payload[$field] = $data[$field] ?? null;
     if ($create && !preg_match('/^ED-[A-Za-z0-9-]+$/', (string) ($data['id'] ?? ''))) throw new InvalidArgumentException('ID event wajib berformat ED-... .');
@@ -53,13 +53,23 @@ function bandung_payload(array $data, bool $create): array
         $payload[$field] = (float) $payload[$field];
     }
     foreach (['tgl_event', 'tgl_jatuh_tempo'] as $field) if (array_key_exists($field, $payload)) $payload[$field] = bandung_date($payload[$field]);
-    foreach (['nama_event', 'jenis_acara', 'lokasi', 'pelanggan'] as $field) if (array_key_exists($field, $payload)) $payload[$field] = trim((string) $payload[$field]);
+    foreach (['nama_event', 'jenis_acara', 'lokasi'] as $field) if (array_key_exists($field, $payload)) $payload[$field] = trim((string) $payload[$field]);
+    if ($create || array_key_exists('customer_id', $data)) {
+        $code = trim((string) ($data['customer_id'] ?? ''));
+        if (!preg_match('/^NKC-([0-9]{6,})$/', $code, $match)) throw new InvalidArgumentException('Pilih kode pelanggan yang valid.');
+        $profile = database()->prepare('SELECT id, name FROM customers WHERE id=:id AND branch_id=:branch_id LIMIT 1');
+        $profile->execute(['id' => (int) $match[1], 'branch_id' => bandung_branch_id()]);
+        $customer = $profile->fetch();
+        if (!$customer || 'NKC-' . str_pad((string) $customer['id'], 6, '0', STR_PAD_LEFT) !== $code) throw new InvalidArgumentException('Kode pelanggan tidak ditemukan pada cabang Bandung.');
+        $payload['customer_id'] = (int) $customer['id'];
+        $payload['pelanggan'] = (string) $customer['name'];
+    }
     return $payload;
 }
 
 function bandung_event(PDO $db, string $id): array
 {
-    $query = $db->prepare('SELECT * FROM vw_events_dashboard WHERE id = :id');
+    $query = $db->prepare("SELECT v.*, CONCAT('NKC-', LPAD(c.id, 6, '0')) AS customer_code FROM vw_events_dashboard v LEFT JOIN nusa_karsa.customers c ON c.id=v.customer_id WHERE v.id = :id");
     $query->execute(['id' => $id]);
     $event = $query->fetch();
     if (!$event) respond(['success' => false, 'message' => 'Event Bandung tidak ditemukan.'], 404);
@@ -78,7 +88,7 @@ if ($method === 'DELETE' && !in_array($scope['role'], ['admin_pusat', 'super_adm
 try {
     if ($method === 'GET') {
         if ($id !== '') respond(['success' => true, 'event' => bandung_event($db, $id)]);
-        $events = $db->query('SELECT * FROM vw_events_dashboard ORDER BY tgl_event IS NULL, tgl_event, id')->fetchAll();
+        $events = $db->query("SELECT v.*, CONCAT('NKC-', LPAD(c.id, 6, '0')) AS customer_code FROM vw_events_dashboard v LEFT JOIN nusa_karsa.customers c ON c.id=v.customer_id ORDER BY v.tgl_event IS NULL, v.tgl_event, v.id")->fetchAll();
         $summary = $db->query("SELECT
             COALESCE(SUM(nilai_kontrak), 0) AS total_nilai_kontrak,
             COALESCE(SUM(total_dibayar - COALESCE(d.demo_amount, 0)), 0) AS total_dibayar,
@@ -112,6 +122,10 @@ try {
         $set = implode(', ', array_map(fn ($field) => "$field = :$field", array_keys($payload)));
         $payload['id'] = $id;
         $db->prepare("UPDATE events SET $set WHERE id = :id")->execute($payload);
+        if (array_key_exists('customer_id', $payload)) {
+            $history = $db->prepare('UPDATE event_payments SET customer_id=:customer_id, customer_name=:customer_name WHERE event_id=:event_id');
+            $history->execute(['customer_id' => $payload['customer_id'], 'customer_name' => $payload['pelanggan'], 'event_id' => $id]);
+        }
         respond(['success' => true, 'message' => 'Event Bandung berhasil diperbarui.', 'event' => bandung_event($db, $id)]);
     }
 

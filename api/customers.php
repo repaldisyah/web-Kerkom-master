@@ -28,7 +28,7 @@ if ($method !== 'GET') {
     $values['id'] = $id; $save = $db->prepare('UPDATE customers SET branch_id=:branch_id, name=:name, email=:email, phone=:phone, address=:address WHERE id=:id'); $save->execute($values);
     respond(['success' => true, 'message' => $save->rowCount() ? 'Profil pelanggan berhasil diperbarui.' : 'Tidak ada perubahan pada profil pelanggan.']);
 }
-$sql = 'SELECT c.id, c.name, c.email, c.phone, c.address, b.name AS branch, (SELECT COUNT(*) FROM events e WHERE e.customer_id = c.id) AS event_count, (SELECT COALESCE(SUM(r.balance), 0) FROM receivables r WHERE r.customer_id = c.id) AS outstanding_balance FROM customers c JOIN branches b ON b.id = c.branch_id';
+$sql = "SELECT c.id, CONCAT('NKC-', LPAD(c.id, 6, '0')) AS customer_code, c.name, c.email, c.phone, c.address, b.name AS branch, (SELECT COUNT(*) FROM events e WHERE e.customer_id = c.id) AS event_count, (SELECT COALESCE(SUM(r.balance), 0) FROM receivables r WHERE r.customer_id = c.id) AS outstanding_balance FROM customers c JOIN branches b ON b.id = c.branch_id";
 $params = [];
 if ($scope['role'] === 'admin_cabang') {
     if (!$scope['branch_id']) respond(['success' => false, 'message' => 'Akun belum memiliki cabang.'], 403);

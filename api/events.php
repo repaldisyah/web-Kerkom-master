@@ -47,7 +47,7 @@ function event_payload(array $data, bool $isCreate): array
     $allowedParties = ['Perorangan', 'Perusahaan'];
     $allowedStatuses = ['Draft', 'Final'];
     $fields = [
-        'nama_event', 'skala', 'jenis_acara', 'tgl_event', 'lokasi', 'pelanggan',
+        'nama_event', 'skala', 'jenis_acara', 'tgl_event', 'lokasi',
         'jenis_pihak', 'hpp_rab', 'margin', 'tgl_jatuh_tempo', 'status_data',
     ];
     $payload = [];
@@ -80,15 +80,27 @@ function event_payload(array $data, bool $isCreate): array
     foreach (['tgl_event', 'tgl_jatuh_tempo'] as $dateField) {
         if (array_key_exists($dateField, $payload)) $payload[$dateField] = nullable_date($payload[$dateField]);
     }
-    foreach (['nama_event', 'jenis_acara', 'lokasi', 'pelanggan'] as $textField) {
+    foreach (['nama_event', 'jenis_acara', 'lokasi'] as $textField) {
         if (array_key_exists($textField, $payload)) $payload[$textField] = trim((string) $payload[$textField]);
+    }
+    if ($isCreate || array_key_exists('customer_id', $data)) {
+        $code = trim((string) ($data['customer_id'] ?? ''));
+        if (!preg_match('/^NKC-([0-9]{6,})$/', $code, $match)) throw new InvalidArgumentException('Pilih kode pelanggan yang valid.');
+        $profile = database()->prepare("SELECT id, name FROM customers WHERE id = :id AND branch_id = :branch_id LIMIT 1");
+        $profile->execute(['id' => (int) $match[1], 'branch_id' => events_branch_id()]);
+        $customer = $profile->fetch();
+        if (!$customer || customer_code((int) $customer['id']) !== $code) throw new InvalidArgumentException('Kode pelanggan tidak ditemukan pada cabang Bali.');
+        $payload['customer_id'] = (int) $customer['id'];
+        $payload['pelanggan'] = (string) $customer['name'];
     }
     return $payload;
 }
 
+function customer_code(int $id): string { return 'NKC-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT); }
+
 function fetch_event(PDO $db, string $id): array
 {
-    $statement = $db->prepare('SELECT * FROM vw_events_dashboard WHERE id = :id');
+    $statement = $db->prepare("SELECT v.*, CONCAT('NKC-', LPAD(c.id, 6, '0')) AS customer_code FROM vw_events_dashboard v LEFT JOIN nusa_karsa.customers c ON c.id = v.customer_id WHERE v.id = :id");
     $statement->execute(['id' => $id]);
     $event = $statement->fetch();
     if (!$event) respond(['success' => false, 'message' => 'Event tidak ditemukan.'], 404);
@@ -107,7 +119,7 @@ if ($method === 'DELETE' && !in_array($scope['role'], ['admin_pusat', 'super_adm
 try {
     if ($method === 'GET') {
         if ($id !== '') respond(['success' => true, 'event' => fetch_event($db, $id)]);
-        $events = $db->query('SELECT * FROM vw_events_dashboard ORDER BY tgl_event IS NULL, tgl_event, id')->fetchAll();
+        $events = $db->query("SELECT v.*, CONCAT('NKC-', LPAD(c.id, 6, '0')) AS customer_code FROM vw_events_dashboard v LEFT JOIN nusa_karsa.customers c ON c.id = v.customer_id ORDER BY v.tgl_event IS NULL, v.tgl_event, v.id")->fetchAll();
         $summary = $db->query("SELECT
             COALESCE(SUM(nilai_kontrak), 0) AS total_nilai_kontrak,
             COALESCE(SUM(total_dibayar - COALESCE(d.demo_amount, 0)), 0) AS total_dibayar,
@@ -144,6 +156,10 @@ try {
         $set = implode(', ', array_map(fn ($column) => "$column = :$column", array_keys($payload)));
         $payload['id'] = $id;
         $db->prepare("UPDATE events SET $set WHERE id = :id")->execute($payload);
+        if (array_key_exists('customer_id', $payload)) {
+            $history = $db->prepare('UPDATE event_payments SET customer_id=:customer_id, customer_name=:customer_name WHERE event_id=:event_id');
+            $history->execute(['customer_id' => $payload['customer_id'], 'customer_name' => $payload['pelanggan'], 'event_id' => $id]);
+        }
         respond(['success' => true, 'message' => 'Event berhasil diperbarui.', 'event' => fetch_event($db, $id)]);
     }
 

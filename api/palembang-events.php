@@ -15,10 +15,10 @@ if ($palembangBranchId === false) {
 require_branch_access($scope, (int) $palembangBranchId);
 
 if ($method === 'GET') {
-    $events = $db->query("SELECT id, nama_event, skala, jenis_acara, tgl_event, lokasi, pelanggan, jenis_pihak, hpp_rab, margin_persen, nilai_kontrak, dp, termin_2, pelunasan, total_dibayar, piutang, status_sumber, sumber_data, tgl_jatuh_tempo,
+    $events = $db->query("SELECT e.id, e.nama_event, e.skala, e.jenis_acara, e.tgl_event, e.lokasi, e.pelanggan, e.customer_id, CONCAT('NKC-', LPAD(c.id, 6, '0')) AS customer_code, e.jenis_pihak, e.hpp_rab, e.margin_persen, e.nilai_kontrak, e.dp, e.termin_2, e.pelunasan, e.total_dibayar, e.piutang, e.status_sumber, e.sumber_data, e.tgl_jatuh_tempo,
         CASE WHEN piutang <= 0 THEN 'Lunas' WHEN tgl_jatuh_tempo < CURDATE() THEN 'Menunggak' ELSE 'Belum Lunas' END AS status_terkini,
         CASE WHEN piutang > 0 AND tgl_jatuh_tempo < CURDATE() THEN DATEDIFF(CURDATE(), tgl_jatuh_tempo) ELSE 0 END AS hari_terlambat
-        FROM palembang_events ORDER BY tgl_jatuh_tempo, id")->fetchAll();
+        FROM palembang_events e LEFT JOIN customers c ON c.id=e.customer_id ORDER BY e.tgl_jatuh_tempo, e.id")->fetchAll();
     $summary = $db->query("SELECT COUNT(*) AS jumlah_event, COALESCE(SUM(e.nilai_kontrak),0) AS total_kontrak, COALESCE(SUM(e.total_dibayar - COALESCE(d.demo_amount,0)),0) AS total_dibayar, COALESCE(SUM(e.piutang + COALESCE(d.demo_amount,0)),0) AS total_piutang, SUM(CASE WHEN e.piutang > 0 AND e.tgl_jatuh_tempo < CURDATE() THEN 1 ELSE 0 END) AS jumlah_terlambat FROM palembang_events e LEFT JOIN (SELECT event_id, SUM(amount) AS demo_amount FROM palembang_payments WHERE record_type = 'demo_simulation' GROUP BY event_id) d ON d.event_id = e.id")->fetch();
     respond(['success' => true, 'events' => $events, 'summary' => $summary]);
 }
@@ -33,6 +33,33 @@ if ($method === 'DELETE') {
     $delete->execute(['id' => $eventId]);
     if ($delete->rowCount() === 0) respond(['success' => false, 'message' => 'Event Palembang tidak ditemukan.'], 404);
     respond(['success' => true, 'message' => 'Event Palembang berhasil dihapus. Riwayat pembayarannya tetap tersimpan.']);
+}
+
+if ($method === 'PUT') {
+    $data = request_data();
+    $eventId = trim((string) ($data['event_id'] ?? ''));
+    $code = trim((string) ($data['customer_id'] ?? ''));
+    if ($eventId === '' || !preg_match('/^NKC-([0-9]{6,})$/', $code, $match)) respond(['success' => false, 'message' => 'Event dan kode pelanggan wajib dipilih.'], 422);
+    $customerQuery = $db->prepare('SELECT id, name FROM customers WHERE id=:id AND branch_id=:branch_id LIMIT 1');
+    $customerQuery->execute(['id' => (int) $match[1], 'branch_id' => (int) $palembangBranchId]);
+    $customer = $customerQuery->fetch();
+    if (!$customer || 'NKC-' . str_pad((string) $customer['id'], 6, '0', STR_PAD_LEFT) !== $code) respond(['success' => false, 'message' => 'Kode pelanggan tidak ditemukan di cabang Palembang.'], 422);
+    $db->beginTransaction();
+    try {
+        $eventQuery = $db->prepare('UPDATE palembang_events SET customer_id=:customer_id, pelanggan=:name WHERE id=:id');
+        $eventQuery->execute(['customer_id' => (int) $customer['id'], 'name' => $customer['name'], 'id' => $eventId]);
+        if (!$eventQuery->rowCount()) {
+            $exists = $db->prepare('SELECT id FROM palembang_events WHERE id=:id'); $exists->execute(['id' => $eventId]);
+            if (!$exists->fetchColumn()) throw new RuntimeException('Event Palembang tidak ditemukan.');
+        }
+        $payments = $db->prepare('UPDATE palembang_payments SET customer_id=:customer_id, customer_name=:name WHERE event_id=:id');
+        $payments->execute(['customer_id' => (int) $customer['id'], 'name' => $customer['name'], 'id' => $eventId]);
+        $db->commit();
+        respond(['success' => true, 'message' => 'Event dan riwayatnya berhasil ditautkan ke kode pelanggan.']);
+    } catch (Throwable $error) {
+        if ($db->inTransaction()) $db->rollBack();
+        respond(['success' => false, 'message' => $error instanceof RuntimeException ? $error->getMessage() : 'Tautan pelanggan tidak dapat disimpan. Pastikan migrasi kode pelanggan sudah dijalankan.'], 422);
+    }
 }
 
 if ($method !== 'POST') {
@@ -55,7 +82,7 @@ if (strlen($note) > 255) {
 
 $db->beginTransaction();
 try {
-    $query = $db->prepare('SELECT id, nama_event, pelanggan, piutang FROM palembang_events WHERE id = :id FOR UPDATE');
+    $query = $db->prepare('SELECT id, nama_event, pelanggan, customer_id, piutang FROM palembang_events WHERE id = :id FOR UPDATE');
     $query->execute(['id' => $eventId]);
     $event = $query->fetch();
     if (!$event) throw new RuntimeException('Event Palembang tidak ditemukan.');
@@ -64,14 +91,14 @@ try {
     }
 
     $token = 'NK-P-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
-    $insert = $db->prepare('INSERT INTO palembang_payments (event_id, event_name, customer_name, payment_date, amount, payment_method, payment_token, note) VALUES (:event_id, :event_name, :customer_name, CURDATE(), :amount, :payment_method, :payment_token, :note)');
-    $insert->execute(['event_id' => $eventId, 'event_name' => $event['nama_event'], 'customer_name' => $event['pelanggan'], 'amount' => $amount, 'payment_method' => $paymentMethod, 'payment_token' => $token, 'note' => $note !== '' ? $note : null]);
+    $insert = $db->prepare('INSERT INTO palembang_payments (event_id, customer_id, event_name, customer_name, payment_date, amount, payment_method, payment_token, note) VALUES (:event_id, :customer_id, :event_name, :customer_name, CURDATE(), :amount, :payment_method, :payment_token, :note)');
+    $insert->execute(['event_id' => $eventId, 'customer_id' => $event['customer_id'], 'event_name' => $event['nama_event'], 'customer_name' => $event['pelanggan'], 'amount' => $amount, 'payment_method' => $paymentMethod, 'payment_token' => $token, 'note' => $note !== '' ? $note : null]);
 
     $update = $db->prepare('UPDATE palembang_events SET total_dibayar = LEAST(nilai_kontrak, total_dibayar + :paid), piutang = GREATEST(0, piutang - :balance), pelunasan = pelunasan + :settlement WHERE id = :id');
     $update->execute(['paid' => $amount, 'balance' => $amount, 'settlement' => $amount, 'id' => $eventId]);
     $db->commit();
     require_once __DIR__ . '/payment-notifications.php';
-    notify_payment_received((int) $palembangBranchId, 'palembang', $token, (string) $event['pelanggan'], (string) $event['nama_event'], $amount);
+    notify_payment_received((int) $palembangBranchId, 'palembang', $token, (string) $event['pelanggan'], (string) $event['nama_event'], $amount, false, (int) ($event['customer_id'] ?? 0));
     respond(['success' => true, 'message' => 'Pembayaran piutang Palembang berhasil dicatat.', 'receipt' => [
         'token' => $token,
         'payment_date' => date('Y-m-d'),

@@ -25,8 +25,9 @@ Gunakan database kosong; langkah ini bukan untuk database yang sudah menerima tr
 6. Impor `events_bali.sql` dan `events_bandung.sql` ke database masing-masing; sesudah Bandung jalankan `events_bandung_upsert.sql`.
 7. Setelah database event siap, terapkan migrasi riwayat pembayaran, simulasi demo, permintaan penghapusan, dan notifikasi sesuai database sasaran dalam setiap SQL.
 8. Jalankan `migration_payment_cancellations.sql` setelah tabel transaksi/riwayat tersedia.
-9. Atur `api/config.php`, jalankan Apache/MySQL, buka `http://localhost/web-Kerkom-master/halaman.html` melalui Apache.
-10. Untuk pengingat, pasang `install-due-reminders-task.ps1` setelah migrasi notifikasi. Worker perlu PHP/MySQL berjalan dan hanya membuat notifikasi in-app.
+9. Jika memakai seed akun pelanggan demo, jalankan `migration_link_demo_customer_accounts_to_events.sql` lebih dahulu agar profil demo merujuk pelanggan event yang benar. Setelah tabel pelanggan, event, dan riwayat pembayaran siap, jalankan `migration_link_events_to_customer_codes.sql`. Migrasi hanya mengaitkan nama lama yang unik pada cabangnya; baris tanpa tautan perlu dipilih manual memakai kode pelanggan `NKC-xxxxxx` pada halaman cabang.
+10. Atur `api/config.php`, jalankan Apache/MySQL, buka `http://localhost/web-Kerkom-master/halaman.html` melalui Apache.
+11. Untuk pengingat, pasang `install-due-reminders-task.ps1` setelah migrasi notifikasi. Worker perlu PHP/MySQL berjalan dan hanya membuat notifikasi in-app.
 
 Periksa database sasaran dalam tiap skrip SQL. Tidak semua migrasi aman dijalankan ulang.
 
@@ -68,6 +69,12 @@ Jangan jalankan ulang seed pada database operasional untuk mereset kredensial. P
 Simulasi portal pelanggan membuat transaksi `demo_simulation` dan mengurangi saldo operasional. Ini bukan pembayaran gateway atau bukti penerimaan uang. Pakai hanya pada database demo yang dapat dipulihkan dari backup. Sebagian data lama berupa snapshot saldo historis, bukan rincian cicilan bertanggal.
 
 Pembatalan mempertahankan transaksi dan alasan, membalik saldo, serta membuat notifikasi. Pelanggan dapat membatalkan simulasi sendiri dalam 24 jam; admin cabang dibatasi 30 hari dan cabangnya; admin pusat dapat membatalkan transaksi tersimpan. Snapshot historis tidak dapat dibatalkan. Pembatalan lintas database memerlukan InnoDB dan izin MySQL yang sesuai.
+
+## Kode pelanggan dan tautan event
+
+Kode pelanggan ditampilkan sebagai `NKC-` diikuti ID profil enam digit, misalnya `NKC-000123`. Event baru harus memilih kode dari daftar cabangnya. Relasi disimpan memakai `customer_id`; nama pelanggan tetap dipakai sebagai teks tampilan/snapshot, bukan sebagai kunci pencocokan.
+
+Migrasi `migration_link_events_to_customer_codes.sql` mengisi tautan lama hanya bila nama tersebut cocok dengan tepat satu profil dalam cabang yang sama. Tinjau event yang masih `customer_id IS NULL` setelah migrasi. Admin dapat menautkan event lama yang belum jelas dari halaman Bali/Bandung melalui edit event, atau dari kolom pelanggan Palembang. Riwayat pembayaran terkait ikut diperbarui saat event ditautkan.
 
 Worker `api/due-reminders-worker.php` berjalan melalui PHP CLI, memeriksa H-7, H-3, H-1, hari-H, dan interval keterlambatan mingguan. Kunci unik mencegah notifikasi identik berulang. Pengiriman email/WhatsApp tidak tersedia.
 

@@ -6,6 +6,8 @@ const statusFilter = document.getElementById("statusFilter");
 let events = [];
 let canDeleteEvents = false;
 let canRequestDeletion = false;
+let canLinkCustomers = false;
+let customerOptions = [];
 
 const money = value => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(value) || 0);
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -31,7 +33,7 @@ function renderRows() {
     const query = searchInput.value.trim().toLocaleLowerCase("id-ID");
     const status = statusFilter.value;
     const filtered = events.filter(event => {
-        const text = `${event.id} ${event.nama_event} ${event.pelanggan} ${event.lokasi}`.toLocaleLowerCase("id-ID");
+        const text = `${event.id} ${event.nama_event} ${event.customer_code || ''} ${event.pelanggan} ${event.lokasi}`.toLocaleLowerCase("id-ID");
         return (!query || text.includes(query)) && (!status || event.status_terkini === status);
     });
     if (!filtered.length) {
@@ -48,10 +50,13 @@ function renderRows() {
         const deletionAction = canDeleteEvents
             ? `<button type="button" data-delete="${escapeHtml(event.id)}">Hapus</button>`
             : canRequestDeletion ? `<button type="button" data-request-delete="${escapeHtml(event.id)}">Minta hapus</button>` : '';
+        const linkAction = !event.customer_id && canLinkCustomers
+            ? `<div class="customer-link-control"><select data-customer-for="${escapeHtml(event.id)}" aria-label="Pilih kode pelanggan"><option value="">Pilih kode pelanggan</option>${customerOptions.map(customer => `<option value="${escapeHtml(customer.customer_code)}">${escapeHtml(customer.customer_code)} · ${escapeHtml(customer.name)}</option>`).join('')}</select><button type="button" data-link-customer="${escapeHtml(event.id)}">Tautkan</button></div>`
+            : (event.customer_code ? `<span class="event-id">${escapeHtml(event.customer_code)}</span>` : '<span class="event-id">Belum tertaut</span>');
         return `<tr>
             <td><span class="event-name">${escapeHtml(event.nama_event)}</span><span class="event-id">${escapeHtml(event.id)} · Sumber: ${escapeHtml(event.sumber_data)}</span></td>
             <td>${escapeHtml(event.skala)}<br><span class="event-id">${escapeHtml(event.jenis_acara)}</span></td>
-            <td>${escapeHtml(event.pelanggan)}<br><span class="event-id">${escapeHtml(event.lokasi)}</span></td>
+            <td>${escapeHtml(event.pelanggan)}<br>${linkAction}<span class="event-id">${escapeHtml(event.lokasi)}</span></td>
             <td>${formatDate(event.tgl_event)}</td>
             <td>${money(event.hpp_rab)}<br><span class="event-id">Margin ${Number(event.margin_persen).toLocaleString("id-ID")}%</span></td>
             <td>${money(event.nilai_kontrak)}</td>
@@ -82,6 +87,19 @@ async function loadEvents() {
 }
 
 rows.addEventListener('click', async event => {
+    const linkId = event.target.dataset.linkCustomer;
+    if (linkId && canLinkCustomers) {
+        const code = rows.querySelector(`[data-customer-for="${CSS.escape(linkId)}"]`)?.value || '';
+        if (!code) { errorBox.textContent = 'Pilih kode pelanggan terlebih dahulu.'; errorBox.hidden = false; return; }
+        try {
+            const response = await fetch('../api/palembang-events.php', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_id: linkId, customer_id: code }) });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Tautan pelanggan gagal disimpan.');
+            errorBox.textContent = result.message; errorBox.hidden = false;
+            await loadEvents();
+        } catch (error) { errorBox.textContent = error.message; errorBox.hidden = false; }
+        return;
+    }
     const requestId = event.target.dataset.requestDelete;
     const deleteId = event.target.dataset.delete;
     if (requestId && canRequestDeletion) {
@@ -112,6 +130,13 @@ statusFilter.addEventListener("change", renderRows);
         if (!session.authenticated) { const login = new URL('login.html', window.location.href); login.searchParams.set('next', window.location.href); location.replace(login.href); return; }
         canDeleteEvents = ['admin_pusat', 'super_admin'].includes(session.user.role);
         canRequestDeletion = session.user.role === 'admin_cabang';
+        canLinkCustomers = ['admin_pusat', 'super_admin', 'admin_cabang'].includes(session.user.role);
+        if (canLinkCustomers) {
+            const response = await fetch('../api/customers.php', { cache: 'no-store' });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Daftar kode pelanggan gagal dimuat.');
+            customerOptions = (result.customers || []).filter(customer => String(customer.branch).toLowerCase() === 'palembang');
+        }
         await loadEvents();
     } catch (error) { errorBox.textContent = error.message; errorBox.hidden = false; }
 })();

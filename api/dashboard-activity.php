@@ -31,7 +31,7 @@ if ($scope['role'] === 'admin_cabang') {
 }
 
 $paymentRows = [];
-$sql = 'SELECT p.id AS transaction_id, p.payment_date, p.amount, ' . (has_payment_method_column() ? 'p.payment_method' : "'Manual' AS payment_method") . ', c.name AS customer, b.name AS branch, e.name AS event, ' . (has_payment_record_type_column() ? 'p.record_type' : "'payment'") . ' AS record_type FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id' . $where . ' ORDER BY p.payment_date DESC, p.id DESC LIMIT 100';
+$sql = 'SELECT p.id AS transaction_id, r.customer_id, p.payment_date, p.amount, ' . (has_payment_method_column() ? 'p.payment_method' : "'Manual' AS payment_method") . ', c.name AS customer, b.name AS branch, e.name AS event, ' . (has_payment_record_type_column() ? 'p.record_type' : "'payment'") . ' AS record_type FROM payments p JOIN receivables r ON r.id = p.receivable_id JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id' . $where . ' ORDER BY p.payment_date DESC, p.id DESC LIMIT 100';
 $statement = $db->prepare($sql);
 $statement->execute($params);
 $paymentRows = $statement->fetchAll();
@@ -45,14 +45,14 @@ $paymentRows = $statement->fetchAll();
             $hasSnapshot = (bool) $db->query("SHOW COLUMNS FROM palembang_payments LIKE 'event_name'")->fetch();
             $method = $hasRecordType ? 'p.record_type' : "'payment' AS record_type";
             if ($hasSnapshot) {
-                $paymentSql = "SELECT p.id AS transaction_id, p.payment_date, p.amount, p.payment_method, COALESCE(p.customer_name, e.pelanggan) AS customer, 'Palembang' AS branch, COALESCE(p.event_name, e.nama_event) AS event, $method FROM palembang_payments p LEFT JOIN palembang_events e ON e.id = p.event_id";
+                $paymentSql = "SELECT p.id AS transaction_id, p.customer_id, p.payment_date, p.amount, p.payment_method, COALESCE(p.customer_name, e.pelanggan) AS customer, 'Palembang' AS branch, COALESCE(p.event_name, e.nama_event) AS event, $method FROM palembang_payments p LEFT JOIN palembang_events e ON e.id = p.event_id";
             } else {
-                $paymentSql = "SELECT p.id AS transaction_id, p.payment_date, p.amount, p.payment_method, e.pelanggan AS customer, 'Palembang' AS branch, e.nama_event AS event, $method FROM palembang_payments p JOIN palembang_events e ON e.id = p.event_id";
+                $paymentSql = "SELECT p.id AS transaction_id, p.customer_id, p.payment_date, p.amount, p.payment_method, e.pelanggan AS customer, 'Palembang' AS branch, e.nama_event AS event, $method FROM palembang_payments p JOIN palembang_events e ON e.id = p.event_id";
             }
             $palembangParams = [];
             if ($scope['role'] === 'pelanggan') {
-                $paymentSql .= ' WHERE ' . ($hasSnapshot ? 'COALESCE(p.customer_name, e.pelanggan)' : 'e.pelanggan') . ' = :customer_name';
-                $palembangParams['customer_name'] = $customerName;
+                $paymentSql .= ' WHERE p.customer_id = :customer_id';
+                $palembangParams['customer_id'] = $scope['customer_id'];
             }
             $paymentSql .= ' ORDER BY p.payment_date DESC, p.id DESC LIMIT 100';
             $query = $db->prepare($paymentSql);
@@ -79,11 +79,11 @@ $paymentRows = $statement->fetchAll();
                 [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
             );
             if (!$eventDb->query("SHOW TABLES LIKE 'event_payments'")->fetchColumn()) continue;
-            $paymentSql = "SELECT id AS transaction_id, payment_date, amount, payment_method, customer_name AS customer, event_name AS event, record_type FROM event_payments";
+            $paymentSql = "SELECT id AS transaction_id, customer_id, payment_date, amount, payment_method, customer_name AS customer, event_name AS event, record_type FROM event_payments";
             $paymentParams = [];
             if ($scope['role'] === 'pelanggan') {
-                $paymentSql .= ' WHERE customer_name = :customer_name';
-                $paymentParams['customer_name'] = $customerName;
+                $paymentSql .= ' WHERE customer_id = :customer_id';
+                $paymentParams['customer_id'] = $scope['customer_id'];
             }
             $paymentSql .= ' ORDER BY payment_date DESC, id DESC LIMIT 100';
             $query = $eventDb->prepare($paymentSql);
@@ -114,7 +114,7 @@ $customers = [];
 foreach ($paymentRows as $payment) {
     $name = trim((string) ($payment['customer'] ?? ''));
     if ($name === '') continue;
-    $key = mb_strtolower((string) $payment['branch'] . '|' . $name, 'UTF-8');
+    $key = !empty($payment['customer_id']) ? 'customer:' . (int) $payment['customer_id'] : mb_strtolower((string) $payment['branch'] . '|' . $name, 'UTF-8');
     if (!isset($customers[$key])) {
         $customers[$key] = ['customer' => $name, 'branch' => (string) $payment['branch'], 'last_payment_date' => $payment['payment_date'], 'last_payment_amount' => (float) $payment['amount'], 'record_type' => $payment['record_type'] ?? 'payment'];
     }

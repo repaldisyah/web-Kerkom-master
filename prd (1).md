@@ -32,8 +32,9 @@ Perhitungan dan skema data berbeda antarcabang. Sebagian riwayat lama merupakan 
 3. Belum ditemukan pembatasan percobaan login.
 4. Worker membuat notifikasi in-app saja; email/WhatsApp dan pengaturan aturan pengingat belum tersedia.
 5. Simulasi pembayaran pelanggan mengurangi saldo operasional; pisahkan data demo dari data nyata.
-6. Prosedur backup/restore, monitoring, retensi, dan deployment produksi perlu ditetapkan serta diverifikasi.
-7. Audit penuh otorisasi endpoint dan uji alur browser/database dibutuhkan sebelum menyatakan siap produksi.
+6. Data event lama yang belum dapat dipetakan unik harus ditautkan manual melalui kode pelanggan.
+7. Prosedur backup/restore, monitoring, retensi, dan deployment produksi perlu ditetapkan serta diverifikasi.
+8. Audit penuh otorisasi endpoint dan uji alur browser/database dibutuhkan sebelum menyatakan siap produksi.
 
 ## Kriteria penerimaan
 

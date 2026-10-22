@@ -15,7 +15,7 @@ Dokumen ini mencocokkan panduan dengan implementasi yang ditemukan. Keberadaan k
 
 1. Endpoint utama memakai sesi dan role; API event/pembayaran cabang juga memeriksa cabang, dan endpoint pelanggan umumnya memakai `customer_id` untuk data utama.
 2. Ditemukan dan diperbaiki: `api/branches.php` sebelumnya mengembalikan ringkasan semua cabang kepada admin cabang. Kini hasil admin cabang dibatasi ke `branch_id` miliknya.
-3. Batasan data lama: tabel event dan pembayarannya di Bali, Bandung, dan Palembang menyimpan nama pelanggan, bukan `customer_id`. Cakupan akun pelanggan pada data tersebut bergantung pada nama dan cabang; dua pelanggan dengan nama sama dalam cabang yang sama belum dapat dibedakan secara pasti.
+3. Event cabang kini memakai kode pelanggan `NKC-xxxxxx` dan `customer_id` untuk pencocokan akun. Migrasi `database/migration_link_events_to_customer_codes.sql` hanya mengaitkan data lama dengan nama unik; baris ambigu atau tanpa profil harus ditautkan manual.
 4. Pemeriksaan ini berbasis pembacaan kode. Uji runtime lintas akun/cabang dan database belum dijalankan.
 
 Untuk proyek uji coba, cakupan akses tersebut menjadi fokus. Rate limit, CSRF menyeluruh, pemulihan password, backup/restore, dan kesiapan produksi dapat tetap menjadi backlog jika proyek nanti dipakai aktif.
@@ -31,7 +31,7 @@ Untuk proyek uji coba, cakupan akses tersebut menjadi fokus. Rate limit, CSRF me
 - Pratinjau contoh struk disediakan sebagai `assets/contoh-struk-pembayaran.svg`.
 - Pemulihan password memakai halaman terpisah dan kode simulasi sesi yang berlaku 10 menit dengan maksimal lima percobaan. Kode ditampilkan kepada pengguna karena tidak ada kanal email/SMS; ini tidak memverifikasi identitas untuk penggunaan nyata.
 - `api/customer-summary.php` membatasi ringkasan berdasarkan role: admin cabang mendapat daftar pelanggan cabangnya, admin pusat mendapat ringkasan tahunan semua cabang, dan pelanggan mendapat ringkasan akun sendiri.
-- Tahun ringkasan memakai tanggal event dan mulai 2022. Data lama cabang yang hanya menyimpan nama pelanggan tetap memiliki keterbatasan identifikasi jika nama pelanggan sama.
+- Tahun ringkasan memakai tanggal event dan mulai 2022. Event cabang yang belum ditautkan melalui migrasi kode pelanggan tidak masuk ke portal pelanggan sampai admin memilih kode yang benar.
 
 ### Pemeliharaan frontend
 
@@ -48,5 +48,5 @@ Pemulihan password melalui kanal email/SMS nyata, rate limit login, kanal notifi
 
 1. Jaga dokumentasi sesuai kode dan jangan publikasikan kredensial.
 2. Pisahkan struktur, gaya, dan perilaku dashboard; hapus hanya file kosong yang dipastikan tidak dipakai.
-3. Jika diperlukan, tambahkan `customer_id` pada skema event lama agar pelanggan bernama sama tetap terpisah.
+3. Tinjau event `customer_id IS NULL` setelah migrasi kode pelanggan dan tautkan manual bila cocokannya ambigu.
 4. Untuk penggunaan aktif, rencanakan perlindungan mutasi, pemisahan data demo/operasional, pemulihan akun, dan prosedur backup.

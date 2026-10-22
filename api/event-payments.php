@@ -56,7 +56,7 @@ if ($eventId === '' || !is_finite($amount) || $amount <= 0 || !$parsedDate || $p
 
 $db->beginTransaction();
 try {
-    $query = $db->prepare('SELECT id, nama_event, pelanggan, total_dibayar, (hpp_rab + margin) AS contract_total FROM events WHERE id = :id FOR UPDATE');
+    $query = $db->prepare('SELECT id, nama_event, pelanggan, customer_id, total_dibayar, (hpp_rab + margin) AS contract_total FROM events WHERE id = :id FOR UPDATE');
     $query->execute(['id' => $eventId]);
     $event = $query->fetch();
     if (!$event) throw new RuntimeException('Event tidak ditemukan.');
@@ -64,9 +64,10 @@ try {
     if ($balance <= 0 || $amount > $balance) throw new RuntimeException('Nominal melebihi sisa piutang event.');
 
     $token = 'NK-' . $branchConfig['prefix'] . '-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
-    $insert = $db->prepare('INSERT INTO event_payments (event_id, event_name, customer_name, payment_date, amount, payment_method, payment_token, note) VALUES (:event_id, :event_name, :customer_name, :payment_date, :amount, :payment_method, :payment_token, :note)');
+    $insert = $db->prepare('INSERT INTO event_payments (event_id, customer_id, event_name, customer_name, payment_date, amount, payment_method, payment_token, note) VALUES (:event_id, :customer_id, :event_name, :customer_name, :payment_date, :amount, :payment_method, :payment_token, :note)');
     $insert->execute([
         'event_id' => $eventId,
+        'customer_id' => $event['customer_id'],
         'event_name' => $event['nama_event'],
         'customer_name' => $event['pelanggan'],
         'payment_date' => $paymentDate,
@@ -80,7 +81,7 @@ try {
     $newBalance = max(0, $balance - $amount);
     $db->commit();
     require_once __DIR__ . '/payment-notifications.php';
-    notify_payment_received((int) $branchConfig['branch_id'], $branch, $token, (string) $event['pelanggan'], (string) $event['nama_event'], $amount);
+    notify_payment_received((int) $branchConfig['branch_id'], $branch, $token, (string) $event['pelanggan'], (string) $event['nama_event'], $amount, false, (int) ($event['customer_id'] ?? 0));
     respond(['success' => true, 'message' => 'Pembayaran berhasil dicatat.', 'payment' => [
         'payment_token' => $token,
         'payment_date' => $paymentDate,

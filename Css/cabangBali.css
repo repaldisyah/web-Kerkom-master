@@ -1,4 +1,6 @@
-body[data-branch="bali"] { --accent:#c99320; --accent-soft:#fff7df; }
+body[data-branch="bali"] { --accent:#c99320; --accent-soft:#fff7df; --action:#a9780e; --action-hover:#865d08; --focus:rgba(201,147,32,.16); }
+body[data-branch="bandung"] { --accent:#db5d38; --accent-soft:#fff0e8; --action:#9f4227; --action-hover:#80351f; --focus:rgba(202,86,53,.22); }
+body[data-branch="palembang"] { --accent:#684895; --accent-soft:#f0eafa; --action:#684895; --action-hover:#50337e; --focus:rgba(104,72,149,.2); }
 .brand-area a { display:grid; place-items:center; }
 .bali-form-card { margin:0 0 22px; padding:22px; border:1px solid var(--line); border-radius:17px; background:#fff; box-shadow:0 10px 30px rgba(25,52,82,.06); }
 .bali-card-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
@@ -7,21 +9,22 @@ body[data-branch="bali"] { --accent:#c99320; --accent-soft:#fff7df; }
 .bali-form-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; }
 .bali-form-grid label { display:grid; align-content:start; gap:6px; color:var(--text); font-size:.75rem; font-weight:700; }
 .bali-form-grid input,.bali-form-grid select,.bali-controls input,.bali-controls select { min-width:0; padding:10px 11px; border:1px solid var(--line); border-radius:9px; color:var(--text); background:#fff; font:inherit; font-size:.8rem; }
-.bali-form-grid input:focus,.bali-form-grid select:focus,.bali-controls input:focus,.bali-controls select:focus { outline:3px solid rgba(201,147,32,.16); border-color:var(--accent); }
+.bali-form-grid input:focus,.bali-form-grid select:focus,.bali-controls input:focus,.bali-controls select:focus { outline:3px solid var(--focus); border-color:var(--accent); }
 .bali-calculator { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:16px; }
 .bali-calculator div { padding:11px 12px; border-radius:10px; background:#f8fafc; }
 .bali-calculator span,.bali-calculator strong { display:block; }
 .bali-calculator span { color:var(--muted); font-size:.68rem; }
 .bali-calculator strong { margin-top:4px; color:var(--navy); font-size:.82rem; }
 .bali-primary,.bali-secondary,.actions button { border:0; border-radius:9px; font:inherit; font-size:.78rem; font-weight:700; cursor:pointer; }
-.bali-primary { margin-top:16px; padding:11px 17px; color:#fff; background:#a9780e; }
-.bali-primary:hover { background:#865d08; }
+.bali-primary { margin-top:16px; padding:11px 17px; color:#fff; background:var(--action); }
+.bali-primary:hover { background:var(--action-hover); }
 .bali-secondary { padding:9px 13px; color:var(--navy); background:#f1f5f9; }
 .bali-notice { margin:0 0 16px; padding:12px 15px; border-radius:10px; color:#14724c; background:#e7f7ef; font-size:.84rem; }
 .bali-notice.error,.bali-error { color:#8f2d2d; background:#fff4f4; border:1px solid #f2c6c6; }
 .bali-table-head { align-items:flex-start; }
 .bali-table-head .palembang-note { margin:5px 0 0; }
 .bali-controls { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.bali-controls input,.bali-controls select { min-height:40px; }
 .bali-controls input { width:225px; }
 .bali-controls select { width:auto; }
 .bali-table { min-width:1700px; font-size:.75rem; }

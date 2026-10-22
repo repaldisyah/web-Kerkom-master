@@ -109,7 +109,7 @@ function renderCustomers(customers, role) {
     });
 
     orderedCustomers.forEach(customer => addRow([
-        customer.id, customer.name, customer.email || '-', customer.phone || '-', customer.address || '-', customer.branch,
+        customer.customer_code || '-', customer.name, customer.email || '-', customer.phone || '-', customer.address || '-', customer.branch,
         String(customer.event_count) + ' event', money(customer.outstanding_balance)
     ]));
 }

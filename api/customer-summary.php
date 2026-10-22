@@ -47,7 +47,7 @@ if ($masterWhere) $masterSql .= ' WHERE ' . implode(' AND ', $masterWhere);
 $masterSql .= ' GROUP BY YEAR(e.event_date), b.id, c.id, c.name';
 $masterQuery = $db->prepare($masterSql);
 $masterQuery->execute($masterParams);
-foreach ($masterQuery->fetchAll() as $row) $append((int) $row['branch_id'], (string) $row['customer'], (int) $row['event_count'], (float) $row['contract_total'], (float) $row['paid_total'], (float) $row['outstanding'], (int) $row['year'], 'name:' . mb_strtolower(trim((string) $row['customer']), 'UTF-8'));
+foreach ($masterQuery->fetchAll() as $row) $append((int) $row['branch_id'], (string) $row['customer'], (int) $row['event_count'], (float) $row['contract_total'], (float) $row['paid_total'], (float) $row['outstanding'], (int) $row['year'], 'customer:' . (int) $row['customer_id']);
 
 $config = require __DIR__ . '/config.php';
 $external = [
@@ -73,17 +73,16 @@ foreach ($external as $key => $item) {
         else $eventDb = new PDO(sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $config['db_host'], $config['db_port'], $item['database']), $config['db_user'], $config['db_pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
         $table = $key === 'palembang' ? 'palembang_events' : 'events';
         if (!$eventDb->query("SHOW TABLES LIKE '$table'")->fetchColumn()) continue;
-        $contractExpr = $key === 'palembang' ? 'nilai_kontrak' : '(hpp_rab+margin)';
-        $paidExpr = 'total_dibayar';
-        $balanceExpr = $key === 'palembang' ? 'piutang' : "GREATEST(0,(hpp_rab+margin)-total_dibayar)";
-        $customerExpr = 'pelanggan';
-        $sql = "SELECT YEAR(tgl_event) AS year, $customerExpr AS customer, COUNT(*) AS event_count, COALESCE(SUM($contractExpr),0) AS contract_total, COALESCE(SUM($paidExpr),0) AS paid_total, COALESCE(SUM($balanceExpr),0) AS outstanding FROM $table";
+        $contractExpr = $key === 'palembang' ? 'e.nilai_kontrak' : '(e.hpp_rab+e.margin)';
+        $paidExpr = 'e.total_dibayar';
+        $balanceExpr = $key === 'palembang' ? 'e.piutang' : "GREATEST(0,(e.hpp_rab+e.margin)-e.total_dibayar)";
+        $sql = "SELECT YEAR(e.tgl_event) AS year, e.customer_id, COALESCE(c.name,e.pelanggan) AS customer, COUNT(*) AS event_count, COALESCE(SUM($contractExpr),0) AS contract_total, COALESCE(SUM($paidExpr),0) AS paid_total, COALESCE(SUM($balanceExpr),0) AS outstanding FROM $table e LEFT JOIN nusa_karsa.customers c ON c.id=e.customer_id";
         $params = [];
-        if ($isCustomer) { $sql .= ' WHERE pelanggan=:customer'; $params['customer'] = $customerName; }
-        $sql .= ' GROUP BY YEAR(tgl_event), pelanggan';
+        if ($isCustomer) { $sql .= ' WHERE e.customer_id=:customer_id'; $params['customer_id'] = $scope['customer_id']; }
+        $sql .= ' GROUP BY YEAR(e.tgl_event), e.customer_id, COALESCE(c.name,e.pelanggan)';
         $query = $eventDb->prepare($sql);
         $query->execute($params);
-        foreach ($query->fetchAll() as $row) $append((int) $branchId, (string) $row['customer'], (int) $row['event_count'], (float) $row['contract_total'], (float) $row['paid_total'], (float) $row['outstanding'], (int) $row['year'], 'name:' . mb_strtolower(trim((string) $row['customer']), 'UTF-8'));
+        foreach ($query->fetchAll() as $row) $append((int) $branchId, (string) $row['customer'], (int) $row['event_count'], (float) $row['contract_total'], (float) $row['paid_total'], (float) $row['outstanding'], (int) $row['year'], !empty($row['customer_id']) ? 'customer:' . (int) $row['customer_id'] : 'legacy:' . mb_strtolower(trim((string) $row['customer']), 'UTF-8'));
     } catch (Throwable) {
         // Database cabang yang belum tersedia dilewati agar ringkasan cabang lain tetap tampil.
     }

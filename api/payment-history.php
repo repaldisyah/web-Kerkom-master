@@ -86,11 +86,11 @@ $eventDatabases = [
                 $join = $hasSnapshot ? 'LEFT JOIN palembang_events e ON e.id = p.event_id' : 'JOIN palembang_events e ON e.id = p.event_id';
                 $snapshotColumns = $hasSnapshot ? 'COALESCE(p.customer_name, e.pelanggan)' : 'e.pelanggan';
                 $snapshotEvent = $hasSnapshot ? 'COALESCE(p.event_name, e.nama_event)' : 'e.nama_event';
-                $sql = "SELECT p.id AS transaction_id, 'palembang' AS source, p.created_at, p.cancelled_at, p.cancelled_by, p.cancelled_by_role, p.cancellation_reason, p.payment_token, p.payment_date, p.amount, p.payment_method, p.note, $snapshotColumns AS customer, 'Palembang' AS branch, $snapshotEvent AS event, $recordTypeColumn AS record_type FROM palembang_payments p $join";
+                $sql = "SELECT p.id AS transaction_id, 'palembang' AS source, p.customer_id, p.created_at, p.cancelled_at, p.cancelled_by, p.cancelled_by_role, p.cancellation_reason, p.payment_token, p.payment_date, p.amount, p.payment_method, p.note, $snapshotColumns AS customer, 'Palembang' AS branch, $snapshotEvent AS event, $recordTypeColumn AS record_type FROM palembang_payments p $join";
                 $params = [];
                 if ($scope['role'] === 'pelanggan') {
-                    $sql .= " WHERE $snapshotColumns = :customer_name";
-                    $params['customer_name'] = $customerName;
+                    $sql .= ' WHERE p.customer_id = :customer_id';
+                    $params['customer_id'] = $scope['customer_id'];
                 }
                 $query = $db->prepare($sql);
                 $query->execute($params);
@@ -118,11 +118,11 @@ $eventDatabases = [
                 $warnings[] = ucfirst($branch) . ': jalankan migrasi riwayat pembayaran.';
                 continue;
             }
-            $sql = "SELECT id AS transaction_id, '$branch' AS source, created_at, cancelled_at, cancelled_by, cancelled_by_role, cancellation_reason, payment_token, payment_date, amount, payment_method, note, customer_name AS customer, event_name AS event, record_type FROM event_payments";
+            $sql = "SELECT id AS transaction_id, '$branch' AS source, customer_id, created_at, cancelled_at, cancelled_by, cancelled_by_role, cancellation_reason, payment_token, payment_date, amount, payment_method, note, customer_name AS customer, event_name AS event, record_type FROM event_payments";
             $params = [];
             if ($scope['role'] === 'pelanggan') {
-                $sql .= ' WHERE customer_name = :customer_name';
-                $params['customer_name'] = $customerName;
+                $sql .= ' WHERE customer_id = :customer_id';
+                $params['customer_id'] = $scope['customer_id'];
             }
             $query = $eventDb->prepare($sql);
             $query->execute($params);

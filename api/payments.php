@@ -33,7 +33,7 @@ if (!$isSuperAdmin && $branchId === null) {
 $db->beginTransaction();
 try {
     $scope = $isSuperAdmin ? '' : ' AND branch_id = :branch_id';
-    $statement = $db->prepare("SELECT r.id, r.balance, r.branch_id, c.name AS customer, b.name AS branch, e.name AS event FROM receivables r JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id WHERE r.id = :id AND r.balance > 0$scope FOR UPDATE");
+    $statement = $db->prepare("SELECT r.id, r.balance, r.branch_id, r.customer_id, c.name AS customer, b.name AS branch, e.name AS event FROM receivables r JOIN customers c ON c.id = r.customer_id JOIN branches b ON b.id = r.branch_id JOIN events e ON e.id = r.event_id WHERE r.id = :id AND r.balance > 0$scope FOR UPDATE");
     $parameters = ['id' => $receivableId];
     if (!$isSuperAdmin) $parameters['branch_id'] = (int) $branchId;
     $statement->execute($parameters);
@@ -51,7 +51,7 @@ try {
     $update->execute(['balance' => max(0, $newBalance), 'status' => $status, 'id' => $receivableId]);
     $db->commit();
     require_once __DIR__ . '/payment-notifications.php';
-    notify_payment_received((int) $receivable['branch_id'], 'master', $paymentToken, (string) $receivable['customer'], (string) $receivable['event'], $amount);
+    notify_payment_received((int) $receivable['branch_id'], 'master', $paymentToken, (string) $receivable['customer'], (string) $receivable['event'], $amount, false, (int) $receivable['customer_id']);
     respond([
         'success' => true,
         'message' => 'Pembayaran berhasil dicatat.',

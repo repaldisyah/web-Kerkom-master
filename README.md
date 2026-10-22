@@ -44,7 +44,7 @@ Aplikasi menggunakan database `nusa_karsa`, `admin_pusat`, `events_bali`, dan `e
 - Lupa password memakai halaman terpisah dan verifikasi dua langkah. Kode verifikasi ditampilkan di halaman karena proyek tidak terhubung ke layanan email/SMS; gunakan hanya untuk demo lokal.
 - Ringkasan pelanggan mengikuti role: admin cabang melihat pelanggan cabangnya, admin pusat melihat rekap semua cabang per tahun, dan pelanggan melihat ringkasan akun sendiri.
 - Struk pembayaran dapat dicetak/disimpan sebagai PDF, diunduh sebagai DOCX atau JPG/JPEG. Contoh visual struk tersedia di `assets/contoh-struk-pembayaran.svg`.
-- Event cabang lama mengaitkan pelanggan melalui nama; nama yang sama di cabang yang sama belum dapat dipisahkan secara pasti tanpa `customer_id` pada tabel event.
+- Event cabang baru ditautkan memakai kode pelanggan `NKC-xxxxxx` dan `customer_id`. Jalankan `database/migration_link_events_to_customer_codes.sql`; nama lama yang ambigu memerlukan penautan manual.
 
 Lihat [PRD](prd%20(1).md) dan [audit](AUDIT-PENYEMPURNAAN.md) untuk batas fitur dan tindak lanjut.
 Aktifkan notifikasi perangkat dari halaman Notifikasi. Bunyi mengikuti izin browser dan setelan suara OS. Akses ponsel memerlukan HTTPS.

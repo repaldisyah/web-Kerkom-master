@@ -34,7 +34,7 @@ try {
     if (!$c) throw new RuntimeException('Profil pelanggan tidak valid.');
     $owns=false;
     if ($source==='master') $owns=(int)$p['customer_id']===(int)$scope['customer_id'];
-    else $owns=mb_strtolower(trim((string)($p['customer_name']??'')))===mb_strtolower(trim((string)$c['name'])) && (int)$c['branch_id']===$branchId;
+    else $owns=(int)($p['customer_id']??0)===(int)$scope['customer_id'] && (int)$c['branch_id']===$branchId;
     if (!$owns) throw new RuntimeException('Transaksi bukan milik akun pelanggan ini.');
     $created=strtotime((string)($p['created_at']??$p['payment_date']??''));
     if (!$created || time()-$created>86400) throw new RuntimeException('Batas pembatalan pelanggan adalah 24 jam sejak transaksi dicatat.');
