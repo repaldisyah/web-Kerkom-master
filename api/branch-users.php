@@ -16,8 +16,8 @@ if ($method === 'GET') {
 if ($method === 'DELETE') {
     $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
     if (!$id) respond(['success' => false, 'message' => 'ID akun wajib valid.'], 422);
-    if ($id === (int) $scope['user_id']) respond(['success' => false, 'message' => 'Akun yang sedang digunakan tidak dapat dihapus.'], 409);
-    $delete = $db->prepare('DELETE FROM users WHERE id=:id'); $delete->execute(['id' => $id]);
+    if ($scope['role'] === 'admin_cabang' && $id === (int) $scope['user_id']) respond(['success' => false, 'message' => 'Akun yang sedang digunakan tidak dapat dihapus.'], 409);
+    $delete = $db->prepare('DELETE FROM users WHERE id=:id AND role=:role'); $delete->execute(['id' => $id, 'role' => 'admin_cabang']);
     if (!$delete->rowCount()) respond(['success' => false, 'message' => 'Akun tidak ditemukan.'], 404);
     respond(['success' => true, 'message' => 'Akun berhasil dihapus.']);
 }

@@ -18,10 +18,9 @@ SELECT id, name, username, email, password_hash, 'admin_pusat', created_at
 FROM nusa_karsa.users
 WHERE username = 'admin' AND role = 'super_admin'
 ON DUPLICATE KEY UPDATE
-    name = VALUES(name), email = VALUES(email), password_hash = VALUES(password_hash),
-    role = 'admin_pusat';
+    id = id;
 
 DELETE FROM nusa_karsa.users
 WHERE username = 'admin' AND role = 'super_admin'
-  AND EXISTS (SELECT 1 FROM admin_pusat.users WHERE username = 'admin');
+  AND EXISTS (SELECT 1 FROM admin_pusat.users a WHERE a.username = nusa_karsa.users.username AND a.email = nusa_karsa.users.email);
 COMMIT;

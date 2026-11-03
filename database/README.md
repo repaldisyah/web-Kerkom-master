@@ -51,18 +51,45 @@ Jangan impor ulang seed event pada database operasional. Pulihkan backup jika mi
 | `admin_cabang` | `nusa_karsa` | Cabang pada akun. |
 | `pelanggan` | `nusa_karsa` | Profil yang ditautkan melalui `customer_id`. |
 
-Skrip seed dapat membuat/memperbarui akun demo dan mengatur ulang password seed ketika dijalankan. Dokumen ini sengaja tidak memuat nama akun seed, password, maupun hash. Untuk memeriksa akun aktual tanpa membaca hash:
+### ID akun, ID login, dan profil pelanggan
+
+`users.id` adalah ID akun database dan dibuat otomatis saat akun dibuat; nilainya dapat berbeda antar instalasi. Untuk login, gunakan `username` atau `email`, bukan `users.id`. Akun pelanggan juga memiliki `users.customer_id`, yang menunjuk ke `customers.id`; ID profil pelanggan bukan ID login.
+
+Akun yang disediakan oleh skrip seed saat ini:
+
+| Jenis akun | Username | Email login | Keterangan |
+|---|---|---|---|
+| Admin pusat | `admin` | `admin@nusakarsa.com` | Dibuat oleh `migration_seed_admin_accounts.sql` di `admin_pusat`. |
+| Admin cabang Palembang | `admin_palembang` | `admin.palembang@nusakarsa.com` | Dibuat oleh `migration_seed_admin_accounts.sql`. |
+| Admin cabang Bali | `admin_bali` | `admin.bali@nusakarsa.com` | Dibuat oleh `migration_seed_admin_accounts.sql`. |
+| Admin cabang Bandung | `admin_bandung` | `admin.bandung@nusakarsa.com` | Dibuat oleh `migration_seed_admin_accounts.sql`. |
+| Pelanggan | `rani.siger` | `rani.siger@example.com` | Seed akun pelanggan per cabang; lihat `migration_seed_customer_accounts_by_branch.sql`. |
+| Pelanggan | `dimas.sriwijaya` | `dimas.sriwijaya@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan | `nadia.musi` | `nadia.musi@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan | `made.dewata` | `made.dewata@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan | `ayu.purnama` | `ayu.purnama@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan | `komang.aruna` | `komang.aruna@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan | `fajar.parahyangan` | `fajar.parahyangan@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan | `intan.lembur` | `intan.lembur@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan | `rizky.priangan` | `rizky.priangan@example.com` | Seed akun pelanggan per cabang. |
+| Pelanggan demo opsional | `ilyas.palembang` | `ilyas.palembang@demo.nusakarsa.com` | Dibuat oleh `migration_seed_demo_customers.sql`. |
+| Pelanggan demo opsional | `keyla.bandung` | `keyla.bandung@demo.nusakarsa.com` | Dibuat oleh `migration_seed_demo_customers.sql`. |
+| Pelanggan demo opsional | `dhini.bali` | `dhini.bali@demo.nusakarsa.com` | Dibuat oleh `migration_seed_demo_customers.sql`. |
+
+Tabel di atas adalah daftar akun yang didefinisikan skrip seed, bukan jaminan semua akun tersebut ada di database saat ini. Akun aktual dan ID-nya bergantung pada skrip yang pernah dijalankan serta perubahan di aplikasi. Jalankan query berikut untuk memeriksa akun dan relasi profil saat ini tanpa membaca hash password:
 
     SELECT id, name, username, email, role FROM admin_pusat.users ORDER BY username;
 
     SELECT u.id, u.name, u.username, u.email, u.role,
-           b.name AS cabang, c.name AS profil_pelanggan
+           u.branch_id, b.name AS cabang, u.customer_id, c.name AS profil_pelanggan
     FROM nusa_karsa.users AS u
     LEFT JOIN nusa_karsa.branches AS b ON b.id = u.branch_id
     LEFT JOIN nusa_karsa.customers AS c ON c.id = u.customer_id
     ORDER BY u.role, b.name, u.username;
 
-Jangan jalankan ulang seed pada database operasional untuk mereset kredensial. Perubahan password tersedia bagi akun yang login. Alur lupa password simulasi tersedia melalui halaman terpisah, tetapi kode verifikasi ditampilkan di halaman dan tidak membuktikan kepemilikan email/nomor telepon.
+Password setiap akun tidak dicantumkan karena skrip menyimpan `password_hash`, bukan password asli. Hash tidak dapat dikembalikan menjadi password. Karena itu README maupun query database tidak dapat menunjukkan password yang saat ini berlaku; gunakan fitur ganti/lupa password atau atur kredensial baru melalui proses administrasi yang sesuai. Alur lupa password simulasi tersedia melalui halaman terpisah, tetapi kode verifikasi ditampilkan di halaman dan tidak membuktikan kepemilikan email/nomor telepon.
+
+Jangan jalankan ulang skrip seed pada database operasional untuk mencari atau mereset password: beberapa seed memperbarui hash akun yang sudah ada. Seed demo ditujukan untuk instalasi/presentasi lokal dan bukan sumber password akun produksi.
 
 ## Pembayaran dan data demo
 

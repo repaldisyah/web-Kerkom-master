@@ -79,3 +79,49 @@ SET p.customer_id = c.id WHERE p.customer_id IS NULL AND p.customer_name IS NOT 
 -- SELECT id, pelanggan FROM events_bali.events WHERE pelanggan IS NOT NULL AND customer_id IS NULL;
 -- SELECT id, pelanggan FROM events_bandung.events WHERE pelanggan IS NOT NULL AND customer_id IS NULL;
 -- SELECT id, pelanggan FROM nusa_karsa.palembang_events WHERE pelanggan IS NOT NULL AND customer_id IS NULL;
+
+-- MySQL does not refresh a view's expanded SELECT * after a base-table column is added.
+-- Recreate these views so customer_id is available to dashboard and portal queries.
+CREATE OR REPLACE VIEW events_bali.vw_events_dashboard AS
+SELECT e.*,
+       e.hpp_rab + e.margin AS nilai_kontrak,
+       (e.hpp_rab + e.margin) - e.total_dibayar AS piutang,
+       COALESCE(e.termin_2_schedule,
+           CASE WHEN e.total_dibayar > e.dp
+               THEN LEAST((e.hpp_rab + e.margin) * 0.30, e.total_dibayar - e.dp)
+               ELSE 0 END) AS termin_2,
+       COALESCE(e.pelunasan_schedule,
+           GREATEST((e.hpp_rab + e.margin) - e.dp -
+               COALESCE(e.termin_2_schedule,
+                   CASE WHEN e.total_dibayar > e.dp
+                       THEN LEAST((e.hpp_rab + e.margin) * 0.30, e.total_dibayar - e.dp)
+                       ELSE 0 END), 0)) AS pelunasan,
+       CASE
+           WHEN (e.hpp_rab + e.margin) - e.total_dibayar <= 0 THEN 'Lunas'
+           WHEN e.tgl_jatuh_tempo < CURRENT_DATE() THEN 'Piutang Jatuh Tempo'
+           ELSE 'Berjalan'
+       END AS status_piutang,
+       CASE
+           WHEN (e.hpp_rab + e.margin) - e.total_dibayar <= 0 THEN 'Hijau'
+           WHEN e.tgl_jatuh_tempo < CURRENT_DATE() THEN 'Merah'
+           ELSE 'Kuning'
+       END AS indikator_warna
+FROM (
+    SELECT events.*,
+           COALESCE(dp_schedule,
+               CASE skala WHEN 'Besar' THEN (hpp_rab + margin) * 0.40
+                          WHEN 'Sedang' THEN (hpp_rab + margin) * 0.30
+                          ELSE (hpp_rab + margin) * 0.50 END) AS dp
+    FROM events_bali.events AS events
+) AS e;
+
+CREATE OR REPLACE VIEW events_bandung.vw_events_dashboard AS
+SELECT e.*,
+       e.hpp_rab + e.margin AS nilai_kontrak,
+       (e.hpp_rab + e.margin) - e.total_dibayar AS piutang,
+       COALESCE(e.dp_schedule, CASE e.skala WHEN 'Besar' THEN (e.hpp_rab + e.margin) * 0.40 WHEN 'Sedang' THEN (e.hpp_rab + e.margin) * 0.30 ELSE (e.hpp_rab + e.margin) * 0.50 END) AS dp,
+       COALESCE(e.termin_2_schedule, CASE WHEN e.total_dibayar > COALESCE(e.dp_schedule, CASE e.skala WHEN 'Besar' THEN (e.hpp_rab + e.margin) * 0.40 WHEN 'Sedang' THEN (e.hpp_rab + e.margin) * 0.30 ELSE (e.hpp_rab + e.margin) * 0.50 END) THEN LEAST((e.hpp_rab + e.margin) * 0.30, e.total_dibayar - COALESCE(e.dp_schedule, CASE e.skala WHEN 'Besar' THEN (e.hpp_rab + e.margin) * 0.40 WHEN 'Sedang' THEN (e.hpp_rab + e.margin) * 0.30 ELSE (e.hpp_rab + e.margin) * 0.50 END)) ELSE 0 END) AS termin_2,
+       COALESCE(e.pelunasan_schedule, GREATEST((e.hpp_rab + e.margin) - COALESCE(e.dp_schedule, CASE e.skala WHEN 'Besar' THEN (e.hpp_rab + e.margin) * 0.40 WHEN 'Sedang' THEN (e.hpp_rab + e.margin) * 0.30 ELSE (e.hpp_rab + e.margin) * 0.50 END) - COALESCE(e.termin_2_schedule, CASE WHEN e.total_dibayar > COALESCE(e.dp_schedule, CASE e.skala WHEN 'Besar' THEN (e.hpp_rab + e.margin) * 0.40 WHEN 'Sedang' THEN (e.hpp_rab + e.margin) * 0.30 ELSE (e.hpp_rab + e.margin) * 0.50 END) THEN LEAST((e.hpp_rab + e.margin) * 0.30, e.total_dibayar - COALESCE(e.dp_schedule, CASE e.skala WHEN 'Besar' THEN (e.hpp_rab + e.margin) * 0.40 WHEN 'Sedang' THEN (e.hpp_rab + e.margin) * 0.30 ELSE (e.hpp_rab + e.margin) * 0.50 END)) ELSE 0 END), 0)) AS pelunasan,
+       CASE WHEN (e.hpp_rab + e.margin) - e.total_dibayar <= 0 THEN 'Lunas' WHEN e.tgl_jatuh_tempo < CURRENT_DATE() THEN 'Piutang Jatuh Tempo' ELSE 'Berjalan' END AS status_piutang,
+       CASE WHEN (e.hpp_rab + e.margin) - e.total_dibayar <= 0 THEN 'Hijau' WHEN e.tgl_jatuh_tempo < CURRENT_DATE() THEN 'Merah' ELSE 'Kuning' END AS indikator_warna
+FROM events_bandung.events AS e;
